@@ -21,16 +21,19 @@
 ```
 Người 1: Quản trị hệ thống + Self-Service  → Auth + Users + System Config + Audit + File + Cổng nhân viên
 Người 2: Quản lý nhân sự                   → Hồ sơ CRUD + Sub-entities + Import/Export
-Người 3: Hợp đồng, Đào tạo, Đánh giá      → HĐ + Đào tạo + KT/KL + Domain Config (loại HĐ, loại ĐT, loại ĐG)
+Người 3: Hợp đồng, Đào tạo, Đánh giá      → HĐ + Đào tạo + KT/KL + Domain Config (loại HĐ, loại ĐT)
 Người 4: Tổ chức, Báo cáo & Cổng TCKT      → Cơ cấu tổ chức + Dashboard + TCKT + Reports + Shared Export
 ```
 
-### Thay đổi so với v3
+### Thay đổi so với v3 (cập nhật theo schema revised)
 
 | Thay đổi | Lý do |
 |----------|-------|
-| Domain config (contract_types, training_course_types, evaluation_types) chuyển từ Người 1 → **Người 3** | Người 3 sở hữu business logic HĐ/ĐT/ĐG, hiểu config domain mình nhất |
-| FE config pages (ContractConfigPage, TrainingTypesPage, EvaluationConfigPage) chuyển từ Người 1 → **Người 3** | Đi kèm DB tables |
+| Domain config (contract_types, training_course_types) chuyển từ Người 1 → **Người 3** | Người 3 sở hữu business logic HĐ/ĐT, hiểu config domain mình nhất |
+| `evaluation_types` → **`ref_eval_types`** (bảng enum cố định, KHÔNG cấu hình runtime) | Schema revised chuyển loại đánh giá thành enum cố định, bỏ EvaluationConfigPage |
+| `salary_coefficients` → **`salary_grades` + `salary_grade_steps`** | Schema revised tách ngạch + bậc lương, có status + hệ số chi tiết hơn |
+| Thêm **21 bảng `ref_*`** (enum cố định) + **3 materialized views** | Schema revised sử dụng ref tables thay vì danh mục chung |
+| FE config pages (ContractConfigPage, TrainingTypesPage) chuyển từ Người 1 → **Người 3** | Đi kèm DB tables |
 | Shared Export engine do **Người 4** tạo, Người 3 tái sử dụng cho in HĐ PDF | Tránh 2 người build export song song |
 | Skeleton unblock: **4 giờ** thay vì 2 ngày | Giảm bottleneck, 3 người không bị block cả ngày |
 | Thêm: Cross-module API contract, Error handling, Seed data, Testing, Environment | Thiếu trong v3 |
@@ -43,10 +46,23 @@ Người 4: Tổ chức, Báo cáo & Cổng TCKT      → Cơ cấu tổ chức 
 
 Tất cả cùng dùng 1 database, mỗi người **chỉ đọc/ghi bảng trong phạm vi mình**.
 
+> **Bảng ref_* (21 bảng enum)**: Đây là hằng số hệ thống, pre-seeded khi deploy, **KHÔNG ai cấu hình runtime**.
+> Thay đổi giá trị ref_* cần migration/code deployment. Tất cả module đều READ-ONLY từ ref_*.
+
 ```
-Người 1 sở hữu (11 bảng — GHI):
+Bảng ref_* DÙNG CHUNG (21 bảng — READ-ONLY, pre-seeded):
+  ref_genders, ref_work_statuses, ref_contract_statuses,
+  ref_org_unit_types, ref_org_unit_statuses, ref_org_event_types,
+  ref_org_event_reasons, ref_family_relations, ref_party_org_types,
+  ref_eval_types, ref_assignment_event_types, ref_education_levels,
+  ref_training_levels, ref_academic_titles, ref_academic_ranks,
+  ref_contract_doc_statuses, ref_training_statuses,
+  ref_participation_statuses, ref_result_statuses,
+  ref_auth_user_statuses, ref_catalog_statuses
+
+Người 1 sở hữu (12 bảng — GHI):
   auth_users, auth_roles, auth_user_roles, session, account,
-  verification, salary_coefficients, allowance_types,
+  verification, salary_grades, salary_grade_steps, allowance_types,
   audit_logs, files, campuses
 
 Người 2 sở hữu (10 bảng — GHI):
@@ -56,18 +72,20 @@ Người 2 sở hữu (10 bảng — GHI):
   employee_certifications, employee_foreign_work_permits,
   employee_allowances
 
-Người 3 sở hữu (9 bảng — GHI):
-  contract_types, training_course_types, evaluation_types,   ← MỚI (chuyển từ Người 1)
+Người 3 sở hữu (8 bảng — GHI):
+  contract_types, training_course_types,
   employment_contracts, contract_appendices,
   training_courses, training_registrations, training_results,
   employee_evaluations
 
-Người 4 sở hữu (3 bảng — GHI + READ ALL):
+Người 4 sở hữu (3 bảng + 3 materialized views — GHI + READ ALL):
   org_units, org_unit_status_events, employee_assignments
+  + mv_headcount_by_org_unit, mv_employee_turnover, mv_contract_summary
   + READ-ONLY từ bảng người khác cho Dashboard/Reports/TCKT
 ```
 
-> ⚠️ **evaluation_types** chưa có trong schema.postgres.sql hiện tại — Người 3 cần tạo migration bổ sung.
+> ℹ️ **evaluation_types** đã được thay bằng `ref_eval_types` (bảng enum cố định, KHÔNG cấu hình runtime).
+> **salary_coefficients** đã được thay bằng `salary_grades` + `salary_grade_steps` (ngạch + bậc lương).
 
 ### 2. API Response Format: Thống nhất 1 lần
 
@@ -183,7 +201,8 @@ export function generateWord(template: string, data: Record<string, unknown>): B
 | `GET /api/v1/auth/me` | Tất cả (FE) | Thông tin user đang đăng nhập |
 | `GET /api/v1/users/by-employee/:employeeId` | Người 2 (cascade thôi việc → khóa tài khoản) | Tìm user theo employee |
 | `PATCH /api/v1/users/:id/lock` | Người 2 (cascade thôi việc) | Khóa tài khoản |
-| `GET /api/v1/config/salary-coefficients` | Người 2 (gán lương) | Danh sách hệ số lương |
+| `GET /api/v1/config/salary-grades` | Người 2 (gán lương) | Danh sách ngạch lương + bậc lương |
+| `GET /api/v1/config/salary-grades/:id/steps` | Người 2 (gán bậc lương) | Danh sách bậc lương theo ngạch |
 | `GET /api/v1/config/allowance-types` | Người 2 (gán phụ cấp) | Danh sách loại phụ cấp |
 | `POST /api/v1/files/upload` | Tất cả | Upload file |
 | `POST /api/v1/audit` | Tất cả (BE) | Ghi log hành động |
@@ -254,7 +273,7 @@ Người 4 export:
 
 ## NGƯỜI 1 — Quản trị hệ thống + Cổng Self-Service
 
-**Tự thiết kế + code**: Auth, Quản lý User, System Config (lương, phụ cấp, danh mục), Backend skeleton, File upload, Audit, Cổng nhân viên
+**Tự thiết kế + code**: Auth, Quản lý User, System Config (ngạch lương, bậc lương, phụ cấp), Backend skeleton, File upload, Audit, Cổng nhân viên
 
 ### Phạm vi sở hữu
 
@@ -264,23 +283,23 @@ FE (đã có, tự sửa):
 ├── pages/admin/UserListPage.tsx
 ├── pages/admin/UserCreatePage.tsx
 ├── pages/admin/UserEditPage.tsx
-├── pages/admin/config/SalaryConfigPage.tsx
+├── pages/admin/config/SalaryGradeConfigPage.tsx     ← ngạch + bậc lương (salary_grades + salary_grade_steps)
 ├── pages/admin/config/AllowanceConfigPage.tsx
-├── pages/admin/config/BusinessCatalogsPage.tsx    ← danh mục dân tộc, tôn giáo...
 ├── components/AdminRoute.tsx
 ├── components/ProtectedRoute.tsx
 ├── components/SessionTimeoutProvider.tsx
 └── stores/auth.ts
 
-⚠️ KHÔNG còn sở hữu (chuyển sang Người 3):
-  pages/admin/config/ContractConfigPage.tsx
-  pages/admin/config/TrainingTypesPage.tsx
-  pages/admin/config/EvaluationConfigPage.tsx
+⚠️ KHÔNG còn sở hữu (chuyển sang Người 3 / loại bỏ):
+  pages/admin/config/ContractConfigPage.tsx     → chuyển sang Người 3
+  pages/admin/config/TrainingTypesPage.tsx      → chuyển sang Người 3
+  pages/admin/config/EvaluationConfigPage.tsx   → LOẠI BỎ (ref_eval_types cố định)
+  pages/admin/config/BusinessCatalogsPage.tsx   → LOẠI BỎ (danh mục cố định trong ref_* tables)
 
 BE (tự thiết kế):
 ├── backend/src/auth/          → Đăng nhập, đăng xuất, đổi mật khẩu, session
 ├── backend/src/users/         → CRUD tài khoản, phân quyền, khóa/mở khóa
-├── backend/src/config/        → CRUD hệ số lương, phụ cấp, danh mục chung
+├── backend/src/config/        → CRUD ngạch lương (salary_grades), bậc lương (salary_grade_steps), phụ cấp
 ├── backend/src/middleware/    → Auth middleware, error handler, logger
 ├── backend/src/db/            → DB connection, migrations
 ├── backend/src/audit/         → Ghi + xem nhật ký hệ thống
@@ -307,9 +326,8 @@ FE mới cần tạo:
 | 3 | **Auth** | API login/logout/me/change-password, session (better-auth), FE kết nối | 🔴 P0 — Ngày 1-2 |
 | 4 | **Quản lý User** | API CRUD user, phân quyền, khóa/mở khóa, FE kết nối | 🟠 P1 — Ngày 3-4 |
 | 5 | **File upload** | API upload/download file, lưu disk/S3 | 🟠 P1 — Ngày 3-4 |
-| 6 | **Cấu hình lương** | API CRUD salary_coefficients, FE SalaryConfigPage kết nối | 🟡 P2 — Tuần 2 |
+| 6 | **Cấu hình ngạch lương** | API CRUD salary_grades + salary_grade_steps, FE SalaryGradeConfigPage kết nối | 🟡 P2 — Tuần 2 |
 | 7 | **Cấu hình phụ cấp** | API CRUD allowance_types, FE AllowanceConfigPage kết nối | 🟡 P2 — Tuần 2 |
-| 8 | **Danh mục chung** | API CRUD catalogs (dân tộc, tôn giáo, quốc gia...), FE kết nối | 🟡 P2 — Tuần 2 |
 | 9 | **Audit log** | API ghi log + xem/lọc log, FE AuditLogPage mới | 🟡 P2 — Tuần 2 |
 | 10 | **Internal services** | Export lockUserByEmployee, createAuditLog cho module khác | 🟠 P1 — Ngày 4-5 |
 | **Cổng Self-Service** | | | |
@@ -321,8 +339,8 @@ FE mới cần tạo:
 | 16 | **Đề nghị cập nhật** | API POST update-request, FE form mới | 🔵 P3 — Tuần 4 |
 | 17 | **router.tsx** | Quản lý file route chung, merge PR người khác | Liên tục |
 
-### DB sở hữu (11 bảng)
-`auth_users`, `auth_roles`, `auth_user_roles`, `session`, `account`, `verification`, `salary_coefficients`, `allowance_types`, `audit_logs`, `files`, `campuses`
+### DB sở hữu (12 bảng)
+`auth_users`, `auth_roles`, `auth_user_roles`, `session`, `account`, `verification`, `salary_grades`, `salary_grade_steps`, `allowance_types`, `audit_logs`, `files`, `campuses`
 
 ---
 
@@ -392,7 +410,9 @@ PersonnelDetailPage.tsx (Người 2 sở hữu)
 
 ## NGƯỜI 3 — Hợp đồng, Đào tạo, Đánh giá + Domain Config
 
-**Tự thiết kế + code**: Hợp đồng lao động, Phụ lục HĐ, Khóa đào tạo, Đăng ký + Kết quả, Khen thưởng/Kỷ luật, Cấu hình domain (loại HĐ, loại ĐT, loại đánh giá)
+**Tự thiết kế + code**: Hợp đồng lao động, Phụ lục HĐ, Khóa đào tạo, Đăng ký + Kết quả, Khen thưởng/Kỷ luật, Cấu hình domain (loại HĐ, loại ĐT)
+
+> ℹ️ **evaluation_types** đã thay bằng `ref_eval_types` (bảng enum cố định, pre-seeded). Người 3 KHÔNG cần quản lý cấu hình loại đánh giá nữa.
 
 ### Phạm vi sở hữu
 
@@ -406,7 +426,7 @@ FE (đã có, tự sửa):
 ├── pages/tccb/TrainingEditPage.tsx
 ├── pages/admin/config/ContractConfigPage.tsx      ← MỚI (chuyển từ Người 1)
 ├── pages/admin/config/TrainingTypesPage.tsx        ← MỚI (chuyển từ Người 1)
-├── pages/admin/config/EvaluationConfigPage.tsx     ← MỚI (chuyển từ Người 1)
+├── ⚠️ LOẠI BỎ: EvaluationConfigPage.tsx           ← KHÔNG CÒN (ref_eval_types là enum cố định)
 ├── components/contracts/ContractExtensionDialog.tsx
 ├── components/contracts/ContractTerminationDialog.tsx
 ├── components/contracts/AddAppendixDialog.tsx
@@ -422,7 +442,7 @@ BE (tự thiết kế):
 ├── backend/src/contracts/      → CRUD HĐ, gia hạn, chấm dứt, phụ lục, in HĐ
 ├── backend/src/training/       → CRUD khóa, mở đăng ký, đăng ký, kết quả
 ├── backend/src/evaluations/    → CRUD khen thưởng/kỷ luật
-└── backend/src/domain-config/  → CRUD contract_types, training_course_types, evaluation_types
+└── backend/src/domain-config/  → CRUD contract_types, training_course_types (evaluation_types đã chuyển thành ref_eval_types cố định)
 ```
 
 ### Tự làm từ A→Z
@@ -432,7 +452,7 @@ BE (tự thiết kế):
 | **Domain Config** | | | |
 | 1 | **Cấu hình loại HĐ** | API CRUD contract_types, FE ContractConfigPage kết nối | 🟠 P1 — Ngày 3-4 |
 | 2 | **Cấu hình loại đào tạo** | API CRUD training_course_types, FE TrainingTypesPage kết nối | 🟠 P1 — Ngày 3-4 |
-| 3 | **Cấu hình loại đánh giá** | API CRUD evaluation_types (cần tạo bảng mới), FE EvaluationConfigPage kết nối | 🟠 P1 — Ngày 3-4 |
+| ~~3~~ | ~~Cấu hình loại đánh giá~~ | ⚠️ ĐÃ LOẠI BỎ — `ref_eval_types` là bảng enum cố định, KHÔNG cấu hình runtime | — |
 | **Hợp đồng** | | | |
 | 4 | **Danh sách hợp đồng** | API GET list (search, filter, join tên nhân sự), FE kết nối | 🔴 P0 — Ngày 2-3 |
 | 5 | **Tạo hợp đồng** | API POST (validate nhân sự, kiểm tra HĐ hiện tại, số lần ký, thời hạn), FE kết nối | 🔴 P0 — Ngày 3-5 |
@@ -466,8 +486,10 @@ Task "Auto cập nhật chứng chỉ" cần INSERT vào `employee_certification
 - BE: JOIN với bảng `employees` (READ-ONLY) hoặc gọi `getEmployeeById()` từ internal service
 - Trong response API: Luôn denormalize `employee_name`, `employee_staff_code` để FE không cần gọi thêm
 
-### DB sở hữu (9 bảng)
-`contract_types`, `training_course_types`, `evaluation_types`, `employment_contracts`, `contract_appendices`, `training_courses`, `training_registrations`, `training_results`, `employee_evaluations`
+### DB sở hữu (8 bảng)
+`contract_types`, `training_course_types`, `employment_contracts`, `contract_appendices`, `training_courses`, `training_registrations`, `training_results`, `employee_evaluations`
+
+> ℹ️ `employee_evaluations.eval_type` tham chiếu FK đến `ref_eval_types(code)` — bảng enum cố định, không cần quản lý.
 
 ---
 
@@ -549,8 +571,13 @@ BE (tự thiết kế):
 | Cascade thôi việc | **Người 2** gọi internal service **Người 4** | `removeAllAssignments(employeeId, tx)` |
 | Dashboard data | **Người 4** | READ-ONLY từ tất cả bảng, hoặc gọi internal service |
 
-### DB sở hữu (3 bảng + READ ALL)
+### DB sở hữu (3 bảng + 3 materialized views + READ ALL)
 `org_units`, `org_unit_status_events`, `employee_assignments`
+
+**Materialized views** (Người 4 quản lý REFRESH):
+- `mv_headcount_by_org_unit` — Thống kê nhân sự theo đơn vị
+- `mv_employee_turnover` — Biến động nhân sự theo tháng
+- `mv_contract_summary` — Tổng hợp hợp đồng theo loại + trạng thái
 
 ---
 
@@ -569,12 +596,12 @@ fe/tlu-hr/src/
 ├── pages/admin/
 │   ├── User*                     → Người 1
 │   └── config/
-│       ├── SalaryConfigPage      → Người 1
+│       ├── SalaryGradeConfigPage → Người 1 (ngạch + bậc lương)
 │       ├── AllowanceConfigPage   → Người 1
-│       ├── BusinessCatalogsPage  → Người 1
 │       ├── ContractConfigPage    → Người 3 ← THAY ĐỔI
-│       ├── TrainingTypesPage     → Người 3 ← THAY ĐỔI
-│       └── EvaluationConfigPage  → Người 3 ← THAY ĐỔI
+│       └── TrainingTypesPage     → Người 3 ← THAY ĐỔI
+│       ⚠️ EvaluationConfigPage  → LOẠI BỎ (ref_eval_types cố định)
+│       ⚠️ BusinessCatalogsPage  → LOẠI BỎ (danh mục cố định trong ref_* tables)
 ├── pages/self-service/*          → Người 1 (MỚI)
 ├── pages/tccb/
 │   ├── Personnel*                → Người 2
@@ -615,7 +642,7 @@ backend/src/
 │   ├── users.controller.ts
 │   ├── users.service.ts
 │   └── internal.service.ts
-├── config/                 → Người 1 (salary, allowance, catalogs)
+├── config/                 → Người 1 (salary_grades, salary_grade_steps, allowance_types)
 ├── audit/                  → Người 1
 │   └── internal.service.ts
 ├── files/                  → Người 1
@@ -627,7 +654,7 @@ backend/src/
 │   ├── sub-entities.service.ts
 │   └── internal.service.ts
 │
-├── domain-config/          → Người 3 (contract_types, training_types, eval_types)
+├── domain-config/          → Người 3 (contract_types, training_course_types)
 ├── contracts/              → Người 3
 │   ├── contracts.controller.ts
 │   ├── contracts.service.ts
@@ -707,10 +734,12 @@ npm run dev                   # Chạy backend
 | 2 | `auth_roles` | Người 1 | 4 roles (ADMIN, TCCB, TCKT, EMPLOYEE) | Ngày 1 |
 | 3 | `auth_users` | Người 1 | 5-10 users (admin, tccb, tckt, employee×5) | Ngày 2 |
 | 4 | `org_units` | Người 4 | 15-20 đơn vị (cây 3 cấp) | Ngày 2 |
-| 5 | `salary_coefficients` | Người 1 | 20 hệ số | Ngày 2 |
+| 5 | `salary_grades` | Người 1 | 5-8 ngạch | Ngày 2 |
+| 5b | `salary_grade_steps` | Người 1 | 20-30 bậc (3-5 bậc/ngạch) | Ngày 2 |
 | 6 | `allowance_types` | Người 1 | 5-8 loại phụ cấp | Ngày 2 |
 | 7 | `contract_types` | Người 3 | 4 loại HĐ (thử việc, 12 tháng, 36 tháng, vô thời hạn) | Ngày 2 |
 | 8 | `training_course_types` | Người 3 | 5 loại (nội bộ, ngoài, online...) | Ngày 2 |
+| 8b | 21 bảng `ref_*` | Người 1 (trong schema init) | Pre-seeded tự động | Ngày 1 (schema SQL) |
 | 9 | **`employees`** | **Người 2** | **50-100 nhân sự** | **Ngày 3-4** |
 | 10 | `employee_assignments` | Người 4 | Gán nhân sự vào đơn vị | Ngày 4-5 |
 | 11 | `employment_contracts` | Người 3 | 50-100 HĐ (match với employees) | Ngày 4-5 |
@@ -757,7 +786,7 @@ Cuối ngày 5: Internal services exported, cross-module communication tested
 ### Tuần 2: Feature Complete (P1 + P2 tasks)
 
 ```
-├── Người 1: Config APIs (salary, allowance, catalogs) → Audit log → kết nối FE
+├── Người 1: Config APIs (salary_grades, salary_grade_steps, allowance_types) → Audit log → kết nối FE
 ├── Người 2: Sub-entities ×7 → Lương/Phụ cấp → Thôi việc cascade → kết nối FE
 ├── Người 3: Gia hạn/Chấm dứt HĐ → Phụ lục → Đăng ký ĐT → Kết quả → KT/KL
 └── Người 4: Dashboard API → Giải thể/Sáp nhập → kết nối FE
@@ -853,17 +882,17 @@ main
 
 ---
 
-## ĐÁNH GIÁ CÂN BẰNG (v4 — điều chỉnh từ v3)
+## ĐÁNH GIÁ CÂN BẰNG (v4 — điều chỉnh từ v3, cập nhật theo schema revised)
 
-### So sánh v3 vs v4
+### So sánh v3 vs v4 (cập nhật schema revised)
 
 | Chiều đo | Người 1 (v3→v4) | Người 2 (v3→v4) | Người 3 (v3→v4) | Người 4 (v3→v4) |
 |----------|-----------------|-----------------|-----------------|-----------------|
-| Tasks | 18→17 | 9→11 | 16→20 | 17→21 |
-| Bảng DB (ghi) | 14→**11** | 10 | 6→**9** | 3 |
-| FE config pages | 6→**3** | 0 | 3+3→**6+3 tabs** | 3 |
+| Tasks | 18→16 | 9→11 | 16→19 | 17→21 |
+| Bảng DB (ghi) | 14→**12** | 10 | 6→**8** | 3 + 3 MV |
+| FE config pages | 6→**2** | 0 | 3+3→**5+3 tabs** | 3 |
 | FE tạo mới | 7 | 0 | 3 tabs | ~7 + 1 tab |
-| Shared responsibility | Skeleton + Auth | Seed data | Domain config | Export engine |
+| Shared responsibility | Skeleton + Auth + ref_* init | Seed data | Domain config | Export engine + MV refresh |
 
 ### Effort thực tế (honest assessment)
 
@@ -881,23 +910,23 @@ Vibecoding Effort  ██████████ 10
 
 | Người | Effort | Tại sao? |
 |-------|--------|----------|
-| **1** | **5.5/10** | Skeleton 1 lần, auth dùng better-auth (framework), config ×3 (lặp), Self-Service 5 trang read-only. Vibecoding generate cực nhanh. |
+| **1** | **5.5/10** | Skeleton 1 lần, auth dùng better-auth (framework), config ×2 (ngạch+bậc lương, phụ cấp), Self-Service 5 trang read-only. Vibecoding generate cực nhanh. |
 | **2** | **6.5/10** | Wizard 8 bước validation phức tạp, sub-entities ×7 (lặp nhưng nhiều), Import Excel parsing, cascade thôi việc. Seed 100 records. |
-| **3** | **6.5/10** | Business logic HĐ (chuyển loại, gia hạn, đếm lần ký, grace days), 3 domain modules, 3 config pages + 3 tabs mới, in PDF template. |
-| **4** | **6.0/10** | Shared export engine (công 1 lần nhưng phức tạp), org tree + giải thể/sáp nhập, SQL aggregate cho reports, ~8 new pages nhưng đa phần read-only. |
+| **3** | **6.0/10** | Business logic HĐ (chuyển loại, gia hạn, đếm lần ký, grace days), 3 domain modules, 2 config pages + 3 tabs mới, in PDF template. Giảm nhẹ vì bỏ evaluation_types config. |
+| **4** | **6.5/10** | Shared export engine (công 1 lần nhưng phức tạp), org tree + giải thể/sáp nhập, SQL aggregate cho reports, ~8 new pages nhưng đa phần read-only. +0.5 do quản lý REFRESH 3 materialized views. |
 
 ### Chênh lệch: 5.5 — 6.5 = 1.0 → **Chấp nhận được**
 
-Người 1 nhẹ hơn ~15% nhưng chịu trách nhiệm **unblock team ngày 1** + **merge conflict router** + **auth thông suốt sớm** = effort ẩn không tính vào feature count.
+Người 1 nhẹ hơn ~15% nhưng chịu trách nhiệm **unblock team ngày 1** + **merge conflict router** + **auth thông suốt sớm** + **init 21 bảng ref_*** = effort ẩn không tính vào feature count.
 
 ### Ai cũng được làm thật
 
 | Người | Ghi DB? | Business logic phức tạp? | FE mới? | BE modules? | Shared? |
 |-------|---------|-------------------------|---------|-------------|---------|
-| **1** | ✅ 11 bảng | ✅ Auth, phân quyền, session | ✅ 7 trang | ✅ 5 modules | ✅ Skeleton, Auth MW |
+| **1** | ✅ 12 bảng | ✅ Auth, phân quyền, session | ✅ 7 trang | ✅ 5 modules | ✅ Skeleton, Auth MW, ref_* init |
 | **2** | ✅ 10 bảng | ✅ Wizard, thôi việc, import | ❌ (FE sẵn đủ) | ✅ 1 module lớn | ✅ Seed data |
-| **3** | ✅ 9 bảng | ✅ Quy tắc HĐ, in PDF | ✅ 3 tabs + 3 config | ✅ 4 modules | ❌ |
-| **4** | ✅ 3 bảng | ✅ Giải thể/sáp nhập, SQL agg | ✅ ~8 trang + 1 tab | ✅ 4 modules | ✅ Export engine |
+| **3** | ✅ 8 bảng | ✅ Quy tắc HĐ, in PDF | ✅ 3 tabs + 2 config | ✅ 4 modules | ❌ |
+| **4** | ✅ 3 bảng + 3 MV | ✅ Giải thể/sáp nhập, SQL agg | ✅ ~8 trang + 1 tab | ✅ 4 modules | ✅ Export engine, MV refresh |
 
 ---
 
@@ -905,10 +934,10 @@ Người 1 nhẹ hơn ~15% nhưng chịu trách nhiệm **unblock team ngày 1**
 
 | Người | Phạm vi | Bảng DB | FE sẵn | FE mới | BE modules | Shared |
 |-------|---------|---------|--------|--------|------------|--------|
-| **1** | Auth + Users + System Config + Audit + File + Self-Service | 11 | 7 trang | 7 trang | 5 | Skeleton, Auth MW |
+| **1** | Auth + Users + System Config + Audit + File + Self-Service | 12 | 7 trang | 7 trang | 5 | Skeleton, Auth MW, ref_* init |
 | **2** | Nhân sự CRUD + Sub-entities + Import/Export | 10 | 4 + wizard | 0 | 1 (lớn) | Seed data |
-| **3** | HĐ + ĐT + KT/KL + Domain Config (loại HĐ/ĐT/ĐG) | 9 | 6 + 5 dialogs + 3 config | 3 tabs | 4 | — |
-| **4** | Tổ chức + Dashboard + TCKT + Reports | 3 + read | 3 trang | ~8 trang | 4 | Export engine |
+| **3** | HĐ + ĐT + KT/KL + Domain Config (loại HĐ/ĐT) | 8 | 6 + 5 dialogs + 2 config | 3 tabs | 4 | — |
+| **4** | Tổ chức + Dashboard + TCKT + Reports | 3 + 3 MV + read | 3 trang | ~8 trang | 4 | Export engine, MV refresh |
 
 ### Nguyên tắc vàng
 
