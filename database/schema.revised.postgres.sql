@@ -1,12 +1,11 @@
 -- ============================================================================
--- HRMS Database Schema (PostgreSQL) — REVISED (Strictly-Typed Reference Tables)
+-- HRMS Database Schema (PostgreSQL) — REVISED
 -- ============================================================================
 -- Design principles:
 --   1. Full FEAT/UC coverage (FEAT 1.1–11.2, UC 5.1–5.41)
---   2. Every enum domain has a dedicated ref_* table with hardcoded seed data.
---      Columns reference these tables via FK, giving strict type safety at the
---      DB level.  Ref tables use code (varchar) as PK so the FK value in the
---      referencing column is human-readable — no JOINs needed for display.
+--   2. Enum domains are defined as TypeScript constants in
+--      packages/shared/src/constants/enums.ts — validated at the API boundary
+--      via Zod schemas.  Columns store human-readable varchar codes.
 --   3. No generic catalog — admins cannot invent new enum values at runtime.
 --   4. Improve audit/history support for reporting (FEAT 9.1).
 --
@@ -28,336 +27,56 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- ############################################################################
---  SECTION 0 — REFERENCE / ENUM TABLES  (one per domain, strictly typed)
+--  SECTION 0 — ENUM DOMAIN REFERENCE  (application constants)
 -- ############################################################################
---  These are APPLICATION-INTERNAL constants — pre-seeded at deployment time.
---  No use case (UC) exists for runtime management of these tables.
---  Values are hardcoded and NOT configurable by any user role (ADMIN/TCCB/TCKT).
---  Changes require a migration / code deployment.
+--  These enum domains are NO LONGER stored as database tables.
+--  They are defined as TypeScript constants in:
+--    packages/shared/src/constants/enums.ts
 --
---  For TCCB-configurable catalogs, see Sections 4, 5, 9, and 12a instead:
+--  Validation is enforced at the API boundary via Zod schemas (to be created
+--  in packages/shared/src/validators/).  Drizzle schema columns use
+--  .$type<XxxCode>() for compile-time type safety.
+--
+--  IMPORTANT: If you add/remove enum values, you MUST also update enums.ts.
+--
+--  Domain                          Valid codes
+--  ──────────────────────────────  ─────────────────────────────────────────
+--  0.1  Giới tính                  NAM, NU, KHAC
+--  0.2  Trạng thái làm việc        pending, working, terminated
+--  0.3  Trạng thái HĐ (hồ sơ)     none, valid, expired, renewal_wait
+--  0.4  Loại đơn vị tổ chức        HOI_DONG, BAN, KHOA, PHONG, BO_MON,
+--                                   PHONG_THI_NGHIEM, TRUNG_TAM
+--  0.5  Trạng thái đơn vị          active, merged, dissolved
+--  0.6  Loại sự kiện đơn vị        DISSOLVE, MERGE
+--  0.7  Lý do sự kiện đơn vị       GIAI_THE, SAP_NHAP, TAI_CO_CAU, KHAC
+--  0.8  Quan hệ gia đình           CHA, ME, VO_CHONG, CON,
+--                                   NGUOI_PHU_THUOC, KHAC
+--  0.9  Loại tổ chức Đảng/Đoàn     DOAN, DANG
+--  0.10 Loại đánh giá              REWARD, DISCIPLINE
+--  0.11 Loại sự kiện bổ nhiệm      APPOINT, DISMISS
+--  0.12 Trình độ văn hóa           THCS, THPT, TRUNG_CAP, CAO_DANG,
+--                                   DAI_HOC, THAC_SI, TIEN_SI
+--  0.13 Trình độ đào tạo           SO_CAP, TRUNG_CAP, CAO_DANG, DAI_HOC,
+--                                   THAC_SI, TIEN_SI, TSKH
+--  0.14 Chức danh nghề nghiệp      GIANG_VIEN, GIANG_VIEN_CHINH,
+--                                   GIANG_VIEN_CC, TRO_GIANG,
+--                                   NGHIEN_CUU_VIEN, CHUYEN_VIEN,
+--                                   CHUYEN_VIEN_CHINH, KY_THUAT_VIEN
+--  0.15 Học hàm                    GS, PGS
+--  0.16 Trạng thái tài liệu HĐ    draft, valid, expired, terminated
+--  0.17 Trạng thái khóa đào tạo    draft, open_registration, in_progress,
+--                                   completed, closed
+--  0.18 Trạng thái tham gia ĐT     registered, learning, completed, failed
+--  0.19 Kết quả đào tạo            completed, failed
+--  0.20 Trạng thái tài khoản       active, locked
+--  0.21 Trạng thái danh mục        active, inactive
+--
+--  For TCCB-configurable catalogs (runtime-managed), see DB tables:
 --    salary_grades / salary_grade_steps  → UC 5.12–5.15
 --    allowance_types                     → UC 5.16–5.18
 --    contract_types                      → UC 5.19–5.21
 --    training_course_types               → UC 5.33 (inline)
 -- ############################################################################
--- Pattern:  code varchar PK  |  label varchar  |  sort_order int
--- Every column that was formerly "catalog: …" now has a real FK to its ref_*.
-
--- ---------------------------------------------------------------------------
--- 0.1  Giới tính
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_genders (
-  code varchar(10) PRIMARY KEY,
-  label varchar(50) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_genders (code, label, sort_order) VALUES
-  ('NAM',  'Nam',  1),
-  ('NU',   'Nữ',   2),
-  ('KHAC', 'Khác', 3)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.2  Trạng thái làm việc của nhân sự
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_work_statuses (
-  code varchar(20) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_work_statuses (code, label, sort_order) VALUES
-  ('pending',    'Đang chờ xét',  1),
-  ('working',    'Đang công tác',  2),
-  ('terminated', 'Đã thôi việc',   3)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.3  Trạng thái hợp đồng (trên hồ sơ nhân sự)
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_contract_statuses (
-  code varchar(20) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_contract_statuses (code, label, sort_order) VALUES
-  ('none',         'Chưa hợp đồng',   1),
-  ('valid',        'Còn hiệu lực',     2),
-  ('expired',      'Hết hiệu lực',     3),
-  ('renewal_wait', 'Chờ gia hạn',      4)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.4  Loại đơn vị tổ chức
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_org_unit_types (
-  code varchar(30) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_org_unit_types (code, label, sort_order) VALUES
-  ('HOI_DONG',          'Hội đồng',          1),
-  ('BAN',               'Ban',                2),
-  ('KHOA',              'Khoa',               3),
-  ('PHONG',             'Phòng',              4),
-  ('BO_MON',            'Bộ môn',             5),
-  ('PHONG_THI_NGHIEM',  'Phòng thí nghiệm',  6),
-  ('TRUNG_TAM',         'Trung tâm',          7)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.5  Trạng thái đơn vị tổ chức
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_org_unit_statuses (
-  code varchar(20) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_org_unit_statuses (code, label, sort_order) VALUES
-  ('active',    'Đang hoạt động', 1),
-  ('merged',    'Đã sáp nhập',    2),
-  ('dissolved', 'Đã giải thể',    3)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.6  Loại sự kiện trạng thái đơn vị
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_org_event_types (
-  code varchar(20) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_org_event_types (code, label, sort_order) VALUES
-  ('DISSOLVE', 'Giải thể',   1),
-  ('MERGE',    'Sáp nhập',   2)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.7  Lý do sự kiện đơn vị
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_org_event_reasons (
-  code varchar(30) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_org_event_reasons (code, label, sort_order) VALUES
-  ('GIAI_THE',    'Giải thể',     1),
-  ('SAP_NHAP',    'Sáp nhập',     2),
-  ('TAI_CO_CAU',  'Tái cơ cấu',   3),
-  ('KHAC',        'Khác',          4)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.8  Quan hệ gia đình
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_family_relations (
-  code varchar(30) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_family_relations (code, label, sort_order) VALUES
-  ('CHA',              'Cha',               1),
-  ('ME',               'Mẹ',               2),
-  ('VO_CHONG',         'Vợ/Chồng',         3),
-  ('CON',              'Con',               4),
-  ('NGUOI_PHU_THUOC',  'Người phụ thuộc',   5),
-  ('KHAC',             'Khác',              6)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.9  Loại tổ chức Đảng/Đoàn
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_party_org_types (
-  code varchar(10) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_party_org_types (code, label, sort_order) VALUES
-  ('DOAN', 'Đoàn',  1),
-  ('DANG', 'Đảng',  2)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.10  Loại đánh giá (khen thưởng / kỷ luật)
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_eval_types (
-  code varchar(20) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_eval_types (code, label, sort_order) VALUES
-  ('REWARD',     'Khen thưởng', 1),
-  ('DISCIPLINE', 'Kỷ luật',     2)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.11  Loại sự kiện bổ nhiệm
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_assignment_event_types (
-  code varchar(20) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_assignment_event_types (code, label, sort_order) VALUES
-  ('APPOINT', 'Bổ nhiệm',   1),
-  ('DISMISS', 'Bãi nhiệm',  2)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.12  Trình độ văn hóa
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_education_levels (
-  code varchar(50) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_education_levels (code, label, sort_order) VALUES
-  ('THCS',       'Trung học cơ sở',    1),
-  ('THPT',       'Trung học phổ thông', 2),
-  ('TRUNG_CAP',  'Trung cấp',          3),
-  ('CAO_DANG',   'Cao đẳng',           4),
-  ('DAI_HOC',    'Đại học',            5),
-  ('THAC_SI',    'Thạc sĩ',           6),
-  ('TIEN_SI',    'Tiến sĩ',           7)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.13  Trình độ đào tạo
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_training_levels (
-  code varchar(50) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_training_levels (code, label, sort_order) VALUES
-  ('SO_CAP',     'Sơ cấp',             1),
-  ('TRUNG_CAP',  'Trung cấp',          2),
-  ('CAO_DANG',   'Cao đẳng',           3),
-  ('DAI_HOC',    'Đại học',            4),
-  ('THAC_SI',    'Thạc sĩ',           5),
-  ('TIEN_SI',    'Tiến sĩ',           6),
-  ('TSKH',       'Tiến sĩ khoa học',   7)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.14  Chức danh nghề nghiệp
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_academic_titles (
-  code varchar(50) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_academic_titles (code, label, sort_order) VALUES
-  ('GIANG_VIEN',        'Giảng viên',           1),
-  ('GIANG_VIEN_CHINH',  'Giảng viên chính',     2),
-  ('GIANG_VIEN_CC',     'Giảng viên cao cấp',   3),
-  ('TRO_GIANG',         'Trợ giảng',            4),
-  ('NGHIEN_CUU_VIEN',   'Nghiên cứu viên',      5),
-  ('CHUYEN_VIEN',       'Chuyên viên',           6),
-  ('CHUYEN_VIEN_CHINH', 'Chuyên viên chính',     7),
-  ('KY_THUAT_VIEN',     'Kỹ thuật viên',         8)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.15  Chức danh khoa học (Học hàm)
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_academic_ranks (
-  code varchar(50) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_academic_ranks (code, label, sort_order) VALUES
-  ('GS',  'Giáo sư',       1),
-  ('PGS', 'Phó Giáo sư',   2)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.16  Trạng thái tài liệu hợp đồng
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_contract_doc_statuses (
-  code varchar(20) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_contract_doc_statuses (code, label, sort_order) VALUES
-  ('draft',      'Nháp',           1),
-  ('valid',      'Đang hiệu lực', 2),
-  ('expired',    'Hết hiệu lực',  3),
-  ('terminated', 'Đã chấm dứt',   4)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.17  Trạng thái khóa đào tạo
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_training_statuses (
-  code varchar(30) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_training_statuses (code, label, sort_order) VALUES
-  ('draft',             'Nháp',              1),
-  ('open_registration', 'Mở đăng ký',       2),
-  ('in_progress',       'Đang diễn ra',      3),
-  ('completed',         'Đã hoàn thành',     4),
-  ('closed',            'Đã đóng',           5)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.18  Trạng thái tham gia khóa đào tạo
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_participation_statuses (
-  code varchar(20) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_participation_statuses (code, label, sort_order) VALUES
-  ('registered', 'Đã đăng ký',   1),
-  ('learning',   'Đang học',      2),
-  ('completed',  'Hoàn thành',    3),
-  ('failed',     'Không đạt',     4)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.19  Kết quả đào tạo
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_result_statuses (
-  code varchar(20) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_result_statuses (code, label, sort_order) VALUES
-  ('completed', 'Hoàn thành',  1),
-  ('failed',    'Không đạt',   2)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.20  Trạng thái tài khoản
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_auth_user_statuses (
-  code varchar(20) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_auth_user_statuses (code, label, sort_order) VALUES
-  ('active', 'Đang hoạt động', 1),
-  ('locked', 'Đã khóa',        2)
-ON CONFLICT (code) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- 0.21  Trạng thái danh mục cấu hình (dùng chung cho salary_grades,
---        salary_grade_steps, allowance_types, contract_types, training_course_types)
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS ref_catalog_statuses (
-  code varchar(20) PRIMARY KEY,
-  label varchar(100) NOT NULL,
-  sort_order int NOT NULL DEFAULT 0
-);
-INSERT INTO ref_catalog_statuses (code, label, sort_order) VALUES
-  ('active',   'Đang sử dụng',     1),
-  ('inactive', 'Ngừng sử dụng',    2)
-ON CONFLICT (code) DO NOTHING;
-
-
 -- ############################################################################
 --  SECTION 1 — FILES
 -- ############################################################################
@@ -397,8 +116,7 @@ CREATE TABLE IF NOT EXISTS org_units (
 
   unit_code varchar(50) NOT NULL UNIQUE,
   unit_name varchar(255) NOT NULL,
-  unit_type varchar(30) NOT NULL
-      REFERENCES ref_org_unit_types(code),
+  unit_type varchar(30) NOT NULL,  -- validated by Zod: OrgUnitTypeCode
 
   founded_on date,
   address text,
@@ -409,8 +127,7 @@ CREATE TABLE IF NOT EXISTS org_units (
 
   is_leaf_confirmed boolean NOT NULL DEFAULT false,
 
-  status varchar(20) NOT NULL DEFAULT 'active'
-      REFERENCES ref_org_unit_statuses(code),
+  status varchar(20) NOT NULL DEFAULT 'active',  -- validated by Zod: OrgUnitStatusCode
   status_updated_at timestamptz,
 
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -426,16 +143,14 @@ CREATE TABLE IF NOT EXISTS org_unit_status_events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   org_unit_id uuid NOT NULL REFERENCES org_units(id) ON DELETE CASCADE,
 
-  event_type varchar(20) NOT NULL
-      REFERENCES ref_org_event_types(code),
+  event_type varchar(20) NOT NULL,  -- validated by Zod: OrgEventTypeCode
   effective_on date NOT NULL,
 
   decision_no varchar(50),
   decision_on date,
   decision_file_id uuid REFERENCES files(id) ON DELETE SET NULL,
 
-  reason varchar(30) NOT NULL
-      REFERENCES ref_org_event_reasons(code),
+  reason varchar(30) NOT NULL,  -- validated by Zod: OrgEventReasonCode
   note text,
 
   merged_into_org_unit_id uuid REFERENCES org_units(id) ON DELETE RESTRICT,
@@ -468,8 +183,7 @@ CREATE TABLE IF NOT EXISTS salary_grades (
   grade_code varchar(50) NOT NULL UNIQUE,
   grade_name varchar(255) NOT NULL,
 
-  status varchar(20) NOT NULL DEFAULT 'active'
-      REFERENCES ref_catalog_statuses(code),
+  status varchar(20) NOT NULL DEFAULT 'active',  -- validated by Zod: CatalogStatusCode
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -485,8 +199,7 @@ CREATE TABLE IF NOT EXISTS salary_grade_steps (
   step_no int NOT NULL,
   coefficient numeric(8,3) NOT NULL,
 
-  status varchar(20) NOT NULL DEFAULT 'active'
-      REFERENCES ref_catalog_statuses(code),
+  status varchar(20) NOT NULL DEFAULT 'active',  -- validated by Zod: CatalogStatusCode
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
 
@@ -511,8 +224,7 @@ CREATE TABLE IF NOT EXISTS allowance_types (
   description text,
   calc_method text,
 
-  status varchar(20) NOT NULL DEFAULT 'active'
-      REFERENCES ref_catalog_statuses(code),
+  status varchar(20) NOT NULL DEFAULT 'active',  -- validated by Zod: CatalogStatusCode
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
 
@@ -532,8 +244,7 @@ CREATE TABLE IF NOT EXISTS employees (
 
   full_name varchar(255) NOT NULL,
   dob date NOT NULL,
-  gender varchar(10) NOT NULL
-      REFERENCES ref_genders(code),
+  gender varchar(10) NOT NULL,  -- validated by Zod: GenderCode
 
   national_id varchar(20) NOT NULL UNIQUE,
   hometown text,
@@ -549,19 +260,13 @@ CREATE TABLE IF NOT EXISTS employees (
   is_foreigner boolean NOT NULL DEFAULT false,
 
   -- Academic qualifications (UC 5.24 filter, UC 5.25 create)
-  education_level varchar(50)
-      REFERENCES ref_education_levels(code),
-  training_level varchar(50)
-      REFERENCES ref_training_levels(code),
-  academic_title varchar(50)
-      REFERENCES ref_academic_titles(code),
-  academic_rank varchar(50)
-      REFERENCES ref_academic_ranks(code),
+  education_level varchar(50),  -- validated by Zod: EducationLevelCode
+  training_level varchar(50),  -- validated by Zod: TrainingLevelCode
+  academic_title varchar(50),  -- validated by Zod: AcademicTitleCode
+  academic_rank varchar(50),  -- validated by Zod: AcademicRankCode
 
-  work_status varchar(20) NOT NULL DEFAULT 'pending'
-      REFERENCES ref_work_statuses(code),
-  contract_status varchar(20) NOT NULL DEFAULT 'none'
-      REFERENCES ref_contract_statuses(code),
+  work_status varchar(20) NOT NULL DEFAULT 'pending',  -- validated by Zod: WorkStatusCode
+  contract_status varchar(20) NOT NULL DEFAULT 'none',  -- validated by Zod: ContractStatusCode
 
   current_org_unit_id uuid REFERENCES org_units(id) ON DELETE SET NULL,
   current_position_title varchar(255),
@@ -607,8 +312,7 @@ CREATE TABLE IF NOT EXISTS employee_assignments (
   org_unit_id uuid NOT NULL REFERENCES org_units(id) ON DELETE RESTRICT,
   position_title varchar(255),
 
-  event_type varchar(20) NOT NULL DEFAULT 'APPOINT'
-      REFERENCES ref_assignment_event_types(code),
+  event_type varchar(20) NOT NULL DEFAULT 'APPOINT',  -- validated by Zod: AssignmentEventTypeCode
 
   started_on date NOT NULL,
   ended_on date,
@@ -632,8 +336,7 @@ CREATE TABLE IF NOT EXISTS employee_family_members (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   employee_id uuid NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
 
-  relation varchar(30) NOT NULL
-      REFERENCES ref_family_relations(code),
+  relation varchar(30) NOT NULL,  -- validated by Zod: FamilyRelationCode
 
   full_name varchar(255) NOT NULL,
   dob date,
@@ -675,8 +378,7 @@ CREATE TABLE IF NOT EXISTS employee_party_memberships (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   employee_id uuid NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
 
-  organization_type varchar(10) NOT NULL
-      REFERENCES ref_party_org_types(code),
+  organization_type varchar(10) NOT NULL,  -- validated by Zod: PartyOrgTypeCode
 
   joined_on date,
   details text,
@@ -758,8 +460,7 @@ CREATE TABLE IF NOT EXISTS contract_types (
   max_renewals int NOT NULL,
   renewal_grace_days int NOT NULL,
 
-  status varchar(20) NOT NULL DEFAULT 'active'
-      REFERENCES ref_catalog_statuses(code),
+  status varchar(20) NOT NULL DEFAULT 'active',  -- validated by Zod: CatalogStatusCode
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
 
@@ -785,8 +486,7 @@ CREATE TABLE IF NOT EXISTS employment_contracts (
   renewal_count int NOT NULL DEFAULT 0,
   previous_contract_id uuid REFERENCES employment_contracts(id) ON DELETE SET NULL,
 
-  status varchar(20) NOT NULL DEFAULT 'valid'
-      REFERENCES ref_contract_doc_statuses(code),
+  status varchar(20) NOT NULL DEFAULT 'valid',  -- validated by Zod: ContractDocStatusCode
   content_html text,
   contract_file_id uuid REFERENCES files(id) ON DELETE SET NULL,
 
@@ -827,8 +527,7 @@ CREATE TABLE IF NOT EXISTS employee_evaluations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   employee_id uuid NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
 
-  eval_type varchar(20) NOT NULL
-      REFERENCES ref_eval_types(code),
+  eval_type varchar(20) NOT NULL,  -- validated by Zod: EvalTypeCode
 
   -- Reward fields
   reward_type varchar(255),
@@ -869,8 +568,7 @@ CREATE TABLE IF NOT EXISTS training_course_types (
   type_name varchar(255) NOT NULL UNIQUE,
   description text,
 
-  status varchar(20) NOT NULL DEFAULT 'active'
-      REFERENCES ref_catalog_statuses(code),
+  status varchar(20) NOT NULL DEFAULT 'active',  -- validated by Zod: CatalogStatusCode
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -894,8 +592,7 @@ CREATE TABLE IF NOT EXISTS training_courses (
   registration_to date,
   registration_limit int,
 
-  status varchar(30) NOT NULL DEFAULT 'draft'
-      REFERENCES ref_training_statuses(code),
+  status varchar(30) NOT NULL DEFAULT 'draft',  -- validated by Zod: TrainingStatusCode
 
   created_by_user_id uuid,
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -922,8 +619,7 @@ CREATE TABLE IF NOT EXISTS training_registrations (
 
   registered_at timestamptz NOT NULL DEFAULT now(),
 
-  participation_status varchar(20) NOT NULL DEFAULT 'registered'
-      REFERENCES ref_participation_statuses(code),
+  participation_status varchar(20) NOT NULL DEFAULT 'registered',  -- validated by Zod: ParticipationStatusCode
 
   CONSTRAINT training_reg_unique UNIQUE (course_id, employee_id)
 );
@@ -936,8 +632,7 @@ CREATE TABLE IF NOT EXISTS training_results (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   registration_id uuid NOT NULL UNIQUE REFERENCES training_registrations(id) ON DELETE CASCADE,
 
-  result_status varchar(20) NOT NULL
-      REFERENCES ref_result_statuses(code),
+  result_status varchar(20) NOT NULL,  -- validated by Zod: ResultStatusCode
 
   completed_on date,
   certificate_file_id uuid REFERENCES files(id) ON DELETE SET NULL,
@@ -959,8 +654,7 @@ CREATE TABLE IF NOT EXISTS auth_users (
 
   employee_id uuid UNIQUE REFERENCES employees(id) ON DELETE SET NULL,
 
-  status varchar(20) NOT NULL DEFAULT 'active'
-      REFERENCES ref_auth_user_statuses(code),
+  status varchar(20) NOT NULL DEFAULT 'active',  -- validated by Zod: AuthUserStatusCode
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   last_login_at timestamptz
