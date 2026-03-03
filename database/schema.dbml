@@ -1,0 +1,665 @@
+// ============================================================================
+// HRMS Database Schema — DBML
+// Generated from schema.revised.postgres.sql
+// ============================================================================
+
+// ############################################################################
+//  SECTION 1 — FILES
+// ############################################################################
+Table files {
+  id uuid [pk, default: `gen_random_uuid()`]
+  storage_path text [not null]
+  original_name text [not null]
+  mime_type text
+  byte_size bigint [note: 'CHECK (byte_size IS NULL OR byte_size >= 0)']
+  sha256 char(64)
+  uploaded_by_user_id uuid [ref: > auth_users.id]
+  uploaded_at timestamptz [not null, default: `now()`]
+}
+
+// ############################################################################
+//  SECTION 2 — CAMPUSES
+// ############################################################################
+Table campuses {
+  id uuid [pk, default: `gen_random_uuid()`]
+  campus_code varchar(50) [not null, unique]
+  campus_name varchar(255) [not null]
+  address text
+  phone varchar(30)
+  email varchar(255)
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+}
+
+// ############################################################################
+//  SECTION 3 — ORGANIZATION UNITS (FEAT 3.1–3.7, UC 5.9–5.11, 5.32, 5.39)
+// ############################################################################
+Table org_units {
+  id uuid [pk, default: `gen_random_uuid()`]
+  campus_id uuid [not null, ref: > campuses.id]
+  parent_id uuid [ref: > org_units.id]
+
+  unit_code varchar(50) [not null, unique]
+  unit_name varchar(255) [not null]
+  unit_type varchar(30) [not null, note: 'Zod: OrgUnitTypeCode']
+
+  founded_on date
+  address text
+  office_address text
+  email varchar(255)
+  phone varchar(30)
+  website text
+
+  is_leaf_confirmed boolean [not null, default: false]
+
+  status varchar(20) [not null, default: 'active', note: 'Zod: OrgUnitStatusCode']
+  status_updated_at timestamptz
+
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    parent_id [name: 'idx_org_units_parent_id']
+    campus_id [name: 'idx_org_units_campus_id']
+    status [name: 'idx_org_units_status']
+  }
+}
+
+// History of status changes (giải thể/sáp nhập) — UC 5.11
+Table org_unit_status_events {
+  id uuid [pk, default: `gen_random_uuid()`]
+  org_unit_id uuid [not null, ref: > org_units.id]
+
+  event_type varchar(20) [not null, note: 'Zod: OrgEventTypeCode']
+  effective_on date [not null]
+
+  decision_no varchar(50)
+  decision_on date
+  decision_file_id uuid [ref: > files.id]
+
+  reason varchar(30) [not null, note: 'Zod: OrgEventReasonCode']
+  note text
+
+  merged_into_org_unit_id uuid [ref: > org_units.id]
+
+  created_by_user_id uuid
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    org_unit_id [name: 'idx_org_unit_status_events_unit']
+    effective_on [name: 'idx_org_unit_status_events_effective']
+  }
+
+  Note: '''
+  CONSTRAINT org_unit_merge_target_chk:
+    MERGE → merged_into_org_unit_id IS NOT NULL
+    DISSOLVE → merged_into_org_unit_id IS NULL
+  '''
+}
+
+// ############################################################################
+//  SECTION 4 — SALARY GRADE & STEP CATALOG (FEAT 8.1–8.4)
+// ############################################################################
+Table salary_grades {
+  id uuid [pk, default: `gen_random_uuid()`]
+  grade_code varchar(50) [not null, unique]
+  grade_name varchar(255) [not null]
+
+  status varchar(20) [not null, default: 'active', note: 'Zod: CatalogStatusCode']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    status [name: 'idx_salary_grades_status']
+  }
+}
+
+Table salary_grade_steps {
+  id uuid [pk, default: `gen_random_uuid()`]
+  salary_grade_id uuid [not null, ref: > salary_grades.id]
+
+  step_no int [not null, note: 'CHECK (step_no > 0)']
+  coefficient numeric(8,3) [not null, note: 'CHECK (coefficient >= 0)']
+
+  status varchar(20) [not null, default: 'active', note: 'Zod: CatalogStatusCode']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    salary_grade_id [name: 'idx_salary_grade_steps_grade']
+    status [name: 'idx_salary_grade_steps_status']
+    (salary_grade_id, step_no) [unique, name: 'salary_unique_grade_step']
+  }
+}
+
+// ############################################################################
+//  SECTION 5 — ALLOWANCE TYPES (FEAT 8.5–8.7)
+// ############################################################################
+Table allowance_types {
+  id uuid [pk, default: `gen_random_uuid()`]
+  allowance_name varchar(200) [not null, unique]
+  description text
+  calc_method text
+
+  status varchar(20) [not null, default: 'active', note: 'Zod: CatalogStatusCode']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+}
+
+// ############################################################################
+//  SECTION 6 — EMPLOYEES (FEAT 6.1–6.8, UC 5.23–5.28)
+// ############################################################################
+Table employees {
+  id uuid [pk, default: `gen_random_uuid()`]
+
+  staff_code varchar(30) [not null, unique]
+
+  full_name varchar(255) [not null]
+  dob date [not null]
+  gender varchar(10) [not null, note: 'Zod: GenderCode']
+
+  national_id varchar(20) [not null, unique]
+  hometown text
+  address text [not null]
+
+  tax_code varchar(30)
+  social_insurance_no varchar(30)
+  health_insurance_no varchar(30)
+
+  email varchar(255) [not null]
+  phone varchar(30) [not null]
+
+  is_foreigner boolean [not null, default: false]
+
+  education_level varchar(50) [note: 'Zod: EducationLevelCode']
+  training_level varchar(50) [note: 'Zod: TrainingLevelCode']
+  academic_title varchar(50) [note: 'Zod: AcademicTitleCode']
+  academic_rank varchar(50) [note: 'Zod: AcademicRankCode']
+
+  work_status varchar(20) [not null, default: 'pending', note: 'Zod: WorkStatusCode']
+  contract_status varchar(20) [not null, default: 'none', note: 'Zod: ContractStatusCode']
+
+  current_org_unit_id uuid [ref: > org_units.id]
+  current_position_title varchar(255)
+
+  salary_grade_step_id uuid [ref: > salary_grade_steps.id]
+  portrait_file_id uuid [ref: > files.id]
+
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    staff_code [name: 'idx_employees_staff_code']
+    national_id [name: 'idx_employees_national_id']
+    current_org_unit_id [name: 'idx_employees_current_org_unit']
+    work_status [name: 'idx_employees_work_status']
+    contract_status [name: 'idx_employees_contract_status']
+    gender [name: 'idx_employees_gender']
+  }
+}
+
+// ############################################################################
+//  SECTION 6a — EMPLOYEE TERMINATIONS (FEAT 6.5–6.6, UC 5.27)
+// ############################################################################
+Table employee_terminations {
+  id uuid [pk, default: `gen_random_uuid()`]
+  employee_id uuid [not null, ref: > employees.id]
+  terminated_on date [not null]
+  reason text [not null]
+  is_auto boolean [not null, default: false]
+  created_by_user_id uuid
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    employee_id [name: 'idx_employee_terminations_employee']
+  }
+}
+
+// ############################################################################
+//  SECTION 6b — ASSIGNMENT HISTORY (FEAT 3.5–3.6, UC 5.30–5.31)
+// ############################################################################
+Table employee_assignments {
+  id uuid [pk, default: `gen_random_uuid()`]
+  employee_id uuid [not null, ref: > employees.id]
+  org_unit_id uuid [not null, ref: > org_units.id]
+  position_title varchar(255)
+
+  event_type varchar(20) [not null, default: 'APPOINT', note: 'Zod: AssignmentEventTypeCode']
+
+  started_on date [not null]
+  ended_on date
+  note text
+  created_by_user_id uuid
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    employee_id [name: 'idx_employee_assignments_employee']
+    org_unit_id [name: 'idx_employee_assignments_org_unit']
+    event_type [name: 'idx_employee_assignments_event_type']
+  }
+
+  Note: 'CONSTRAINT: ended_on IS NULL OR ended_on >= started_on'
+}
+
+// ############################################################################
+//  SECTION 7 — EMPLOYEE SUB-ENTITIES (UC 5.25/5.26/5.28)
+// ############################################################################
+
+// 7a. Family members
+Table employee_family_members {
+  id uuid [pk, default: `gen_random_uuid()`]
+  employee_id uuid [not null, ref: > employees.id]
+
+  relation varchar(30) [not null, note: 'Zod: FamilyRelationCode']
+
+  full_name varchar(255) [not null]
+  dob date
+  phone varchar(30)
+  note text
+  is_dependent boolean [not null, default: false]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    employee_id [name: 'idx_employee_family_members_emp']
+  }
+}
+
+// 7b. Bank accounts
+Table employee_bank_accounts {
+  id uuid [pk, default: `gen_random_uuid()`]
+  employee_id uuid [not null, ref: > employees.id]
+  bank_name varchar(255) [not null]
+  account_no varchar(50) [not null]
+  is_primary boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (employee_id, account_no) [unique, name: 'employee_bank_unique']
+  }
+}
+
+// 7c. Previous jobs
+Table employee_previous_jobs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  employee_id uuid [not null, ref: > employees.id]
+  workplace varchar(255) [not null]
+  started_on date
+  ended_on date
+  note text
+  created_at timestamptz [not null, default: `now()`]
+
+  Note: 'CONSTRAINT: ended_on IS NULL OR started_on IS NULL OR ended_on >= started_on'
+}
+
+// 7d. Party memberships (Đảng/Đoàn)
+Table employee_party_memberships {
+  id uuid [pk, default: `gen_random_uuid()`]
+  employee_id uuid [not null, ref: > employees.id]
+
+  organization_type varchar(10) [not null, note: 'Zod: PartyOrgTypeCode']
+
+  joined_on date
+  details text
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+}
+
+// 7e. Degrees (bằng cấp)
+Table employee_degrees {
+  id uuid [pk, default: `gen_random_uuid()`]
+  employee_id uuid [not null, ref: > employees.id]
+  degree_name varchar(255) [not null]
+  school varchar(255) [not null]
+  major varchar(255)
+  graduation_year int [note: 'CHECK (graduation_year IS NULL OR graduation_year >= 1900)']
+  classification varchar(100)
+  degree_file_id uuid [ref: > files.id]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+}
+
+// 7f. Certifications (chứng chỉ)
+Table employee_certifications {
+  id uuid [pk, default: `gen_random_uuid()`]
+  employee_id uuid [not null, ref: > employees.id]
+  cert_name varchar(255) [not null]
+  issued_by varchar(255)
+  issued_on date
+  expires_on date
+  cert_file_id uuid [ref: > files.id]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Note: 'CONSTRAINT: expires_on IS NULL OR issued_on IS NULL OR expires_on >= issued_on'
+}
+
+// 7g. Foreign work permits
+Table employee_foreign_work_permits {
+  id uuid [pk, default: `gen_random_uuid()`]
+  employee_id uuid [not null, ref: > employees.id]
+  visa_no varchar(50)
+  visa_expires_on date
+  passport_no varchar(50)
+  passport_expires_on date
+  work_permit_no varchar(50)
+  work_permit_expires_on date
+  work_permit_file_id uuid [ref: > files.id]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+}
+
+// ############################################################################
+//  SECTION 8 — EMPLOYEE ALLOWANCES (FEAT 8.5–8.7, UC 5.25/5.26)
+// ############################################################################
+Table employee_allowances {
+  id uuid [pk, default: `gen_random_uuid()`]
+  employee_id uuid [not null, ref: > employees.id]
+  allowance_type_id uuid [not null, ref: > allowance_types.id]
+  amount numeric(14,2) [note: 'CHECK (amount IS NULL OR amount >= 0)']
+  note text
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (employee_id, allowance_type_id) [unique, name: 'employee_allowance_unique']
+  }
+}
+
+// ############################################################################
+//  SECTION 9 — CONTRACT TYPES (FEAT 8.8–8.10)
+// ############################################################################
+Table contract_types {
+  id uuid [pk, default: `gen_random_uuid()`]
+  contract_type_name varchar(255) [not null, unique]
+  min_months int [not null, note: 'CHECK (min_months > 0)']
+  max_months int [not null, note: 'CHECK (max_months >= min_months)']
+  max_renewals int [not null, note: 'CHECK (max_renewals >= 0)']
+  renewal_grace_days int [not null, note: 'CHECK (renewal_grace_days >= 0)']
+
+  status varchar(20) [not null, default: 'active', note: 'Zod: CatalogStatusCode']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+}
+
+// ############################################################################
+//  SECTION 10 — EMPLOYMENT CONTRACTS (FEAT 4.1, UC 5.22)
+// ############################################################################
+Table employment_contracts {
+  id uuid [pk, default: `gen_random_uuid()`]
+  employee_id uuid [not null, ref: > employees.id]
+  contract_type_id uuid [not null, ref: > contract_types.id]
+
+  contract_no varchar(50) [not null, unique]
+  signed_on date [not null]
+  effective_from date [not null]
+  effective_to date [not null]
+
+  org_unit_id uuid [not null, ref: > org_units.id]
+
+  status varchar(20) [not null, default: 'valid', note: 'Zod: ContractDocStatusCode']
+  content_html text
+  contract_file_id uuid [ref: > files.id]
+
+  created_by_user_id uuid
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    employee_id [name: 'idx_employment_contracts_employee']
+    contract_type_id [name: 'idx_employment_contracts_type']
+    org_unit_id [name: 'idx_employment_contracts_org_unit']
+    status [name: 'idx_employment_contracts_status']
+    (effective_from, effective_to) [name: 'idx_employment_contracts_effective']
+  }
+
+  Note: 'CONSTRAINT: effective_to >= effective_from'
+}
+
+// Contract appendices (UC 5.26)
+Table contract_appendices {
+  id uuid [pk, default: `gen_random_uuid()`]
+  contract_id uuid [not null, ref: > employment_contracts.id]
+  appendix_no varchar(50)
+  effective_on date [not null]
+  terms text [not null]
+  notes text
+  appendix_file_id uuid [ref: > files.id]
+  created_by_user_id uuid
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    contract_id [name: 'idx_contract_appendices_contract']
+  }
+}
+
+// ############################################################################
+//  SECTION 11 — EVALUATIONS (FEAT 5.1, UC 5.29, UC 5.26)
+// ############################################################################
+Table employee_evaluations {
+  id uuid [pk, default: `gen_random_uuid()`]
+  employee_id uuid [not null, ref: > employees.id]
+
+  eval_type varchar(20) [not null, note: 'Zod: EvalTypeCode']
+
+  // Reward fields
+  reward_type varchar(255)
+  reward_name varchar(255)
+  decision_on date
+  decision_no varchar(50)
+  content text
+  reward_amount numeric(14,2) [note: 'CHECK (reward_amount IS NULL OR reward_amount >= 0)']
+
+  // Discipline fields
+  discipline_type varchar(255)
+  discipline_name varchar(255)
+  reason text
+  action_form varchar(255)
+
+  // Visibility control (UC 5.26 step 3.2)
+  is_active boolean [not null, default: true]
+  visible_to_employee boolean [not null, default: true]
+  visible_to_tckt boolean [not null, default: true]
+
+  created_by_user_id uuid
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    employee_id [name: 'idx_employee_evaluations_employee']
+    eval_type [name: 'idx_employee_evaluations_type']
+  }
+}
+
+// ############################################################################
+//  SECTION 12 — TRAINING (FEAT 7.1–7.4, 11.1–11.2, UC 5.33–5.36, 5.40–5.41)
+// ############################################################################
+
+// 12a. Course type catalog
+Table training_course_types {
+  id uuid [pk, default: `gen_random_uuid()`]
+  type_name varchar(255) [not null, unique]
+  description text
+
+  status varchar(20) [not null, default: 'active', note: 'Zod: CatalogStatusCode']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+}
+
+// 12b. Training courses
+Table training_courses {
+  id uuid [pk, default: `gen_random_uuid()`]
+  course_name varchar(255) [not null]
+  course_type_id uuid [not null, ref: > training_course_types.id]
+
+  training_from date [not null]
+  training_to date [not null]
+  location varchar(255)
+  cost numeric(14,2) [note: 'CHECK (cost IS NULL OR cost >= 0)']
+  commitment text
+
+  certificate_name varchar(255)
+  certificate_type varchar(255)
+
+  registration_from date
+  registration_to date
+  registration_limit int [note: 'CHECK (registration_limit IS NULL OR registration_limit > 0)']
+
+  status varchar(30) [not null, default: 'draft', note: 'Zod: TrainingStatusCode']
+
+  created_by_user_id uuid
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    course_type_id [name: 'idx_training_courses_type']
+    status [name: 'idx_training_courses_status']
+    (registration_from, registration_to) [name: 'idx_training_courses_registration']
+  }
+
+  Note: '''
+  CONSTRAINTS:
+    training_to >= training_from
+    registration_to >= registration_from (if both non-null)
+  '''
+}
+
+// 12c. Registrations
+Table training_registrations {
+  id uuid [pk, default: `gen_random_uuid()`]
+  course_id uuid [not null, ref: > training_courses.id]
+  employee_id uuid [not null, ref: > employees.id]
+
+  registered_at timestamptz [not null, default: `now()`]
+
+  participation_status varchar(20) [not null, default: 'registered', note: 'Zod: ParticipationStatusCode']
+
+  indexes {
+    employee_id [name: 'idx_training_registrations_employee']
+    course_id [name: 'idx_training_registrations_course']
+    (course_id, employee_id) [unique, name: 'training_reg_unique']
+  }
+}
+
+// 12d. Training results (UC 5.36)
+Table training_results {
+  id uuid [pk, default: `gen_random_uuid()`]
+  registration_id uuid [not null, unique, ref: > training_registrations.id]
+
+  result_status varchar(20) [not null, note: 'Zod: ResultStatusCode']
+
+  completed_on date
+  certificate_file_id uuid [ref: > files.id]
+  note text
+  created_by_user_id uuid
+  created_at timestamptz [not null, default: `now()`]
+}
+
+// ############################################################################
+//  SECTION 13 — AUTH: USERS / ROLES (FEAT 1.1–1.4, 2.1–2.5, UC 5.1–5.8)
+// ############################################################################
+Table auth_users {
+  id uuid [pk, default: `gen_random_uuid()`]
+  username varchar(50) [not null, unique]
+  password_hash text [not null]
+  full_name varchar(255) [not null]
+  email varchar(255) [unique]
+
+  employee_id uuid [unique, ref: > employees.id]
+
+  role_id uuid [not null, ref: > auth_roles.id]
+
+  status varchar(20) [not null, default: 'active', note: 'Zod: AuthUserStatusCode']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  last_login_at timestamptz
+
+  indexes {
+    employee_id [name: 'idx_auth_users_employee_id']
+    role_id [name: 'idx_auth_users_role_id']
+    status [name: 'idx_auth_users_status']
+  }
+}
+
+Table auth_roles {
+  id uuid [pk, default: `gen_random_uuid()`]
+  role_code varchar(30) [not null, unique]
+  role_name varchar(255) [not null]
+  description text
+  is_system boolean [not null, default: false]
+  created_at timestamptz [not null, default: `now()`]
+}
+
+// User ↔ Role: each user has exactly one role (via auth_users.role_id)
+
+// ############################################################################
+//  SECTION 14 — BETTER-AUTH MANAGED TABLES (FEAT 1.1–1.3, UC 5.1–5.2)
+// ############################################################################
+Table session {
+  id text [pk]
+  expiresAt timestamptz [not null]
+  token text [not null, unique]
+  createdAt timestamptz [not null, default: `now()`]
+  updatedAt timestamptz [not null, default: `now()`]
+  ipAddress text
+  userAgent text
+  userId uuid [not null, ref: > auth_users.id]
+
+  indexes {
+    userId [name: 'idx_session_user']
+    token [name: 'idx_session_token']
+    expiresAt [name: 'idx_session_expires']
+  }
+}
+
+Table account {
+  id text [pk]
+  accountId text [not null]
+  providerId text [not null]
+  userId uuid [not null, ref: > auth_users.id]
+  accessToken text
+  refreshToken text
+  idToken text
+  accessTokenExpiresAt timestamptz
+  refreshTokenExpiresAt timestamptz
+  scope text
+  password text
+  createdAt timestamptz [not null, default: `now()`]
+  updatedAt timestamptz [not null, default: `now()`]
+
+  indexes {
+    userId [name: 'idx_account_user']
+  }
+}
+
+Table verification {
+  id text [pk]
+  identifier text [not null]
+  value text [not null]
+  expiresAt timestamptz [not null]
+  createdAt timestamptz [not null, default: `now()`]
+  updatedAt timestamptz [not null, default: `now()`]
+}
+
+// ############################################################################
+//  SECTION 15 — AUDIT LOG (NFR item 8, FEAT 9.1)
+// ############################################################################
+Table audit_logs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  actor_user_id uuid [ref: > auth_users.id]
+  action varchar(100) [not null]
+  entity_type varchar(100)
+  entity_id uuid
+  old_values jsonb
+  new_values jsonb
+  metadata jsonb
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    actor_user_id [name: 'idx_audit_logs_actor']
+    (entity_type, entity_id) [name: 'idx_audit_logs_entity']
+    created_at [name: 'idx_audit_logs_created']
+    action [name: 'idx_audit_logs_action']
+  }
+}

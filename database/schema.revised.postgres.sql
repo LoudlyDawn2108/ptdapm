@@ -483,9 +483,6 @@ CREATE TABLE IF NOT EXISTS employment_contracts (
 
   org_unit_id uuid NOT NULL REFERENCES org_units(id) ON DELETE RESTRICT,
 
-  renewal_count int NOT NULL DEFAULT 0,
-  previous_contract_id uuid REFERENCES employment_contracts(id) ON DELETE SET NULL,
-
   status varchar(20) NOT NULL DEFAULT 'valid',  -- validated by Zod: ContractDocStatusCode
   content_html text,
   contract_file_id uuid REFERENCES files(id) ON DELETE SET NULL,
@@ -495,8 +492,7 @@ CREATE TABLE IF NOT EXISTS employment_contracts (
   updated_at timestamptz NOT NULL DEFAULT now(),
 
   CONSTRAINT contract_dates_chk CHECK (effective_to >= effective_from),
-  CONSTRAINT contract_no_unique UNIQUE (contract_no),
-  CONSTRAINT contract_renewal_count_chk CHECK (renewal_count >= 0)
+  CONSTRAINT contract_no_unique UNIQUE (contract_no)
 );
 
 CREATE INDEX IF NOT EXISTS idx_employment_contracts_employee ON employment_contracts(employee_id);
@@ -654,6 +650,8 @@ CREATE TABLE IF NOT EXISTS auth_users (
 
   employee_id uuid UNIQUE REFERENCES employees(id) ON DELETE SET NULL,
 
+  role_id uuid NOT NULL REFERENCES auth_roles(id) ON DELETE RESTRICT,
+
   status varchar(20) NOT NULL DEFAULT 'active',  -- validated by Zod: AuthUserStatusCode
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
@@ -661,6 +659,7 @@ CREATE TABLE IF NOT EXISTS auth_users (
 );
 
 CREATE INDEX IF NOT EXISTS idx_auth_users_employee_id ON auth_users(employee_id);
+CREATE INDEX IF NOT EXISTS idx_auth_users_role_id ON auth_users(role_id);
 CREATE INDEX IF NOT EXISTS idx_auth_users_status ON auth_users(status);
 
 -- Deferred FK: files.uploaded_by_user_id → auth_users
@@ -693,14 +692,7 @@ INSERT INTO auth_roles (role_code, role_name, description, is_system) VALUES
   ('EMPLOYEE', 'Cán bộ / Giảng viên / Nhân viên', 'Xem hồ sơ cá nhân, đăng ký đào tạo',               true)
 ON CONFLICT (role_code) DO NOTHING;
 
--- User ↔ Role (many-to-many)
-CREATE TABLE IF NOT EXISTS auth_user_roles (
-  user_id uuid NOT NULL REFERENCES auth_users(id) ON DELETE CASCADE,
-  role_id uuid NOT NULL REFERENCES auth_roles(id) ON DELETE CASCADE,
-  granted_at timestamptz NOT NULL DEFAULT now(),
-  granted_by_user_id uuid REFERENCES auth_users(id) ON DELETE SET NULL,
-  PRIMARY KEY (user_id, role_id)
-);
+-- User ↔ Role: each user has exactly one role (via auth_users.role_id)
 
 -- ############################################################################
 --  SECTION 14 — BETTER-AUTH MANAGED TABLES  (FEAT 1.1–1.3, UC 5.1–5.2)
