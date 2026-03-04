@@ -1,0 +1,700 @@
+[
+  {
+    "sid": "/i-bản-kế-hoạch-quản-lý-yêu-cầu",
+    "title": "I. BẢN KẾ HOẠCH QUẢN LÝ YÊU CẦU",
+    "level": 1,
+    "children": [
+      {
+        "sid": "/11-giới-thiệu",
+        "title": "1.1. Giới thiệu",
+        "level": 2,
+        "parent": "/i-bản-kế-hoạch-quản-lý-yêu-cầu",
+        "children": [
+          {
+            "sid": "/111-mục-đích",
+            "title": "1.1.1. Mục đích",
+            "level": 3,
+            "parent": "/11-giới-thiệu",
+            "children": []
+          },
+          {
+            "sid": "/112-phạm-vi-áp-dụng",
+            "title": "1.1.2. Phạm vi áp dụng",
+            "level": 3,
+            "parent": "/11-giới-thiệu",
+            "children": []
+          }
+        ]
+      },
+      {
+        "sid": "/12-công-cụ-sử-dụng-và-các-kiểu-yêu-cầu",
+        "title": "1.2. Công cụ sử dụng và các kiểu yêu cầu",
+        "level": 2,
+        "parent": "/i-bản-kế-hoạch-quản-lý-yêu-cầu",
+        "children": [
+          {
+            "sid": "/121-các-công-cụ-sử-dụng-quản-lý-yêu-cầu",
+            "title": "1.2.1. Các công cụ sử dụng quản lý yêu cầu",
+            "level": 3,
+            "parent": "/12-công-cụ-sử-dụng-và-các-kiểu-yêu-cầu",
+            "children": []
+          },
+          {
+            "sid": "/122-các-kiểu-yêu-cầu-cho-dự-án",
+            "title": "1.2.2. Các kiểu yêu cầu cho dự án",
+            "level": 3,
+            "parent": "/12-công-cụ-sử-dụng-và-các-kiểu-yêu-cầu",
+            "children": []
+          },
+          {
+            "sid": "/123-loại-tài-liệu-yêu-cầu-cho-dự-án",
+            "title": "1.2.3. Loại tài liệu yêu cầu cho dự án",
+            "level": 3,
+            "parent": "/12-công-cụ-sử-dụng-và-các-kiểu-yêu-cầu",
+            "children": []
+          }
+        ]
+      },
+      {
+        "sid": "/13-các-nhân-tố-tham-gia-dự-án-phần-mềm",
+        "title": "1.3. Các nhân tố tham gia dự án phần mềm",
+        "level": 2,
+        "parent": "/i-bản-kế-hoạch-quản-lý-yêu-cầu",
+        "children": []
+      },
+      {
+        "sid": "/14-bảng-liên-lạc-với-các-nhân-tố-chính-stakeholder",
+        "title": "1.4. Bảng liên lạc với các nhân tố chính (Stakeholder)",
+        "level": 2,
+        "parent": "/i-bản-kế-hoạch-quản-lý-yêu-cầu",
+        "children": [
+          {
+            "sid": "/141-các-nhân-tố-chính",
+            "title": "1.4.1. Các nhân tố chính",
+            "level": 3,
+            "parent": "/14-bảng-liên-lạc-với-các-nhân-tố-chính-stakeholder",
+            "children": []
+          },
+          {
+            "sid": "/142-các-bên-liên-quan-khác",
+            "title": "1.4.2. Các bên liên quan khác",
+            "level": 3,
+            "parent": "/14-bảng-liên-lạc-với-các-nhân-tố-chính-stakeholder",
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "sid": "/ii-thu-thập-yêu-cầu-từ-các-stakeholders-xác-định-strq-feat",
+    "title": "II. THU THẬP YÊU CẦU TỪ CÁC STAKEHOLDERS (Xác định STRQ, FEAT)",
+    "level": 1,
+    "children": [
+      {
+        "sid": "/21-xác-định-các-strq-feat",
+        "title": "2.1. Xác định các STRQ, FEAT",
+        "level": 2,
+        "parent": "/ii-thu-thập-yêu-cầu-từ-các-stakeholders-xác-định-strq-feat",
+        "children": []
+      }
+    ]
+  },
+  {
+    "sid": "/iii-mô-hình-hoá-yêu-cầu",
+    "title": "III. MÔ HÌNH HOÁ YÊU CẦU",
+    "level": 1,
+    "children": [
+      {
+        "sid": "/31-xác-định-các-tác-nhân-actors",
+        "title": "3.1. Xác định các Tác nhân (Actors)",
+        "level": 2,
+        "parent": "/iii-mô-hình-hoá-yêu-cầu",
+        "children": []
+      },
+      {
+        "sid": "/32-xác-định-các-use-case-ucs",
+        "title": "3.2. Xác định các Use Case (UCs)",
+        "level": 2,
+        "parent": "/iii-mô-hình-hoá-yêu-cầu",
+        "children": []
+      },
+      {
+        "sid": "/33-vẽ-biểu-đồ-ucs-uc-tổng-quát-uc-phân-rã-theo-các-tác-nhân",
+        "title": "3.3. Vẽ biểu đồ UCs (UC tổng quát, UC phân rã theo các tác nhân)",
+        "level": 2,
+        "parent": "/iii-mô-hình-hoá-yêu-cầu",
+        "children": [
+          {
+            "sid": "/331-biểu-đồ-use-case-tổng-quát",
+            "title": "3.3.1. Biểu đồ Use Case tổng quát",
+            "level": 3,
+            "parent": "/33-vẽ-biểu-đồ-ucs-uc-tổng-quát-uc-phân-rã-theo-các-tác-nhân",
+            "children": []
+          },
+          {
+            "sid": "/332-biểu-đồ-use-case-phân-rã-theo-tác-nhân",
+            "title": "3.3.2. Biểu đồ Use Case phân rã theo tác nhân",
+            "level": 3,
+            "parent": "/33-vẽ-biểu-đồ-ucs-uc-tổng-quát-uc-phân-rã-theo-các-tác-nhân",
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "sid": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+    "title": "IV. Luồng sự kiện và các UCs chính",
+    "level": 1,
+    "children": [
+      {
+        "sid": "/41-use-case-đăng-nhập",
+        "title": "4.1. Use Case: Đăng nhập",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/42-use-case-đăng-xuất",
+        "title": "4.2. Use Case: Đăng xuất",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/43-use-case-đổi-mật-khẩu",
+        "title": "4.3. Use Case: Đổi mật khẩu",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/44-use-case-tìm-kiếm-tài-khoản-người-dùng",
+        "title": "4.4. Use Case: Tìm kiếm tài khoản người dùng",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/45-use-case-thêm-mới-tài-khoản-người-dùng",
+        "title": "4.5. Use Case: Thêm mới tài khoản người dùng",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/46-use-case-sửa-thông-tin-tài-khoản-người-dùng",
+        "title": "4.6. Use Case: Sửa thông tin tài khoản người dùng",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/47-use-case-phân-quyền-tài-khoản-người-dùng",
+        "title": "4.7. Use Case: Phân quyền tài khoản người dùng",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/48-use-case-thay-đổi-trạng-thái-cho-tài-khoản-người-dùng",
+        "title": "4.8. Use Case: Thay đổi trạng thái cho tài khoản người dùng",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/49-use-case-tạo-mới-đơn-vị-tổ-chức-nhân-sự",
+        "title": "4.9. Use Case: Tạo mới đơn vị tổ chức nhân sự",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/410-use-case-sửa-thông-tin-đơn-vị-tổ-chức-nhân-sự",
+        "title": "4.10. Use Case: Sửa thông tin đơn vị tổ chức nhân sự",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/411-use-case-cập-nhật-trạng-thái-tình-trạng-cho-đơn-vị-tổ-chức-nhân-sự",
+        "title": "4.11. Use Case: Cập nhật trạng thái tình trạng cho đơn vị tổ chức nhân sự",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/412-use-case-thêm-mới-danh-mục-hệ-số-lương",
+        "title": "4.12. Use Case: Thêm mới danh mục hệ số lương",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/413-use-case-sửa-danh-mục-hệ-số-lương",
+        "title": "4.13. Use Case: Sửa danh mục hệ số lương",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/414-use-case-xóa-danh-mục-hệ-số-lương",
+        "title": "4.14. Use Case: Xóa danh mục hệ số lương",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/415-use-case-ngừng-sử-dụng-danh-mục-hệ-số-lương",
+        "title": "4.15. Use Case: Ngừng sử dụng danh mục hệ số lương",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/416-use-case-thêm-mới-danh-mục-loại-phụ-cấp",
+        "title": "4.16. Use Case: Thêm mới danh mục loại phụ cấp",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/417-use-case-sửa-danh-mục-loại-phụ-cấp",
+        "title": "4.17. Use Case: Sửa danh mục loại phụ cấp",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/418-use-case-ngừng-sử-dụng-danh-mục-loại-phụ-cấp",
+        "title": "4.18. Use Case: Ngừng sử dụng danh mục loại phụ cấp",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/419-use-case-thêm-mới-danh-mục-loại-hợp-đồng",
+        "title": "4.19. Use Case: Thêm mới danh mục loại hợp đồng",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/420-use-case-sửa-danh-mục-loại-hợp-đồng",
+        "title": "4.20. Use Case: Sửa danh mục loại hợp đồng",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/421-use-case-ngừng-sử-dụng-danh-mục-loại-hợp-đồng",
+        "title": "4.21. Use Case: Ngừng sử dụng danh mục loại hợp đồng",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/422-use-case-thêm-mới-hợp-đồng-lao-động",
+        "title": "4.22. Use Case: Thêm mới Hợp đồng lao động",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/423-use-case-tìm-kiếm-hồ-sơ-nhân-sự",
+        "title": "4.23. Use Case: Tìm kiếm hồ sơ nhân sự",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/424-use-case-lọc-danh-sách-hồ-sơ-nhân-sự",
+        "title": "4.24. Use Case: Lọc danh sách hồ sơ nhân sự",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/425-use-case-thêm-mới-hồ-sơ-nhân-sự",
+        "title": "4.25. Use Case: Thêm mới Hồ sơ nhân sự",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/426-use-case-chỉnh-sửa-trong-chi-tiết-hồ-sơ-nhân-sự",
+        "title": "4.26. Use Case: Chỉnh sửa trong chi tiết hồ sơ nhân sự",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/427-use-case-đánh-dấu-thôi-việc-nhân-sự",
+        "title": "4.27. Use Case: Đánh dấu thôi việc nhân sự",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/428-use-case-xem-chi-tiết-thông-tin-hồ-sơ-nhân-sự",
+        "title": "4.28. Use Case: Xem Chi tiết thông tin hồ sơ nhân sự",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/429-use-case-ghi-nhận-đánh-giá-cho-nhân-sự",
+        "title": "4.29. Use Case: Ghi nhận đánh giá cho nhân sự",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/430-use-case-bổ-nhiệm-nhân-sự-cho-đơn-vị-tổ-chức-nhân-sự",
+        "title": "4.30. Use Case: Bổ nhiệm nhân sự cho đơn vị tổ chức nhân sự",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/431-use-case-bãi-nhiệm-nhân-sự-khỏi-đơn-vị-tổ-chức-nhân-sự",
+        "title": "4.31. Use Case: Bãi nhiệm nhân sự khỏi đơn vị tổ chức nhân sự",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/432-use-case-xem-chi-tiết-thông-tin-đơn-vị-tổ-chức-nhân-sự",
+        "title": "4.32. Use Case: Xem chi tiết thông tin đơn vị tổ chức nhân sự",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/433-use-case-mở-khóa-đào-tạo-cho-cán-bộ-giảng-viên",
+        "title": "4.33. Use Case: Mở khóa đào tạo cho cán bộ giảng viên",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/434-use-case-sửa-thông-tin-khóa-đào-tạo-đã-mở",
+        "title": "4.34. Use Case: Sửa thông tin khóa đào tạo đã mở",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/435-use-case-xem-chi-tiết-thông-tin-khóa-đào-tạo-đã-mở",
+        "title": "4.35. Use Case: Xem chi tiết thông tin khóa đào tạo đã mở",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/436-use-case-ghi-nhận-kết-quả-đào-tạo-của-cán-bộ-giảng-viên",
+        "title": "4.36. Use Case: Ghi nhận kết quả đào tạo của cán bộ giảng viên",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/437-use-case-xem-chi-tiết-các-thống-kê",
+        "title": "4.37. Use Case: Xem chi tiết các thống kê",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/438-use-case-xem-các-thông-tin-trong-hồ-sơ-cá-nhân-của-nhân-sự",
+        "title": "4.38. Use Case: Xem các thông tin trong hồ sơ cá nhân của nhân sự",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/439-use-case-xem-thông-tin-chi-tiết-đơn-vị-đang-công-tác",
+        "title": "4.39. Use Case: Xem thông tin chi tiết đơn vị đang công tác",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/440-use-case-đăng-ký-tham-gia-khóa-đào-tạo",
+        "title": "4.40. Use Case: Đăng ký tham gia khóa đào tạo",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/441-use-case-xem-danh-sách-các-khóa-đào-tạo-đã-đăng-ký",
+        "title": "4.41. Use Case: Xem danh sách các khóa đào tạo đã đăng ký",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      },
+      {
+        "sid": "/442-use-case-xem-nhật-ký-hệ-thống-audit-log",
+        "title": "4.42. Use Case: Xem nhật ký hệ thống (Audit Log)",
+        "level": 3,
+        "parent": "/iv-luồng-sự-kiện-và-các-ucs-chính",
+        "children": []
+      }
+    ]
+  },
+  {
+    "sid": "/v-xác-định-các-lớp-xây-dựng-biểu-đồ-lớp",
+    "title": "V. XÁC ĐỊNH CÁC LỚP, XÂY DỰNG BIỂU ĐỒ LỚP",
+    "level": 1,
+    "children": [
+      {
+        "sid": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+        "title": "5.1. Xác định các lớp — Biểu đồ lớp Hệ thống HRMS",
+        "level": 2,
+        "parent": "/v-xác-định-các-lớp-xây-dựng-biểu-đồ-lớp",
+        "children": [
+          {
+            "sid": "/511-vaitro-vai-trò",
+            "title": "5.1.1. VaiTro (Vai trò)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/512-trangthaitaikhoan-trạng-thái-tài-khoản",
+            "title": "5.1.2. TrangThaiTaiKhoan (Trạng thái tài khoản)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/513-trangthailamviec-trạng-thái-làm-việc",
+            "title": "5.1.3. TrangThaiLamViec (Trạng thái làm việc)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/514-trangthaihopdongns-trạng-thái-hợp-đồng-nhân-sự",
+            "title": "5.1.4. TrangThaiHopDongNS (Trạng thái hợp đồng nhân sự)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/515-loaidonvi-loại-đơn-vị",
+            "title": "5.1.5. LoaiDonVi (Loại đơn vị)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/516-trangthaidonvi-trạng-thái-đơn-vị",
+            "title": "5.1.6. TrangThaiDonVi (Trạng thái đơn vị)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/517-trangthaihopdong-trạng-thái-hợp-đồng",
+            "title": "5.1.7. TrangThaiHopDong (Trạng thái hợp đồng)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/518-trangthaidanhmuc-trạng-thái-danh-mục",
+            "title": "5.1.8. TrangThaiDanhMuc (Trạng thái danh mục)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/519-trangthaikhoadaotao-trạng-thái-khóa-đào-tạo",
+            "title": "5.1.9. TrangThaiKhoaDaoTao (Trạng thái khóa đào tạo)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5110-trangthaithamgia-trạng-thái-tham-gia",
+            "title": "5.1.10. TrangThaiThamGia (Trạng thái tham gia)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5111-taikhoan-tài-khoản",
+            "title": "5.1.11. TaiKhoan (Tài khoản)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5112-nhansu-nhân-sự",
+            "title": "5.1.12. NhanSu (Nhân sự)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5113-thongtinnguoinuocngoai-thông-tin-người-nước-ngoài",
+            "title": "5.1.13. ThongTinNguoiNuocNgoai (Thông tin người nước ngoài)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5114-thongtingiadinh-thông-tin-gia-đình",
+            "title": "5.1.14. ThongTinGiaDinh (Thông tin gia đình)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5115-thongtinnganhang-thông-tin-ngân-hàng",
+            "title": "5.1.15. ThongTinNganHang (Thông tin ngân hàng)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5116-quatrinhcongtac-quá-trình-công-tác",
+            "title": "5.1.16. QuaTrinhCongTac (Quá trình công tác)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5117-thongtindangdoan-thông-tin-đảng--đoàn",
+            "title": "5.1.17. ThongTinDangDoan (Thông tin Đảng / Đoàn)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5118-bangcap-bằng-cấp",
+            "title": "5.1.18. BangCap (Bằng cấp)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5119-chungchi-chứng-chỉ",
+            "title": "5.1.19. ChungChi (Chứng chỉ)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5120-donvitochuc-đơn-vị-tổ-chức",
+            "title": "5.1.20. DonViToChuc (Đơn vị tổ chức)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5121-quyetdinhdonvi-quyết-định-đơn-vị",
+            "title": "5.1.21. QuyetDinhDonVi (Quyết định đơn vị)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5122-bonhiem-bổ-nhiệm",
+            "title": "5.1.22. BoNhiem (Bổ nhiệm)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5123-hesoluong-hệ-số-lương",
+            "title": "5.1.23. HeSoLuong (Hệ số lương)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5124-loaiphucap-loại-phụ-cấp",
+            "title": "5.1.24. LoaiPhuCap (Loại phụ cấp)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5125-loaihopdong-loại-hợp-đồng",
+            "title": "5.1.25. LoaiHopDong (Loại hợp đồng)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5126-hopdonglaodong-hợp-đồng-lao-động",
+            "title": "5.1.26. HopDongLaoDong (Hợp đồng lao động)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5127-phuluchopdong-phụ-lục-hợp-đồng",
+            "title": "5.1.27. PhuLucHopDong (Phụ lục hợp đồng)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5128-danhgia-đánh-giá--",
+            "title": "5.1.28. DanhGia (Đánh giá) — <>",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5129-khenthuong-khen-thưởng--kế-thừa-danhgia",
+            "title": "5.1.29. KhenThuong (Khen thưởng) — kế thừa DanhGia",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5130-kyluat-kỷ-luật--kế-thừa-danhgia",
+            "title": "5.1.30. KyLuat (Kỷ luật) — kế thừa DanhGia",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5131-khoadaotao-khóa-đào-tạo",
+            "title": "5.1.31. KhoaDaoTao (Khóa đào tạo)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5132-dangkydaotao-đăng-ký-đào-tạo",
+            "title": "5.1.32. DangKyDaoTao (Đăng ký đào tạo)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          },
+          {
+            "sid": "/5133-nhatkyhethong-nhật-ký-hệ-thống",
+            "title": "5.1.33. NhatKyHeThong (Nhật ký hệ thống)",
+            "level": 3,
+            "parent": "/51-xác-định-các-lớp--biểu-đồ-lớp-hệ-thống-hrms",
+            "children": []
+          }
+        ]
+      },
+      {
+        "sid": "/52-xây-dựng-biểu-đồ-lớp",
+        "title": "5.2. Xây dựng biểu đồ lớp",
+        "level": 2,
+        "parent": "/v-xác-định-các-lớp-xây-dựng-biểu-đồ-lớp",
+        "children": []
+      }
+    ]
+  }
+]
