@@ -1,0 +1,39 @@
+{
+  "name": "@hrms/frontend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "type-check": "tsc --noEmit",
+    "lint": "biome check .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@elysiajs/eden": "1.2.0",
+    "@hookform/resolvers": "3.9.1",
+    "@hrms/backend": "workspace:*",
+    "@hrms/shared": "workspace:*",
+    "@tanstack/react-router": "1.163.3",
+    "clsx": "2.1.1",
+    "date-fns": "4.1.0",
+    "elysia": "1.2.12",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "react-hook-form": "7.54.2",
+    "tailwind-merge": "2.6.0",
+    "tailwindcss": "4.1.8",
+    "zod": "3.24.2",
+    "zustand": "5.0.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.1.8",
+    "@tanstack/router-plugin": "1.163.3",
+    "@types/react": "19.0.8",
+    "@types/react-dom": "19.0.3",
+    "@vitejs/plugin-react": "4.3.4",
+    "typescript": "5.7.3",
+    "vite": "6.1.0"
+  }
+}
