@@ -1,0 +1,207 @@
+import { relations, sql } from "drizzle-orm";
+import {
+  boolean,
+  date,
+  integer,
+  numeric,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
+import { allowanceTypes } from "./contracts";
+import { files } from "./files";
+import { orgUnits } from "./organization";
+import { salaryGradeSteps } from "./salary";
+
+export const employees = pgTable("employees", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  staffCode: varchar("staff_code", { length: 30 })
+    .notNull()
+    .unique()
+    .default(sql`nextval('employee_staff_code_seq')::text`),
+  fullName: varchar("full_name", { length: 255 }).notNull(),
+  dob: date("dob").notNull(),
+  gender: varchar("gender", { length: 10 }).notNull(),
+  nationalId: varchar("national_id", { length: 20 }).notNull().unique(),
+  hometown: text("hometown"),
+  address: text("address").notNull(),
+  taxCode: varchar("tax_code", { length: 30 }),
+  socialInsuranceNo: varchar("social_insurance_no", { length: 30 }),
+  healthInsuranceNo: varchar("health_insurance_no", { length: 30 }),
+  email: varchar("email", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 30 }).notNull(),
+  isForeigner: boolean("is_foreigner").notNull().default(false),
+  educationLevel: varchar("education_level", { length: 50 }),
+  trainingLevel: varchar("training_level", { length: 50 }),
+  academicTitle: varchar("academic_title", { length: 50 }),
+  academicRank: varchar("academic_rank", { length: 50 }),
+  workStatus: varchar("work_status", { length: 20 }).notNull().default("pending"),
+  contractStatus: varchar("contract_status", { length: 20 }).notNull().default("none"),
+  currentOrgUnitId: uuid("current_org_unit_id").references(() => orgUnits.id, {
+    onDelete: "set null",
+  }),
+  currentPositionTitle: varchar("current_position_title", { length: 255 }),
+  salaryGradeStepId: uuid("salary_grade_step_id").references(() => salaryGradeSteps.id, {
+    onDelete: "set null",
+  }),
+  portraitFileId: uuid("portrait_file_id").references(() => files.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const employeeTerminations = pgTable("employee_terminations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  employeeId: uuid("employee_id")
+    .notNull()
+    .references(() => employees.id, { onDelete: "cascade" }),
+  terminatedOn: date("terminated_on").notNull(),
+  reason: text("reason").notNull(),
+  isAuto: boolean("is_auto").notNull().default(false),
+  createdByUserId: uuid("created_by_user_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const employeeAssignments = pgTable("employee_assignments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  employeeId: uuid("employee_id")
+    .notNull()
+    .references(() => employees.id, { onDelete: "cascade" }),
+  orgUnitId: uuid("org_unit_id")
+    .notNull()
+    .references(() => orgUnits.id, { onDelete: "restrict" }),
+  positionTitle: varchar("position_title", { length: 255 }),
+  eventType: varchar("event_type", { length: 20 }).notNull().default("APPOINT"),
+  startedOn: date("started_on").notNull(),
+  endedOn: date("ended_on"),
+  note: text("note"),
+  createdByUserId: uuid("created_by_user_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const employeeFamilyMembers = pgTable("employee_family_members", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  employeeId: uuid("employee_id")
+    .notNull()
+    .references(() => employees.id, { onDelete: "cascade" }),
+  relation: varchar("relation", { length: 30 }).notNull(),
+  fullName: varchar("full_name", { length: 255 }).notNull(),
+  dob: date("dob"),
+  phone: varchar("phone", { length: 30 }),
+  note: text("note"),
+  isDependent: boolean("is_dependent").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const employeeBankAccounts = pgTable("employee_bank_accounts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  employeeId: uuid("employee_id")
+    .notNull()
+    .references(() => employees.id, { onDelete: "cascade" }),
+  bankName: varchar("bank_name", { length: 255 }).notNull(),
+  accountNo: varchar("account_no", { length: 50 }).notNull(),
+  isPrimary: boolean("is_primary").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const employeePreviousJobs = pgTable("employee_previous_jobs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  employeeId: uuid("employee_id")
+    .notNull()
+    .references(() => employees.id, { onDelete: "cascade" }),
+  workplace: varchar("workplace", { length: 255 }).notNull(),
+  startedOn: date("started_on"),
+  endedOn: date("ended_on"),
+  note: text("note"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const employeePartyMemberships = pgTable("employee_party_memberships", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  employeeId: uuid("employee_id")
+    .notNull()
+    .references(() => employees.id, { onDelete: "cascade" }),
+  organizationType: varchar("organization_type", { length: 10 }).notNull(),
+  joinedOn: date("joined_on"),
+  details: text("details"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const employeeDegrees = pgTable("employee_degrees", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  employeeId: uuid("employee_id")
+    .notNull()
+    .references(() => employees.id, { onDelete: "cascade" }),
+  degreeName: varchar("degree_name", { length: 255 }).notNull(),
+  school: varchar("school", { length: 255 }).notNull(),
+  major: varchar("major", { length: 255 }),
+  graduationYear: integer("graduation_year"),
+  classification: varchar("classification", { length: 100 }),
+  degreeFileId: uuid("degree_file_id").references(() => files.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const employeeCertifications = pgTable("employee_certifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  employeeId: uuid("employee_id")
+    .notNull()
+    .references(() => employees.id, { onDelete: "cascade" }),
+  certName: varchar("cert_name", { length: 255 }).notNull(),
+  issuedBy: varchar("issued_by", { length: 255 }),
+  issuedOn: date("issued_on"),
+  expiresOn: date("expires_on"),
+  certFileId: uuid("cert_file_id").references(() => files.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const employeeForeignWorkPermits = pgTable("employee_foreign_work_permits", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  employeeId: uuid("employee_id")
+    .notNull()
+    .references(() => employees.id, { onDelete: "cascade" }),
+  visaNo: varchar("visa_no", { length: 50 }),
+  visaExpiresOn: date("visa_expires_on"),
+  passportNo: varchar("passport_no", { length: 50 }),
+  passportExpiresOn: date("passport_expires_on"),
+  workPermitNo: varchar("work_permit_no", { length: 50 }),
+  workPermitExpiresOn: date("work_permit_expires_on"),
+  workPermitFileId: uuid("work_permit_file_id").references(() => files.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const employeeAllowances = pgTable("employee_allowances", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  employeeId: uuid("employee_id")
+    .notNull()
+    .references(() => employees.id, { onDelete: "cascade" }),
+  allowanceTypeId: uuid("allowance_type_id")
+    .notNull()
+    .references(() => allowanceTypes.id, { onDelete: "restrict" }),
+  amount: numeric("amount", { precision: 14, scale: 2 }),
+  note: text("note"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const employeesRelations = relations(employees, ({ one, many }) => ({
+  orgUnit: one(orgUnits, {
+    fields: [employees.currentOrgUnitId],
+    references: [orgUnits.id],
+  }),
+  terminations: many(employeeTerminations),
+}));
