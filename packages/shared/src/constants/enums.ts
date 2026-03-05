@@ -278,3 +278,15 @@ export const CatalogStatus = {
 } as const;
 export type CatalogStatusCode = keyof typeof CatalogStatus;
 export const CATALOG_STATUS_CODES = Object.keys(CatalogStatus) as CatalogStatusCode[];
+
+// ---------------------------------------------------------------------------
+// 0.22  Vai trò người dùng (ref_roles)
+// ---------------------------------------------------------------------------
+export const Role = {
+  ADMIN:    { code: 'ADMIN',    label: 'Quản trị viên',                      sortOrder: 1 },
+  TCCB:     { code: 'TCCB',     label: 'Phòng Tổ chức Cán bộ',              sortOrder: 2 },
+  TCKT:     { code: 'TCKT',     label: 'Phòng Tài chính Kế toán',           sortOrder: 3 },
+  EMPLOYEE: { code: 'EMPLOYEE', label: 'Cán bộ / Giảng viên / Nhân viên',   sortOrder: 4 },
+} as const;
+export type RoleCode = keyof typeof Role;
+export const ROLE_CODES = Object.keys(Role) as RoleCode[];

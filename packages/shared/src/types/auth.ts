@@ -1,3 +1,5 @@
+import type { RoleCode } from "../constants/enums";
+
 export interface LoginRequest {
   username: string;
   password: string;
@@ -8,8 +10,9 @@ export interface AuthUser {
   username: string;
   fullName: string;
   email: string | null;
-  role: string;
+  role: RoleCode;
   status: string;
+  employeeId: string | null;
 }
 
 export interface SessionInfo {
