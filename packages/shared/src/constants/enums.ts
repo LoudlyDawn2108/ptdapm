@@ -228,11 +228,9 @@ export const CONTRACT_DOC_STATUS_CODES = Object.keys(ContractDocStatus) as Contr
 // 0.17  Trạng thái khóa đào tạo (ref_training_statuses)
 // ---------------------------------------------------------------------------
 export const TrainingStatus = {
-  draft:             { code: 'draft',             label: 'Nháp',         sortOrder: 1 },
-  open_registration: { code: 'open_registration', label: 'Mở đăng ký',  sortOrder: 2 },
-  in_progress:       { code: 'in_progress',       label: 'Đang diễn ra', sortOrder: 3 },
-  completed:         { code: 'completed',         label: 'Đã hoàn thành', sortOrder: 4 },
-  closed:            { code: 'closed',            label: 'Đã đóng',     sortOrder: 5 },
+  open_registration: { code: 'open_registration', label: 'Mở đăng ký',  sortOrder: 1 },
+  in_progress:       { code: 'in_progress',       label: 'Đang diễn ra', sortOrder: 2 },
+  completed:         { code: 'completed',         label: 'Đã hoàn thành', sortOrder: 3 },
 } as const;
 export type TrainingStatusCode = keyof typeof TrainingStatus;
 export const TRAINING_STATUS_CODES = Object.keys(TrainingStatus) as TrainingStatusCode[];
