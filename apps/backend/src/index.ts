@@ -7,7 +7,7 @@ import { indexRoutes } from "./routes";
 import { authRoutes } from "./routes/auth";
 
 const app = new Elysia()
-  .use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:5173" }))
+  .use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:5173", credentials: true }))
   .use(swagger())
   .use(dbPlugin)
   .use(authPlugin)

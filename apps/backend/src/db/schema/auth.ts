@@ -15,7 +15,8 @@ export const authRoles = pgTable("auth_roles", {
 export const authUsers = pgTable("auth_users", {
   id: uuid("id").primaryKey().defaultRandom(),
   username: varchar("username", { length: 50 }).notNull().unique(),
-  passwordHash: text("password_hash").notNull(), // Unused — better-auth stores passwords in account.password
+  displayUsername: varchar("displayUsername", { length: 50 }).unique(),
+  passwordHash: text("password_hash"), // Unused — better-auth stores passwords in account.password
   fullName: varchar("full_name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).unique(),
   employeeId: uuid("employee_id")
