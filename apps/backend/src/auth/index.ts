@@ -15,11 +15,11 @@ export const auth = betterAuth({
       name: "full_name",
     },
     additionalFields: {
-      roleId: { type: "string", fieldName: "role_id", required: true },
-      employeeId: { type: "string", fieldName: "employee_id" },
+      roleId: { type: "string", fieldName: "role_id", required: true, input: true },
+      employeeId: { type: "string", fieldName: "employee_id", required: false },
       status: { type: "string", defaultValue: "active" },
-      lastLoginAt: { type: "date", fieldName: "last_login_at" },
-      passwordHash: { type: "string", fieldName: "password_hash" },
+      lastLoginAt: { type: "date", fieldName: "last_login_at", required: false },
+      passwordHash: { type: "string", fieldName: "password_hash", required: false },
     },
   },
   session: {
