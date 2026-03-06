@@ -41,10 +41,20 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
         .set({ lastLoginAt: new Date() })
         .where(eq(authUsers.username, username));
 
+      const userRow = await db
+        .select({
+          roleId: authUsers.roleId,
+          status: authUsers.status,
+          employeeId: authUsers.employeeId,
+        })
+        .from(authUsers)
+        .where(eq(authUsers.id, betterAuthUser.id))
+        .limit(1);
+
       const roleRow = await db
         .select({ roleCode: authRoles.roleCode })
         .from(authRoles)
-        .where(eq(authRoles.id, betterAuthUser.roleId))
+        .where(eq(authRoles.id, userRow[0]?.roleId ?? ""))
         .limit(1);
 
       const roleCode = roleRow[0]?.roleCode ?? "EMPLOYEE";
@@ -55,8 +65,8 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
         fullName: betterAuthUser.name,
         email: betterAuthUser.email,
         role: roleCode as AuthUser["role"],
-        status: betterAuthUser.status ?? "active",
-        employeeId: betterAuthUser.employeeId ?? null,
+        status: userRow[0]?.status ?? "active",
+        employeeId: userRow[0]?.employeeId ?? null,
       };
 
       const cookieHeader = res.headers

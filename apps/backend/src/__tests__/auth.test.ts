@@ -22,6 +22,17 @@ async function signIn(username: string, password: string) {
   return res;
 }
 
+async function login(username: string, password: string) {
+  const res = await app.handle(
+    new Request("http://localhost/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    }),
+  );
+  return res;
+}
+
 function extractCookies(res: Response): string {
   const setCookies = res.headers.getSetCookie();
   return setCookies.map((c) => c.split(";")[0]).join("; ");
@@ -33,7 +44,7 @@ describe("Authentication", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.user).toBeDefined();
-    expect(body.session).toBeDefined();
+    expect(body.token).toBeString();
   });
 
   test("sign in with invalid credentials returns error", async () => {
@@ -41,17 +52,17 @@ describe("Authentication", () => {
     expect(res.status).not.toBe(200);
   });
 
-  test("GET /auth/me without auth returns 401", async () => {
-    const res = await app.handle(new Request("http://localhost/auth/me"));
+  test("GET /auth/session without auth returns 401", async () => {
+    const res = await app.handle(new Request("http://localhost/auth/session"));
     expect(res.status).toBe(401);
   });
 
-  test("GET /auth/me with valid session returns AuthUser shape", async () => {
+  test("GET /auth/session with valid session returns AuthUser shape", async () => {
     const signInRes = await signIn("admin", "admin123");
     const cookies = extractCookies(signInRes);
 
     const res = await app.handle(
-      new Request("http://localhost/auth/me", {
+      new Request("http://localhost/auth/session", {
         headers: { Cookie: cookies },
       }),
     );
@@ -76,7 +87,7 @@ describe("Authentication", () => {
     const cookies = extractCookies(signInRes);
 
     const res = await app.handle(
-      new Request("http://localhost/auth/me", {
+      new Request("http://localhost/auth/session", {
         headers: { Cookie: cookies },
       }),
     );
@@ -86,6 +97,156 @@ describe("Authentication", () => {
     expect(body.user.role).not.toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
     );
+  });
+});
+
+describe("Auth Endpoints — Login/Logout/Session", () => {
+  test("POST /auth/login with valid credentials returns 200 + ApiResponse<SessionInfo>", async () => {
+    const res = await login("admin", "admin123");
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.success).toBe(true);
+    expect(body.data).toBeDefined();
+    expect(body.data.user).toBeDefined();
+    expect(body.data.user.id).toBeString();
+    expect(body.data.user.username).toBe("admin");
+    expect(body.data.user.fullName).toBeString();
+    expect(body.data.user.role).toBe("ADMIN");
+    expect(body.data.user.status).toBe("active");
+    expect(body.data.user).toHaveProperty("employeeId");
+    expect(body.data.session).toBeDefined();
+    expect(body.data.session.id).toBeString();
+    expect(body.data.session.expiresAt).toBeDefined();
+  });
+
+  test("POST /auth/login with valid credentials sets session cookie", async () => {
+    const res = await login("admin", "admin123");
+    expect(res.status).toBe(200);
+
+    const setCookies = res.headers.getSetCookie();
+    expect(setCookies.length).toBeGreaterThan(0);
+    expect(setCookies.some((c) => c.includes("__session"))).toBe(true);
+  });
+
+  test("POST /auth/login with invalid credentials returns 401", async () => {
+    const res = await login("admin", "wrongpassword");
+    expect(res.status).toBe(401);
+
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.error).toBeString();
+  });
+
+  test("POST /auth/login with missing body returns 422", async () => {
+    const res = await app.handle(
+      new Request("http://localhost/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }),
+    );
+    expect(res.status).toBeGreaterThanOrEqual(400);
+  });
+
+  test("POST /auth/login updates lastLoginAt", async () => {
+    const { db } = await import("../db");
+    const { authUsers } = await import("../db/schema/auth");
+    const { eq } = await import("drizzle-orm");
+
+    const before = await db
+      .select({ lastLoginAt: authUsers.lastLoginAt })
+      .from(authUsers)
+      .where(eq(authUsers.username, "admin"))
+      .limit(1);
+
+    const beforeTimestamp = before[0]?.lastLoginAt;
+
+    await login("admin", "admin123");
+
+    const after = await db
+      .select({ lastLoginAt: authUsers.lastLoginAt })
+      .from(authUsers)
+      .where(eq(authUsers.username, "admin"))
+      .limit(1);
+
+    const afterTimestamp = after[0]?.lastLoginAt;
+    expect(afterTimestamp).toBeDefined();
+    if (beforeTimestamp && afterTimestamp) {
+      expect(afterTimestamp.getTime()).toBeGreaterThanOrEqual(beforeTimestamp.getTime());
+    }
+  });
+
+  test("POST /auth/logout with valid session returns success", async () => {
+    const loginRes = await login("admin", "admin123");
+    const cookies = extractCookies(loginRes);
+
+    const res = await app.handle(
+      new Request("http://localhost/auth/logout", {
+        method: "POST",
+        headers: { Cookie: cookies },
+      }),
+    );
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.success).toBe(true);
+  });
+
+  test("POST /auth/logout without session returns 401", async () => {
+    const res = await app.handle(
+      new Request("http://localhost/auth/logout", {
+        method: "POST",
+      }),
+    );
+    expect(res.status).toBe(401);
+  });
+
+  test("after logout, GET /auth/session returns 401", async () => {
+    const loginRes = await login("admin", "admin123");
+    const cookies = extractCookies(loginRes);
+
+    await app.handle(
+      new Request("http://localhost/auth/logout", {
+        method: "POST",
+        headers: { Cookie: cookies },
+      }),
+    );
+
+    const sessionRes = await app.handle(
+      new Request("http://localhost/auth/session", {
+        headers: { Cookie: cookies },
+      }),
+    );
+    expect(sessionRes.status).toBe(401);
+  });
+
+  test("GET /auth/session with valid session returns user and session", async () => {
+    const loginRes = await login("admin", "admin123");
+    const cookies = extractCookies(loginRes);
+
+    const res = await app.handle(
+      new Request("http://localhost/auth/session", {
+        headers: { Cookie: cookies },
+      }),
+    );
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.user).toBeDefined();
+    expect(body.user.username).toBe("admin");
+    expect(body.session).toBeDefined();
+    expect(body.session.id).toBeString();
+  });
+
+  test("GET /auth/session without session returns 401", async () => {
+    const res = await app.handle(new Request("http://localhost/auth/session"));
+    expect(res.status).toBe(401);
+  });
+
+  test("GET /auth/me returns 404 (removed)", async () => {
+    const res = await app.handle(new Request("http://localhost/auth/me"));
+    expect(res.status).toBe(404);
   });
 });
 
@@ -105,7 +266,7 @@ describe("Authorization — Role Guard", () => {
   });
 
   test("EMPLOYEE accessing admin-only route returns 403", async () => {
-    const signInRes = await signIn("employee_user", "employee123");
+    const signInRes = await signIn("employee_user", "employee1234");
     const cookies = extractCookies(signInRes);
 
     const res = await app.handle(
@@ -117,7 +278,7 @@ describe("Authorization — Role Guard", () => {
   });
 
   test("TCCB accessing admin-only route returns 403", async () => {
-    const signInRes = await signIn("tccb_user", "tccb123");
+    const signInRes = await signIn("tccb_user", "tccb1234");
     const cookies = extractCookies(signInRes);
 
     const res = await app.handle(
@@ -138,25 +299,25 @@ describe("Locked Account", () => {
     const signInRes = await signIn("admin", "admin123");
     const cookies = extractCookies(signInRes);
 
-    const meRes = await app.handle(
-      new Request("http://localhost/auth/me", {
+    const sessionRes = await app.handle(
+      new Request("http://localhost/auth/session", {
         headers: { Cookie: cookies },
       }),
     );
-    expect(meRes.status).toBe(200);
+    expect(sessionRes.status).toBe(200);
 
     await db.update(authUsers).set({ status: "locked" }).where(eq(authUsers.username, "admin"));
 
     try {
       const lockedRes = await app.handle(
-        new Request("http://localhost/auth/me", {
+        new Request("http://localhost/auth/session", {
           headers: { Cookie: cookies },
         }),
       );
       expect(lockedRes.status).toBe(403);
 
       const afterRes = await app.handle(
-        new Request("http://localhost/auth/me", {
+        new Request("http://localhost/auth/session", {
           headers: { Cookie: cookies },
         }),
       );
