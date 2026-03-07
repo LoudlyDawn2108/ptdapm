@@ -1,0 +1,19 @@
+{
+  "name": "@hrms/env",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./index.ts",
+      "types": "./index.ts"
+    }
+  },
+  "dependencies": {
+    "@t3-oss/env-core": "^0.13.10",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "bun-types": "1.2.4"
+  }
+}

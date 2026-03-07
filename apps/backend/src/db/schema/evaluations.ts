@@ -32,3 +32,5 @@ export const employeeEvaluations = pgTable("employee_evaluations", {
   createdByUserId: uuid("created_by_user_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+export type EmployeeEvaluation = typeof employeeEvaluations.$inferSelect;
+export type NewEmployeeEvaluation = typeof employeeEvaluations.$inferInsert;

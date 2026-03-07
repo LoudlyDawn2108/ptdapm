@@ -2,24 +2,30 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { username } from "better-auth/plugins";
 import { db } from "../db";
+import * as schema from "../db/schema/auth";
 
 export const auth = betterAuth({
-  database: drizzleAdapter(db, { provider: "pg" }),
+  database: drizzleAdapter(db, {
+    provider: "pg",
+    schema: {
+      auth_users: schema.authUsers,
+      session: schema.session,
+      account: schema.account,
+      verification: schema.verification,
+    },
+  }),
   emailAndPassword: {
     enabled: true,
   },
   plugins: [username()],
   user: {
     modelName: "auth_users",
-    fields: {
-      name: "full_name",
-    },
     additionalFields: {
-      roleId: { type: "string", fieldName: "role_id", required: true, input: true },
-      employeeId: { type: "string", fieldName: "employee_id", required: false },
+      roleId: { type: "string", required: true, input: true },
+      employeeId: { type: "string", required: false },
       status: { type: "string", defaultValue: "active" },
-      lastLoginAt: { type: "date", fieldName: "last_login_at", required: false },
-      passwordHash: { type: "string", fieldName: "password_hash", required: false },
+      lastLoginAt: { type: "date", required: false },
+      passwordHash: { type: "string", required: false },
     },
   },
   session: {
@@ -32,5 +38,6 @@ export const auth = betterAuth({
   advanced: {
     cookiePrefix: "__session",
     useSecureCookies: false,
+    generateId: () => crypto.randomUUID(),
   },
 });

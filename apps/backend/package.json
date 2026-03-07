@@ -10,22 +10,29 @@
     }
   },
   "scripts": {
-    "dev": "bun run --hot src/index.ts",
+    "dev": "bun run --env-file ../../.env --hot src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target bun",
     "type-check": "tsc --noEmit",
     "lint": "biome check .",
-    "seed:roles": "bun run src/db/seed/roles.ts",
-    "seed:users": "bun run src/db/seed/users.ts",
-    "seed": "bun run seed:roles && bun run seed:users"
+    "test": "bun test --env-file ../../.env",
+    "seed:roles": "bun run --env-file ../../.env src/db/seed/roles.ts",
+    "seed:users": "bun run --env-file ../../.env src/db/seed/users.ts",
+    "seed": "bun run seed:roles && bun run seed:users",
+    "db:push": "bun --env-file ../../.env x drizzle-kit push",
+    "db:generate": "bun --env-file ../../.env x drizzle-kit generate",
+    "db:migrate": "bun --env-file ../../.env x drizzle-kit migrate",
+    "db:studio": "bun --env-file ../../.env x drizzle-kit studio"
   },
   "dependencies": {
-    "@elysiajs/cors": "1.2.0",
-    "@elysiajs/swagger": "1.2.0",
+    "@elysiajs/cors": "^1.4.1",
+    "@elysiajs/swagger": "^1.3.1",
+    "@hrms/env": "workspace:*",
     "@hrms/shared": "workspace:*",
-    "better-auth": "1.2.3",
+    "better-auth": "1.5.4",
     "drizzle-orm": "0.38.4",
-    "elysia": "1.2.12",
-    "postgres": "3.4.5"
+    "elysia": "^1.4.27",
+    "postgres": "3.4.5",
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "bun-types": "1.2.4",

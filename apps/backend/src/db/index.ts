@@ -1,8 +1,16 @@
+import { env } from "@hrms/env";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
 
-const connectionString = process.env.DATABASE_URL ?? "";
-const client = postgres(connectionString);
+const client = postgres(env.DATABASE_URL);
 export const db = drizzle(client, { schema });
+
+client`SELECT 1`.then(() => {
+  console.log("✅ Database connected");
+}).catch((err) => {
+  console.error("❌ Database connection failed:", err.message);
+  process.exit(1);
+});
+
 export type Database = typeof db;

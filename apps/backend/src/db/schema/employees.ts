@@ -1,3 +1,4 @@
+import type { ContractStatusCode, WorkStatusCode } from "@hrms/shared";
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
@@ -37,8 +38,14 @@ export const employees = pgTable("employees", {
   trainingLevel: varchar("training_level", { length: 50 }),
   academicTitle: varchar("academic_title", { length: 50 }),
   academicRank: varchar("academic_rank", { length: 50 }),
-  workStatus: varchar("work_status", { length: 20 }).notNull().default("pending"),
-  contractStatus: varchar("contract_status", { length: 20 }).notNull().default("none"),
+  workStatus: varchar("work_status", { length: 20 })
+    .$type<WorkStatusCode>()
+    .notNull()
+    .default("pending"),
+  contractStatus: varchar("contract_status", { length: 20 })
+    .$type<ContractStatusCode>()
+    .notNull()
+    .default("none"),
   currentOrgUnitId: uuid("current_org_unit_id").references(() => orgUnits.id, {
     onDelete: "set null",
   }),
@@ -52,6 +59,8 @@ export const employees = pgTable("employees", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+export type Employee = typeof employees.$inferSelect;
+export type NewEmployee = typeof employees.$inferInsert;
 
 export const employeeTerminations = pgTable("employee_terminations", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -64,6 +73,8 @@ export const employeeTerminations = pgTable("employee_terminations", {
   createdByUserId: uuid("created_by_user_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+export type EmployeeTermination = typeof employeeTerminations.$inferSelect;
+export type NewEmployeeTermination = typeof employeeTerminations.$inferInsert;
 
 export const employeeAssignments = pgTable("employee_assignments", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -81,6 +92,8 @@ export const employeeAssignments = pgTable("employee_assignments", {
   createdByUserId: uuid("created_by_user_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+export type EmployeeAssignment = typeof employeeAssignments.$inferSelect;
+export type NewEmployeeAssignment = typeof employeeAssignments.$inferInsert;
 
 export const employeeFamilyMembers = pgTable("employee_family_members", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -96,6 +109,8 @@ export const employeeFamilyMembers = pgTable("employee_family_members", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+export type EmployeeFamilyMember = typeof employeeFamilyMembers.$inferSelect;
+export type NewEmployeeFamilyMember = typeof employeeFamilyMembers.$inferInsert;
 
 export const employeeBankAccounts = pgTable("employee_bank_accounts", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -108,6 +123,8 @@ export const employeeBankAccounts = pgTable("employee_bank_accounts", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+export type EmployeeBankAccount = typeof employeeBankAccounts.$inferSelect;
+export type NewEmployeeBankAccount = typeof employeeBankAccounts.$inferInsert;
 
 export const employeePreviousJobs = pgTable("employee_previous_jobs", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -120,6 +137,8 @@ export const employeePreviousJobs = pgTable("employee_previous_jobs", {
   note: text("note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+export type EmployeePreviousJob = typeof employeePreviousJobs.$inferSelect;
+export type NewEmployeePreviousJob = typeof employeePreviousJobs.$inferInsert;
 
 export const employeePartyMemberships = pgTable("employee_party_memberships", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -132,6 +151,8 @@ export const employeePartyMemberships = pgTable("employee_party_memberships", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+export type EmployeePartyMembership = typeof employeePartyMemberships.$inferSelect;
+export type NewEmployeePartyMembership = typeof employeePartyMemberships.$inferInsert;
 
 export const employeeDegrees = pgTable("employee_degrees", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -149,6 +170,8 @@ export const employeeDegrees = pgTable("employee_degrees", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+export type EmployeeDegree = typeof employeeDegrees.$inferSelect;
+export type NewEmployeeDegree = typeof employeeDegrees.$inferInsert;
 
 export const employeeCertifications = pgTable("employee_certifications", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -165,6 +188,8 @@ export const employeeCertifications = pgTable("employee_certifications", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+export type EmployeeCertification = typeof employeeCertifications.$inferSelect;
+export type NewEmployeeCertification = typeof employeeCertifications.$inferInsert;
 
 export const employeeForeignWorkPermits = pgTable("employee_foreign_work_permits", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -183,6 +208,8 @@ export const employeeForeignWorkPermits = pgTable("employee_foreign_work_permits
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+export type EmployeeForeignWorkPermit = typeof employeeForeignWorkPermits.$inferSelect;
+export type NewEmployeeForeignWorkPermit = typeof employeeForeignWorkPermits.$inferInsert;
 
 export const employeeAllowances = pgTable("employee_allowances", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -197,6 +224,8 @@ export const employeeAllowances = pgTable("employee_allowances", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+export type EmployeeAllowance = typeof employeeAllowances.$inferSelect;
+export type NewEmployeeAllowance = typeof employeeAllowances.$inferInsert;
 
 export const employeesRelations = relations(employees, ({ one, many }) => ({
   orgUnit: one(orgUnits, {

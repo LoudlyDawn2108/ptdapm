@@ -15,6 +15,7 @@
   "references": [
     { "path": "apps/backend" },
     { "path": "apps/frontend" },
-    { "path": "packages/shared" }
+    { "path": "packages/shared" },
+    { "path": "packages/env" }
   ]
 }

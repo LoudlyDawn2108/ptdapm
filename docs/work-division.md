@@ -401,68 +401,172 @@ When you need to modify shared code (`packages/shared/`, `apps/frontend/src/comp
 
 ### 8.1 Backend — Elysia Route Pattern
 
-Every route file follows this structure:
+Every route file follows a **thin controller + service layer** architecture:
+
+```
+routes/<module>.ts          → Route definitions (thin controller — validation + delegation)
+services/<module>.service.ts → Business logic (queries, conflict checks, etc.)
+```
+
+**Route file:**
 
 ```typescript
-// apps/backend/src/routes/<module>.ts
-import { Elysia, t } from "elysia";
-import { authPlugin } from "../plugins/auth";
-import { dbPlugin } from "../plugins/db";
+// apps/backend/src/routes/config/<module>.ts
+import { createXxxSchema, idParamSchema, paginationSchema, updateXxxSchema } from "@hrms/shared";
+import { Elysia } from "elysia";
+import { z } from "zod";
+import { authPlugin } from "../../plugins/auth";
+import * as xxxService from "../../services/xxx.service";
+import { requireRole } from "../../utils/role-guard";
 
-export const moduleRoutes = new Elysia({ prefix: "/api/<module>" })
-  .use(dbPlugin)
+// Route-specific query extensions live in the route file, not in @hrms/shared
+const listQuerySchema = paginationSchema.extend({
+  search: z.string().optional(),
+});
+
+export const xxxRoutes = new Elysia({ prefix: "/api/<module>" })
   .use(authPlugin)
-  .get("/", async ({ db, query }) => {
-    // List with pagination
-    const { page = 1, pageSize = 20, ...filters } = query;
-    // ... query logic
-    return { success: true, data: { items, total, page, pageSize } };
-  }, {
-    query: t.Object({
-      page: t.Optional(t.Numeric()),
-      pageSize: t.Optional(t.Numeric()),
-      // ... filter params
-    }),
-  })
-  .get("/:id", async ({ db, params }) => {
-    // Get by ID
-    return { success: true, data: item };
-  })
-  .post("/", async ({ db, body }) => {
-    // Create
-    return { success: true, data: created };
-  }, {
-    body: t.Object({ /* ... */ }),
-  })
-  .put("/:id", async ({ db, body, params }) => {
-    // Update
-    return { success: true, data: updated };
-  })
-  .delete("/:id", async ({ db, params }) => {
-    // Delete
-    return { success: true, data: { id: params.id } };
-  });
+  .get(
+    "/",
+    async ({ query }) => {
+      const data = await xxxService.list(query.page, query.pageSize, query.search);
+      return { data };
+    },
+    { auth: true, query: listQuerySchema },
+  )
+  .get(
+    "/:id",
+    async ({ params }) => {
+      const data = await xxxService.getById(params.id);
+      return { data };
+    },
+    { auth: true, params: idParamSchema },
+  )
+  .post(
+    "/",
+    async ({ body, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
+      const data = await xxxService.create(body);
+      return { data };
+    },
+    { auth: true, body: createXxxSchema },
+  )
+  .put(
+    "/:id",
+    async ({ params, body, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
+      const data = await xxxService.update(params.id, body);
+      return { data };
+    },
+    { auth: true, params: idParamSchema, body: updateXxxSchema },
+  )
+  .delete(
+    "/:id",
+    async ({ params, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
+      const data = await xxxService.remove(params.id);
+      return { data };
+    },
+    { auth: true, params: idParamSchema },
+  );
+```
+
+**Service file:**
+
+```typescript
+// apps/backend/src/services/xxx.service.ts
+import type { CreateXxxInput, PaginatedResponse, UpdateXxxInput } from "@hrms/shared";
+import { type SQL, eq, ilike } from "drizzle-orm";
+import { db } from "../db";
+import { type Xxx, xxxTable } from "../db/schema";
+import { ConflictError, NotFoundError } from "../utils/errors";
+import { buildPaginatedResponse, countRows } from "../utils/pagination";
+
+export async function list(
+  page: number,
+  pageSize: number,
+  search?: string,
+): Promise<PaginatedResponse<Xxx>> {
+  const where: SQL | undefined = search
+    ? ilike(xxxTable.name, `%${search}%`)
+    : undefined;
+
+  const [items, total] = await Promise.all([
+    db.select().from(xxxTable).where(where)
+      .limit(pageSize).offset((page - 1) * pageSize)
+      .orderBy(xxxTable.createdAt),
+    countRows(xxxTable, where),
+  ]);
+
+  return buildPaginatedResponse(items, total, page, pageSize);
+}
+
+export async function getById(id: string): Promise<Xxx> {
+  const [item] = await db.select().from(xxxTable).where(eq(xxxTable.id, id));
+  if (!item) throw new NotFoundError("Không tìm thấy ...");
+  return item;
+}
+
+export async function create(data: CreateXxxInput): Promise<Xxx> {
+  // Conflict check (unique name, etc.)
+  const existing = await db.select({ id: xxxTable.id }).from(xxxTable)
+    .where(eq(xxxTable.name, data.name)).limit(1);
+  if (existing.length > 0) throw new ConflictError("... đã tồn tại");
+
+  const [created] = await db.insert(xxxTable).values(data).returning();
+  if (!created) throw new Error("Insert failed");
+  return created;
+}
+
+export async function update(id: string, data: UpdateXxxInput): Promise<Xxx> {
+  await getById(id); // throws NotFoundError if missing
+  const [updated] = await db.update(xxxTable)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(xxxTable.id, id)).returning();
+  if (!updated) throw new Error("Update failed");
+  return updated;
+}
+
+export async function remove(id: string) {
+  await getById(id);
+  await db.delete(xxxTable).where(eq(xxxTable.id, id));
+  return { id };
+}
 ```
 
 **Key conventions**:
+- **Validation**: Use Zod schemas from `@hrms/shared` (Elysia 1.4 natively supports Zod via Standard Schema — no plugin needed). Route-specific query compositions (e.g., `paginationSchema.extend(...)`) can use `zod` directly in the route file.
+- **Auth**: Use `authPlugin` once — it provides the `{ auth: true }` option and exposes `user` + `session` in the handler context. The plugin is deduplicated by name, so `.use(authPlugin)` in multiple places is safe.
+- **Role guard**: Use `requireRole(user.role, "ADMIN", "TCCB")` — throws `ForbiddenError` if role is not allowed. No return value to check.
+- **Error handling**: Throw `AppError` subclasses (`BadRequestError`, `NotFoundError`, `ConflictError`, `ForbiddenError`, `UnauthorizedError`) — the global `errorPlugin` catches them and returns `{ error: string }` with the correct HTTP status. Eden Treaty uses the `error` field (non-null) to discriminate success vs failure.
+- **Pagination**: Use `buildPaginatedResponse()` + `countRows()` from `utils/pagination.ts`. Paginated responses always return `{ items: T[], total, page, pageSize }`.
+- **No explicit return types on handlers**: Let TypeScript infer return types from the service layer. Drizzle returns `Date` objects for timestamps, which Elysia serializes to ISO strings in JSON responses. Always wrap the result in `{ data }` — Eden Treaty uses the presence of `data` vs `error` to discriminate success vs failure.
+- **Service layer**: All business logic (DB queries, conflict checks, validation beyond Zod) lives in `services/*.service.ts`. Routes are thin controllers that delegate to services.
 - Prefix all API routes with `/api/`
-- Use `authPlugin` for all authenticated routes
-- Return `ApiResponse<T>` shape: `{ success: boolean, data?: T, error?: string }`
-- Return `PaginatedResponse<T>` for list endpoints: `{ items: T[], total, page, pageSize }`
-- Use Elysia's `t.Object()` for request validation (mirrors Zod schemas from `@hrms/shared`)
 - Employee sub-entities nest under `/api/employees/:employeeId/<sub-entity>`
 
 ### 8.2 Backend — Registering Routes
 
 ```typescript
-// apps/backend/src/index.ts — Add your route import
-import { moduleRoutes } from "./routes/module";
+// apps/backend/src/index.ts
+import { contractTypeRoutes } from "./routes/config/contract-types";
 
 const app = new Elysia()
-  // ... plugins
-  .use(moduleRoutes)  // Add here
-  .listen(process.env.PORT || 3000);
+  .use(cors({ origin: env.FRONTEND_URL, credentials: true }))
+  .use(swagger())
+  .use(errorPlugin)    // Global error handler — must be first
+  .use(dbPlugin)       // DB connection
+  .use(authPlugin)     // Auth macro + better-auth handler
+  .use(indexRoutes)    // Health check
+  .use(authRoutes)     // /auth/login, /auth/logout, /auth/session
+  .use(contractTypeRoutes)  // /api/config/contract-types — add your routes here
+  .listen(env.PORT);
 ```
+
+**Notes**:
+- `errorPlugin` should be registered before all routes — it uses `{ as: "global" }` to catch errors from all child plugins.
+- `authPlugin` provides the `{ auth: true }` option to all subsequent routes. Routes that `.use(authPlugin)` internally will deduplicate (Elysia deduplicates plugins by `name`).
+- Config catalog routes live in `routes/config/<catalog>.ts` (e.g., `config/contract-types.ts`, `config/salary-grades.ts`).
 
 ### 8.3 Frontend — Route File Pattern (TanStack Router)
 
@@ -531,52 +635,76 @@ function ModulePage() {
 }
 ```
 
-### 8.5 Shared Package — Adding Types and Validators
+### 8.5 Shared Package — Adding Validators (DTOs)
+
+The shared package contains **validators/DTOs only** — no entity interface types. Backend gets entity types from Drizzle inference, frontend gets them from Eden Treaty inference.
 
 ```typescript
-// packages/shared/src/types/<module>.ts
-export interface Employee {
-  id: string;
-  fullName: string;
-  // ... fields matching DB schema
-}
-
-export interface CreateEmployeeRequest {
-  fullName: string;
-  // ... only writable fields
-}
-
 // packages/shared/src/validators/<module>.ts
 import { z } from "zod";
+import { type CatalogStatusCode, CATALOG_STATUS_CODES } from "../constants/enums";
 
-export const createEmployeeSchema = z.object({
-  fullName: z.string().min(1, "Họ tên không được để trống"),
-  // ... validation rules
+const catalogStatusSchema = z.enum(
+  CATALOG_STATUS_CODES as [CatalogStatusCode, ...CatalogStatusCode[]],
+);
+
+export const createContractTypeSchema = z.object({
+  contractTypeName: z.string().min(1, "Tên loại hợp đồng không được để trống"),
+  minMonths: z.number().int().min(0),
+  maxMonths: z.number().int().min(1),
+  maxRenewals: z.number().int().min(0),
+  renewalGraceDays: z.number().int().min(0),
 });
 
-// packages/shared/src/index.ts — Re-export
-export * from "./types/<module>";
-export * from "./validators/<module>";
+export type CreateContractTypeInput = z.infer<typeof createContractTypeSchema>;
+
+export const updateContractTypeSchema = createContractTypeSchema.partial().extend({
+  status: catalogStatusSchema.optional(),
+});
+
+export type UpdateContractTypeInput = z.infer<typeof updateContractTypeSchema>;
+
+// packages/shared/src/validators/index.ts — Re-export
+export * from "./<module>";
 ```
+
+**Key conventions**:
+- All Zod schemas for entity CRUD go in `@hrms/shared` — they are used by both backend (validation) and frontend (form validation).
+- Enum-typed arrays need explicit cast for `z.enum()`: `z.enum(CODES as [Code, ...Code[]])` — cast to the specific union, not `string`.
+- Common schemas (`paginationSchema`, `idParamSchema`) live in `validators/common.ts`.
+- `Input` types (e.g., `CreateContractTypeInput`) are inferred from Zod with `z.infer<>`.
+- **Do NOT put entity interfaces in shared** — `Date` fields become `string` after JSON serialization, making a single interface wrong for one side. Let each layer infer its own types.
 
 ### 8.6 Drizzle Schema — Adding/Modifying Tables
 
 ```typescript
 // apps/backend/src/db/schema/<domain>.ts
+import type { CatalogStatusCode } from "@hrms/shared";
 import { pgTable, uuid, varchar, timestamp, text } from "drizzle-orm/pg-core";
 
 export const myTable = pgTable("my_table", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 255 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  // Use .$type<EnumCode>() for compile-time safety on enum-like varchar columns
+  status: varchar("status", { length: 20 }).$type<CatalogStatusCode>().notNull().default("active"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 // apps/backend/src/db/schema/index.ts — Re-export
 export * from "./<domain>";
 ```
 
-**Schema ownership**: Each dev owns their schema files. If you need to add a column to another dev's table, **coordinate first**.
+**Key conventions**:
+- Use `.$type<XxxCode>()` on all `varchar` columns that store enum codes (defined in `packages/shared/src/constants/enums.ts`). This narrows the Drizzle select type from `string` to the union type, preventing type mismatches in the service layer.
+- Always use `{ withTimezone: true }` on timestamps.
+- **Export `$inferSelect` and `$inferInsert` type aliases** after every table definition. This gives clean named types in IDE hover tooltips instead of expanded inline fields. Use them as explicit return types in service functions.
+  ```typescript
+  export const contractTypes = pgTable("contract_types", { ... });
+  export type ContractType = typeof contractTypes.$inferSelect;
+  export type NewContractType = typeof contractTypes.$inferInsert;
+  ```
+- Schema ownership: Each dev owns their schema files. If you need to add a column to another dev's table, **coordinate first**.
 
 ### 8.7 Naming Conventions
 
@@ -596,38 +724,251 @@ export * from "./<domain>";
 
 ### 8.8 API Response Format
 
-All endpoints MUST return this shape (defined in `@hrms/shared`):
+All endpoints MUST return this shape:
 
 ```typescript
 // Single item
-{ success: true, data: { id: "...", ... } }
+{ data: { id: "...", ... } }
 
 // List (paginated)
-{ success: true, data: { items: [...], total: 100, page: 1, pageSize: 20 } }
+{ data: { items: [...], total: 100, page: 1, pageSize: 20 } }
 
-// Error
-{ success: false, error: "Mô tả lỗi bằng tiếng Việt" }
+// Error (returned by errorPlugin, not route handlers)
+{ error: "Mô tả lỗi bằng tiếng Việt" }
 ```
+
+**Eden Treaty discrimination**: On the frontend, `const { data, error } = await api...get()`. If `error` is non-null → error path. If `data` is non-null → success path. No `success` field needed.
 
 ### 8.9 Error Handling Pattern
 
+**Throw-based errors**: Throw `AppError` subclasses in service layer or route handlers. The global `errorPlugin` catches them and returns the correct HTTP status + JSON body.
+
 ```typescript
-// Backend: Use Elysia's error handler
-.onError(({ code, error, set }) => {
-  if (code === "VALIDATION") {
-    set.status = 400;
-    return { success: false, error: error.message };
-  }
-  if (code === "NOT_FOUND") {
-    set.status = 404;
-    return { success: false, error: "Không tìm thấy dữ liệu" };
-  }
-  set.status = 500;
-  return { success: false, error: "Lỗi hệ thống" };
-})
+// Available error classes (apps/backend/src/utils/errors.ts):
+import {
+  BadRequestError,    // 400
+  UnauthorizedError,  // 401
+  ForbiddenError,     // 403
+  NotFoundError,      // 404
+  ConflictError,      // 409
+} from "../utils/errors";
+
+// Usage in services:
+if (!item) throw new NotFoundError("Không tìm thấy dữ liệu");
+if (exists) throw new ConflictError("Loại hợp đồng đã tồn tại");
+
+// Usage in routes (role guard):
+import { requireRole } from "../utils/role-guard";
+requireRole(user.role, "ADMIN", "TCCB");  // throws ForbiddenError if not allowed
 ```
 
-### 8.10 Environment Variables
+**Error response shape** (automatic via `errorPlugin`):
+```json
+{ "error": "Mô tả lỗi bằng tiếng Việt" }
+```
+
+**DO NOT** use `set.status` + return in route handlers. Always throw.
+
+### 8.10 Frontend Architecture Plan
+
+> **Status**: Planned — no design mockups yet. This documents the architecture decisions so all devs can implement consistently once design is ready.
+
+#### Tech Stack
+
+| Layer | Library | Version | Purpose |
+|-------|---------|---------|---------|
+| Framework | React | 19.0.0 | UI rendering |
+| Routing | TanStack Router | 1.163.3 | File-based routing with type-safe params/search |
+| State | Zustand | 5.0.3 | Client-side state (auth, UI state) |
+| API Client | Eden Treaty | 1.2.0 | End-to-end type-safe API calls (derived from Elysia backend) |
+| Forms | React Hook Form + Zod | 7.54.2 + 4.3.6 | Form state + validation (reuse `@hrms/shared` schemas) |
+| Styling | Tailwind CSS 4 | 4.1.8 | Utility-first CSS |
+| UI Components | shadcn/ui (Radix) | radix-maia style | Accessible, composable primitives |
+| Icons | Lucide React | 0.577.0 | Consistent icon set |
+| Date | date-fns | 4.1.0 | Date formatting/manipulation |
+
+#### Project Structure
+
+```
+apps/frontend/src/
+├── api/
+│   └── client.ts               # Eden Treaty client (already exists)
+├── components/
+│   ├── ui/                      # shadcn/ui primitives (Button, Input, Dialog, etc.)
+│   ├── layout/                  # Sidebar, TopNav, PageHeader, AuthGuard
+│   ├── data-table/              # Reusable table with sorting, pagination, filtering
+│   └── forms/                   # Reusable form field wrappers (FormInput, FormSelect, FormDatePicker)
+├── hooks/
+│   ├── use-pagination.ts        # Pagination state hook (synced with URL search params)
+│   └── use-confirm.ts           # Confirmation dialog hook
+├── lib/
+│   └── utils.ts                 # cn() helper (already exists)
+├── stores/
+│   ├── auth.ts                  # Auth state — user, login/logout (already exists)
+│   └── index.ts                 # Barrel export (already exists)
+├── routes/                      # TanStack Router file-based routes (see 8.3)
+│   ├── __root.tsx               # Root layout (already exists)
+│   ├── login.tsx                # Login page (already exists)
+│   ├── index.tsx                # Home/redirect (already exists)
+│   ├── _authenticated.tsx       # Auth guard layout (to be built)
+│   └── _authenticated/          # All protected routes (see 8.3 for full tree)
+└── main.tsx                     # App entry (already exists)
+```
+
+#### API Client (Eden Treaty)
+
+Eden Treaty provides end-to-end type safety by importing the backend's `App` type:
+
+```typescript
+// apps/frontend/src/api/client.ts (already exists)
+import { treaty } from "@elysiajs/eden";
+import type { App } from "@hrms/backend";
+
+export const api = treaty<App>(import.meta.env.VITE_API_URL ?? "http://localhost:3000");
+```
+
+**Usage in components:**
+
+```typescript
+// Type-safe API calls — params, body, query are all typed from the backend route definitions
+const { data, error } = await api.api.config["contract-types"].get({
+  query: { page: 1, pageSize: 20, search: "..." },
+});
+
+// data.data is typed as the backend's return type
+// error is typed with the error response shape
+```
+
+**Conventions:**
+- Always use `api` from `@/api/client` — never raw `fetch`
+- Eden Treaty derives types from the backend — when backend routes change, frontend types update automatically (via `@hrms/backend` workspace dependency)
+- Eden returns `{ data, error }` — if `error` is non-null, it's an error response. No `success` field to check.
+
+#### State Management (Zustand)
+
+**When to use Zustand:**
+- Auth state (current user, session) → `stores/auth.ts`
+- UI state shared across routes (sidebar collapsed, theme) → `stores/ui.ts`
+- **NOT** for server data — use Eden Treaty calls directly (no client-side cache layer for now)
+
+**Store pattern:**
+
+```typescript
+// stores/<domain>.ts
+import { create } from "zustand";
+
+interface XxxState {
+  someValue: string;
+  setSomeValue: (value: string) => void;
+}
+
+export const useXxxStore = create<XxxState>((set) => ({
+  someValue: "",
+  setSomeValue: (value) => set({ someValue: value }),
+}));
+```
+
+**Conventions:**
+- One store per domain (auth, ui), not one global store
+- Export individual hooks (`useAuthStore`, `useUiStore`), re-export from `stores/index.ts`
+- Keep stores minimal — only state that needs to survive route navigation
+
+#### Auth Flow
+
+```
+1. App loads → _authenticated.tsx layout checks session
+2. Call api.auth.session.get() → returns user or 401
+3. If user → setUser(user) in authStore → render <Outlet />
+4. If 401 → redirect to /login
+5. Login page → api.auth.login.post({ body }) → setUser → redirect to /
+6. Logout → api.auth.logout.post() → clearUser → redirect to /login
+```
+
+**Auth guard layout** (`_authenticated.tsx`):
+- Calls `/auth/session` on mount
+- Shows loading spinner while checking
+- Redirects to `/login` if not authenticated
+- Renders sidebar + top nav + `<Outlet />` when authenticated
+
+**Role-based UI:**
+- Use `user.role` from `useAuthStore` to conditionally render menu items and action buttons
+- Backend enforces role checks via `requireRole()` — frontend role checks are for UX only, not security
+
+#### Form Handling (React Hook Form + Zod)
+
+```tsx
+import { zodResolver } from "@hookform/resolvers/zod";
+import { createContractTypeSchema, type CreateContractTypeInput } from "@hrms/shared";
+import { useForm } from "react-hook-form";
+
+function CreateContractTypeForm() {
+  const form = useForm<CreateContractTypeInput>({
+    resolver: zodResolver(createContractTypeSchema),
+    defaultValues: { contractTypeName: "", minMonths: 0, ... },
+  });
+
+  const onSubmit = async (data: CreateContractTypeInput) => {
+    const { error } = await api.api.config["contract-types"].post({ body: data });
+    if (error) { /* show error toast — error.value has { error: string } */ }
+    // success → close dialog, refresh list
+  };
+
+  return <form onSubmit={form.handleSubmit(onSubmit)}>...</form>;
+}
+```
+
+**Conventions:**
+- Reuse Zod schemas from `@hrms/shared` — same validation on frontend and backend
+- Use `zodResolver` from `@hookform/resolvers` to connect Zod → React Hook Form
+- Form components in `components/forms/` wrap shadcn/ui inputs with React Hook Form's `Controller`/`register`
+
+#### Component Conventions
+
+**Shared UI (Dev 3 builds, all devs use):**
+- `components/ui/` — shadcn/ui primitives (install via `npx shadcn@latest add <component>`)
+- `components/data-table/` — Reusable table with column definitions, sorting, pagination
+- `components/forms/` — Form field wrappers connected to React Hook Form
+- `components/layout/` — Sidebar, TopNav, PageHeader
+
+**Page-level components:**
+- Each route file is self-contained — defines its own page component
+- Extract reusable sub-components within the same route file, or into `components/<module>/` if shared across routes
+- Tab components for employee detail live in their own route files (see 8.3)
+
+**Naming:**
+- Components: `PascalCase.tsx` (e.g., `DataTable.tsx`, `PageHeader.tsx`)
+- Hooks: `use-kebab-case.ts` (e.g., `use-pagination.ts`)
+- Stores: `camelCase.ts` (e.g., `auth.ts`)
+
+#### shadcn/ui Configuration
+
+Already configured with `radix-maia` style, `zinc` base color, Lucide icons:
+
+```json
+{
+  "style": "radix-maia",
+  "rsc": false,
+  "tailwind": { "baseColor": "zinc", "cssVariables": true },
+  "iconLibrary": "lucide",
+  "aliases": {
+    "components": "@/components",
+    "ui": "@/components/ui",
+    "hooks": "@/hooks",
+    "lib": "@/lib"
+  }
+}
+```
+
+**Adding components:** `npx shadcn@latest add button input dialog table` — installs into `src/components/ui/`.
+
+#### TODO (When Design is Ready)
+
+1. **Dev 1**: Build login page with actual form, implement `_authenticated.tsx` auth guard
+2. **Dev 3**: Build sidebar navigation, top nav, page header, data table, form field wrappers
+3. **All devs**: Install needed shadcn/ui components and implement their assigned pages
+4. Decide on data fetching strategy (direct Eden calls vs. TanStack Query wrapper) based on complexity needs
+
+### 8.11 Environment Variables
 
 ```bash
 # .env (local development)
@@ -669,5 +1010,5 @@ VITE_API_URL=http://localhost:3000
 
 Branch: feat/<module> → develop → main
 Commit: <type>(<scope>): <description>
-API: /api/<module> → { success, data/error }
+API: /api/<module> → { data } | { error }
 ```

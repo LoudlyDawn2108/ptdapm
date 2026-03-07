@@ -1,3 +1,4 @@
+import type { CatalogStatusCode, ContractDocStatusCode } from "@hrms/shared";
 import { date, integer, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 import { files } from "./files";
 import { orgUnits } from "./organization";
@@ -7,10 +8,12 @@ export const allowanceTypes = pgTable("allowance_types", {
   allowanceName: varchar("allowance_name", { length: 200 }).notNull().unique(),
   description: text("description"),
   calcMethod: text("calc_method"),
-  status: varchar("status", { length: 20 }).notNull().default("active"),
+  status: varchar("status", { length: 20 }).$type<CatalogStatusCode>().notNull().default("active"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+export type AllowanceType = typeof allowanceTypes.$inferSelect;
+export type NewAllowanceType = typeof allowanceTypes.$inferInsert;
 
 export const contractTypes = pgTable("contract_types", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -19,10 +22,12 @@ export const contractTypes = pgTable("contract_types", {
   maxMonths: integer("max_months").notNull(),
   maxRenewals: integer("max_renewals").notNull(),
   renewalGraceDays: integer("renewal_grace_days").notNull(),
-  status: varchar("status", { length: 20 }).notNull().default("active"),
+  status: varchar("status", { length: 20 }).$type<CatalogStatusCode>().notNull().default("active"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+export type ContractType = typeof contractTypes.$inferSelect;
+export type NewContractType = typeof contractTypes.$inferInsert;
 
 export const employmentContracts = pgTable("employment_contracts", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -37,7 +42,10 @@ export const employmentContracts = pgTable("employment_contracts", {
   orgUnitId: uuid("org_unit_id")
     .notNull()
     .references(() => orgUnits.id, { onDelete: "restrict" }),
-  status: varchar("status", { length: 20 }).notNull().default("valid"),
+  status: varchar("status", { length: 20 })
+    .$type<ContractDocStatusCode>()
+    .notNull()
+    .default("valid"),
   contentHtml: text("content_html"),
   contractFileId: uuid("contract_file_id").references(() => files.id, {
     onDelete: "set null",
@@ -46,6 +54,8 @@ export const employmentContracts = pgTable("employment_contracts", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+export type EmploymentContract = typeof employmentContracts.$inferSelect;
+export type NewEmploymentContract = typeof employmentContracts.$inferInsert;
 
 export const contractAppendices = pgTable("contract_appendices", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -62,3 +72,5 @@ export const contractAppendices = pgTable("contract_appendices", {
   createdByUserId: uuid("created_by_user_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+export type ContractAppendix = typeof contractAppendices.$inferSelect;
+export type NewContractAppendix = typeof contractAppendices.$inferInsert;

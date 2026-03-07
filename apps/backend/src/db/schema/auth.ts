@@ -11,13 +11,15 @@ export const authRoles = pgTable("auth_roles", {
   isSystem: boolean("is_system").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+export type AuthRole = typeof authRoles.$inferSelect;
+export type NewAuthRole = typeof authRoles.$inferInsert;
 
 export const authUsers = pgTable("auth_users", {
   id: uuid("id").primaryKey().defaultRandom(),
   username: varchar("username", { length: 50 }).notNull().unique(),
   displayUsername: varchar("displayUsername", { length: 50 }).unique(),
   passwordHash: text("password_hash"), // Unused — better-auth stores passwords in account.password
-  fullName: varchar("full_name", { length: 255 }).notNull(),
+  name: varchar("full_name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).unique(),
   employeeId: uuid("employee_id")
     .unique()
@@ -33,6 +35,8 @@ export const authUsers = pgTable("auth_users", {
   emailVerified: boolean("emailVerified").default(false),
   image: text("image"),
 });
+export type AuthUserRow = typeof authUsers.$inferSelect;
+export type NewAuthUser = typeof authUsers.$inferInsert;
 
 // better-auth managed tables — camelCase column names as per better-auth convention
 export const session = pgTable("session", {

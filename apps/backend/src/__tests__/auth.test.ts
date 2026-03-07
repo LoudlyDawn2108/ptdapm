@@ -3,10 +3,12 @@ import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import { authPlugin } from "../plugins/auth";
 import { dbPlugin } from "../plugins/db";
+import { errorPlugin } from "../plugins/error-handler";
 import { authRoutes } from "../routes/auth";
 
 const app = new Elysia()
   .use(cors({ origin: "http://localhost:5173", credentials: true }))
+  .use(errorPlugin)
   .use(dbPlugin)
   .use(authPlugin)
   .use(authRoutes);
@@ -69,17 +71,17 @@ describe("Authentication", () => {
     expect(res.status).toBe(200);
 
     const body = await res.json();
-    expect(body.user).toBeDefined();
-    expect(body.user.id).toBeString();
-    expect(body.user.username).toBe("admin");
-    expect(body.user.fullName).toBeString();
-    expect(body.user.email).toBeDefined();
-    expect(body.user.role).toBe("ADMIN");
-    expect(body.user.status).toBe("active");
-    expect(body.user).toHaveProperty("employeeId");
-    expect(body.session).toBeDefined();
-    expect(body.session.id).toBeString();
-    expect(body.session.expiresAt).toBeDefined();
+    expect(body.data).toBeDefined();
+    expect(body.data.user).toBeDefined();
+    expect(body.data.user.id).toBeString();
+    expect(body.data.user.username).toBe("admin");
+    expect(body.data.user.fullName).toBeString();
+    expect(body.data.user.email).toBeDefined();
+    expect(body.data.user.role).toBe("ADMIN");
+    expect(body.data.user.status).toBe("active");
+    expect(body.data.user).toHaveProperty("employeeId");
+    expect(body.data.session).toBeDefined();
+    expect(body.data.session.expiresAt).toBeDefined();
   });
 
   test("user.role is a role_code string, not a UUID", async () => {
@@ -93,20 +95,19 @@ describe("Authentication", () => {
     );
     const body = await res.json();
 
-    expect(body.user.role).toBe("ADMIN");
-    expect(body.user.role).not.toMatch(
+    expect(body.data.user.role).toBe("ADMIN");
+    expect(body.data.user.role).not.toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
     );
   });
 });
 
 describe("Auth Endpoints — Login/Logout/Session", () => {
-  test("POST /auth/login with valid credentials returns 200 + ApiResponse<SessionInfo>", async () => {
+  test("POST /auth/login with valid credentials returns 200 + SessionInfo", async () => {
     const res = await login("admin", "admin123");
     expect(res.status).toBe(200);
 
     const body = await res.json();
-    expect(body.success).toBe(true);
     expect(body.data).toBeDefined();
     expect(body.data.user).toBeDefined();
     expect(body.data.user.id).toBeString();
@@ -116,7 +117,6 @@ describe("Auth Endpoints — Login/Logout/Session", () => {
     expect(body.data.user.status).toBe("active");
     expect(body.data.user).toHaveProperty("employeeId");
     expect(body.data.session).toBeDefined();
-    expect(body.data.session.id).toBeString();
     expect(body.data.session.expiresAt).toBeDefined();
   });
 
@@ -134,7 +134,7 @@ describe("Auth Endpoints — Login/Logout/Session", () => {
     expect(res.status).toBe(401);
 
     const body = await res.json();
-    expect(body.success).toBe(false);
+    expect(body.success).toBeUndefined();
     expect(body.error).toBeString();
   });
 
@@ -188,9 +188,6 @@ describe("Auth Endpoints — Login/Logout/Session", () => {
       }),
     );
     expect(res.status).toBe(200);
-
-    const body = await res.json();
-    expect(body.success).toBe(true);
   });
 
   test("POST /auth/logout without session returns 401", async () => {
@@ -233,10 +230,11 @@ describe("Auth Endpoints — Login/Logout/Session", () => {
     expect(res.status).toBe(200);
 
     const body = await res.json();
-    expect(body.user).toBeDefined();
-    expect(body.user.username).toBe("admin");
-    expect(body.session).toBeDefined();
-    expect(body.session.id).toBeString();
+    expect(body.data).toBeDefined();
+    expect(body.data.user).toBeDefined();
+    expect(body.data.user.username).toBe("admin");
+    expect(body.data.session).toBeDefined();
+    expect(body.data.session.expiresAt).toBeDefined();
   });
 
   test("GET /auth/session without session returns 401", async () => {
