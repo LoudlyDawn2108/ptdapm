@@ -65,18 +65,18 @@
 
 ### Owned Routes
 
-**Backend** (`apps/backend/src/routes/`):
+**Backend** (`apps/backend/src/modules/`):
 
-| Route file | Endpoints |
+| Module folder | Endpoints |
 |------------|-----------|
-| `auth.ts` | `POST /auth/login`, `POST /auth/logout`, `GET /auth/session` |
-| `accounts.ts` | CRUD `/api/accounts` (user management by ADMIN) |
-| `audit-logs.ts` | `GET /api/audit-logs` (list, filter, export) |
-| `files.ts` | `POST /api/files/upload`, `GET /api/files/:id` |
-| `contracts.ts` | CRUD `/api/employees/:id/contracts`, `/api/employees/:id/contracts/:cid/appendices` |
-| `degrees.ts` | CRUD `/api/employees/:id/degrees` |
-| `certifications.ts` | CRUD `/api/employees/:id/certifications` |
-| `foreign-permits.ts` | CRUD `/api/employees/:id/foreign-permits` |
+| `auth/` | `POST /auth/login`, `POST /auth/logout`, `GET /auth/session` |
+| `accounts/` | CRUD `/api/accounts` (user management by ADMIN) |
+| `audit-logs/` | `GET /api/audit-logs` (list, filter, export) |
+| `files/` | `POST /api/files/upload`, `GET /api/files/:id` |
+| `contracts/` | CRUD `/api/employees/:id/contracts`, `/api/employees/:id/contracts/:cid/appendices` |
+| `degrees/` | CRUD `/api/employees/:id/degrees` |
+| `certifications/` | CRUD `/api/employees/:id/certifications` |
+| `foreign-permits/` | CRUD `/api/employees/:id/foreign-permits` |
 
 **Frontend** (`apps/frontend/src/routes/`):
 
@@ -121,16 +121,16 @@ Dev 2 must deliver **Org Unit API** and **Config Catalog APIs** in Phase 1 — o
 
 ### Owned Routes
 
-**Backend** (`apps/backend/src/routes/`):
+**Backend** (`apps/backend/src/modules/`):
 
-| Route file | Endpoints |
+| Module folder | Endpoints |
 |------------|-----------|
-| `org-units.ts` | CRUD `/api/org-units`, `POST /api/org-units/:id/merge`, `POST /api/org-units/:id/dissolve` |
-| `assignments.ts` | CRUD `/api/employees/:id/assignments` |
-| `config/salary-grades.ts` | CRUD `/api/config/salary-grades`, `/api/config/salary-grades/:id/steps` |
-| `config/allowance-types.ts` | CRUD `/api/config/allowance-types` |
-| `config/contract-types.ts` | CRUD `/api/config/contract-types` |
-| `dashboard.ts` | `GET /api/dashboard/statistics` (aggregation queries) |
+| `org-units/` | CRUD `/api/org-units`, `POST /api/org-units/:id/merge`, `POST /api/org-units/:id/dissolve` |
+| `assignments/` | CRUD `/api/employees/:id/assignments` |
+| `config/salary-grades/` | CRUD `/api/config/salary-grades`, `/api/config/salary-grades/:id/steps` |
+| `config/allowance-types/` | CRUD `/api/config/allowance-types` |
+| `config/contract-types/` | CRUD `/api/config/contract-types` |
+| `dashboard/` | `GET /api/dashboard/statistics` (aggregation queries) |
 
 **Frontend** (`apps/frontend/src/routes/`):
 
@@ -172,17 +172,17 @@ Dev 2 must deliver **Org Unit API** and **Config Catalog APIs** in Phase 1 — o
 
 ### Owned Routes
 
-**Backend** (`apps/backend/src/routes/`):
+**Backend** (`apps/backend/src/modules/`):
 
-| Route file | Endpoints |
+| Module folder | Endpoints |
 |------------|-----------|
-| `employees.ts` | CRUD `/api/employees`, `GET /api/employees/:id` (aggregate detail) |
-| `family-members.ts` | CRUD `/api/employees/:id/family-members` |
-| `bank-accounts.ts` | CRUD `/api/employees/:id/bank-accounts` |
-| `previous-jobs.ts` | CRUD `/api/employees/:id/previous-jobs` |
-| `party-memberships.ts` | CRUD `/api/employees/:id/party-memberships` |
-| `allowances.ts` | CRUD `/api/employees/:id/allowances` |
-| `employees-export.ts` | `GET /api/employees/:id/export`, `GET /api/employees/export` (list export) |
+| `employees/` | CRUD `/api/employees`, `GET /api/employees/:id` (aggregate detail) |
+| `family-members/` | CRUD `/api/employees/:id/family-members` |
+| `bank-accounts/` | CRUD `/api/employees/:id/bank-accounts` |
+| `previous-jobs/` | CRUD `/api/employees/:id/previous-jobs` |
+| `party-memberships/` | CRUD `/api/employees/:id/party-memberships` |
+| `allowances/` | CRUD `/api/employees/:id/allowances` |
+| `employees-export/` | `GET /api/employees/:id/export`, `GET /api/employees/export` (list export) |
 
 **Frontend** (`apps/frontend/src/routes/`):
 
@@ -225,17 +225,17 @@ Dev 2 must deliver **Org Unit API** and **Config Catalog APIs** in Phase 1 — o
 
 ### Owned Routes
 
-**Backend** (`apps/backend/src/routes/`):
+**Backend** (`apps/backend/src/modules/`):
 
-| Route file | Endpoints |
+| Module folder | Endpoints |
 |------------|-----------|
-| `evaluations.ts` | CRUD `/api/employees/:id/evaluations` |
-| `terminations.ts` | `POST /api/employees/:id/terminate`, `GET /api/employees/:id/termination` |
-| `training-courses.ts` | CRUD `/api/training-courses`, `POST /api/training-courses/:id/open`, `/close`, etc. |
-| `config/training-types.ts` | CRUD `/api/config/training-types` |
-| `training-registrations.ts` | CRUD `/api/training-courses/:id/registrations` |
-| `training-results.ts` | CRUD `/api/training-courses/:id/results` |
-| `my/training.ts` | `GET /api/my/training` (self-service: own courses, register) |
+| `evaluations/` | CRUD `/api/employees/:id/evaluations` |
+| `terminations/` | `POST /api/employees/:id/terminate`, `GET /api/employees/:id/termination` |
+| `training-courses/` | CRUD `/api/training-courses`, `POST /api/training-courses/:id/open`, `/close`, etc. |
+| `config/training-types/` | CRUD `/api/config/training-types` |
+| `training-registrations/` | CRUD `/api/training-courses/:id/registrations` |
+| `training-results/` | CRUD `/api/training-courses/:id/results` |
+| `my/training/` | `GET /api/my/training` (self-service: own courses, register) |
 
 **Frontend** (`apps/frontend/src/routes/`):
 
@@ -401,23 +401,25 @@ When you need to modify shared code (`packages/shared/`, `apps/frontend/src/comp
 
 ### 8.1 Backend — Elysia Route Pattern
 
-Every route file follows a **thin controller + service layer** architecture:
+Every module follows a **thin controller + service layer** architecture, colocated in the same folder:
 
 ```
-routes/<module>.ts          → Route definitions (thin controller — validation + delegation)
-services/<module>.service.ts → Business logic (queries, conflict checks, etc.)
+modules/<module>/
+  index.ts              → Route definitions (thin controller — validation + delegation)
+  <module>.service.ts   → Business logic (queries, conflict checks, etc.)
+  <module>.test.ts      → Tests (colocated with the module)
 ```
 
-**Route file:**
+**Route file (`index.ts`):**
 
 ```typescript
-// apps/backend/src/routes/config/<module>.ts
+// apps/backend/src/modules/config/<module>/index.ts
 import { createXxxSchema, idParamSchema, paginationSchema, updateXxxSchema } from "@hrms/shared";
 import { Elysia } from "elysia";
 import { z } from "zod";
-import { authPlugin } from "../../plugins/auth";
-import * as xxxService from "../../services/xxx.service";
-import { requireRole } from "../../utils/role-guard";
+import { authPlugin } from "../../../common/plugins/auth";
+import { requireRole } from "../../../common/utils/role-guard";
+import * as xxxService from "./xxx.service";
 
 // Route-specific query extensions live in the route file, not in @hrms/shared
 const listQuerySchema = paginationSchema.extend({
@@ -471,16 +473,16 @@ export const xxxRoutes = new Elysia({ prefix: "/api/<module>" })
   );
 ```
 
-**Service file:**
+**Service file (`xxx.service.ts`):**
 
 ```typescript
-// apps/backend/src/services/xxx.service.ts
+// apps/backend/src/modules/<module>/xxx.service.ts
 import type { CreateXxxInput, PaginatedResponse, UpdateXxxInput } from "@hrms/shared";
 import { type SQL, eq, ilike } from "drizzle-orm";
-import { db } from "../db";
-import { type Xxx, xxxTable } from "../db/schema";
-import { ConflictError, NotFoundError } from "../utils/errors";
-import { buildPaginatedResponse, countRows } from "../utils/pagination";
+import { db } from "../../db";
+import { type Xxx, xxxTable } from "../../db/schema";
+import { ConflictError, NotFoundError } from "../../common/utils/errors";
+import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
 
 export async function list(
   page: number,
@@ -539,17 +541,152 @@ export async function remove(id: string) {
 - **Auth**: Use `authPlugin` once — it provides the `{ auth: true }` option and exposes `user` + `session` in the handler context. The plugin is deduplicated by name, so `.use(authPlugin)` in multiple places is safe.
 - **Role guard**: Use `requireRole(user.role, "ADMIN", "TCCB")` — throws `ForbiddenError` if role is not allowed. No return value to check.
 - **Error handling**: Throw `AppError` subclasses (`BadRequestError`, `NotFoundError`, `ConflictError`, `ForbiddenError`, `UnauthorizedError`) — the global `errorPlugin` catches them and returns `{ error: string }` with the correct HTTP status. Eden Treaty uses the `error` field (non-null) to discriminate success vs failure.
-- **Pagination**: Use `buildPaginatedResponse()` + `countRows()` from `utils/pagination.ts`. Paginated responses always return `{ items: T[], total, page, pageSize }`.
+- **Pagination**: Use `buildPaginatedResponse()` + `countRows()` from `common/utils/pagination.ts`. Paginated responses always return `{ items: T[], total, page, pageSize }`.
 - **No explicit return types on handlers**: Let TypeScript infer return types from the service layer. Drizzle returns `Date` objects for timestamps, which Elysia serializes to ISO strings in JSON responses. Always wrap the result in `{ data }` — Eden Treaty uses the presence of `data` vs `error` to discriminate success vs failure.
-- **Service layer**: All business logic (DB queries, conflict checks, validation beyond Zod) lives in `services/*.service.ts`. Routes are thin controllers that delegate to services.
+- **Service layer**: All business logic (DB queries, conflict checks, validation beyond Zod) lives in the module's `*.service.ts` file. Routes are thin controllers that delegate to services.
 - Prefix all API routes with `/api/`
 - Employee sub-entities nest under `/api/employees/:employeeId/<sub-entity>`
 
-### 8.2 Backend — Registering Routes
+### 8.2 Backend — Folder Structure & Registering Routes
+
+#### Folder Structure
+
+```
+apps/backend/src/
+├── common/                              # Shared infrastructure (all devs import from here)
+│   ├── plugins/
+│   │   ├── auth.ts                      # Auth macro plugin ({ auth: true } option)
+│   │   ├── db.ts                        # DB connection plugin
+│   │   └── error-handler.ts             # Global errorPlugin
+│   ├── utils/
+│   │   ├── errors.ts                    # AppError, BadRequestError, NotFoundError, etc.
+│   │   ├── pagination.ts               # withPagination, countRows, buildPaginatedResponse
+│   │   ├── role-guard.ts               # requireRole (throw-based)
+│   │   └── user-context.ts             # User context utilities
+│   └── auth/
+│       └── index.ts                     # better-auth config (betterAuth instance)
+│
+├── db/                                  # Database layer (shared infrastructure)
+│   ├── index.ts                         # DB connection
+│   ├── seed/
+│   │   ├── users.ts
+│   │   └── roles.ts
+│   └── schema/                          # Domain-grouped schemas
+│       ├── index.ts
+│       ├── audit.ts
+│       ├── auth.ts
+│       ├── campuses.ts
+│       ├── contracts.ts
+│       ├── employees.ts
+│       ├── evaluations.ts
+│       ├── files.ts
+│       ├── organization.ts
+│       ├── salary.ts
+│       └── training.ts
+│
+├── modules/                             # Feature modules — each dev works here
+│   ├── auth/                            # 🔐 Dev 1 — Auth flow
+│   │   ├── index.ts                     # Routes: POST /auth/login, /logout, GET /auth/session
+│   │   ├── auth.service.ts
+│   │   └── auth.test.ts
+│   ├── accounts/                        # 🔐 Dev 1 — User account management (ADMIN)
+│   │   ├── index.ts                     # Routes: CRUD /api/accounts
+│   │   └── accounts.service.ts
+│   ├── audit-logs/                      # 🔐 Dev 1 — Audit log viewer
+│   │   ├── index.ts                     # Routes: GET /api/audit-logs
+│   │   └── audit-logs.service.ts
+│   ├── files/                           # 🔐 Dev 1 — File upload infrastructure (shared by all)
+│   │   ├── index.ts                     # Routes: POST /api/files/upload, GET /api/files/:id
+│   │   └── files.service.ts
+│   ├── contracts/                       # 🔐 Dev 1 — Employment contracts + appendices
+│   │   ├── index.ts                     # Routes: CRUD /api/employees/:id/contracts, .../appendices
+│   │   └── contracts.service.ts
+│   ├── degrees/                         # 🔐 Dev 1 — Employee degrees tab
+│   │   ├── index.ts                     # Routes: CRUD /api/employees/:id/degrees
+│   │   └── degrees.service.ts
+│   ├── certifications/                  # 🔐 Dev 1 — Employee certifications tab
+│   │   ├── index.ts                     # Routes: CRUD /api/employees/:id/certifications
+│   │   └── certifications.service.ts
+│   ├── foreign-permits/                 # 🔐 Dev 1 — Employee foreign work permits tab
+│   │   ├── index.ts                     # Routes: CRUD /api/employees/:id/foreign-permits
+│   │   └── foreign-permits.service.ts
+│   ├── org-units/                       # 🏢 Dev 2 — Organization tree
+│   │   ├── index.ts                     # Routes: CRUD /api/org-units, merge, dissolve
+│   │   └── org-units.service.ts
+│   ├── assignments/                     # 🏢 Dev 2 — Employee assignments to org positions
+│   │   ├── index.ts                     # Routes: CRUD /api/employees/:id/assignments
+│   │   └── assignments.service.ts
+│   ├── config/                          # Config catalogs (5 catalogs, same CRUD pattern)
+│   │   ├── contract-types/              # 🏢 Dev 2
+│   │   │   ├── index.ts                 # Routes: CRUD /api/config/contract-types
+│   │   │   └── contract-type.service.ts
+│   │   ├── allowance-types/             # 🏢 Dev 2
+│   │   │   ├── index.ts                 # Routes: CRUD /api/config/allowance-types
+│   │   │   └── allowance-type.service.ts
+│   │   ├── salary-grades/               # 🏢 Dev 2
+│   │   │   ├── index.ts                 # Routes: CRUD /api/config/salary-grades + steps
+│   │   │   └── salary-grade.service.ts
+│   │   ├── training-types/              # 🎓 Dev 4 (same config pattern)
+│   │   │   ├── index.ts                 # Routes: CRUD /api/config/training-types
+│   │   │   └── training-type.service.ts
+│   │   └── campuses/                    # Campus config
+│   │       ├── index.ts                 # Routes: CRUD /api/config/campuses
+│   │       └── campus.service.ts
+│   ├── dashboard/                       # 🏢 Dev 2 — Statistics dashboard
+│   │   ├── index.ts                     # Routes: GET /api/dashboard/statistics
+│   │   └── dashboard.service.ts
+│   ├── employees/                       # 👤 Dev 3 — Employee core entity
+│   │   ├── index.ts                     # Routes: CRUD /api/employees, GET /api/employees/:id
+│   │   └── employees.service.ts
+│   ├── family-members/                  # 👤 Dev 3 — Employee family tab
+│   │   ├── index.ts                     # Routes: CRUD /api/employees/:id/family-members
+│   │   └── family-members.service.ts
+│   ├── bank-accounts/                   # 👤 Dev 3 — Employee bank accounts tab
+│   │   ├── index.ts                     # Routes: CRUD /api/employees/:id/bank-accounts
+│   │   └── bank-accounts.service.ts
+│   ├── previous-jobs/                   # 👤 Dev 3 — Employee work history tab
+│   │   ├── index.ts                     # Routes: CRUD /api/employees/:id/previous-jobs
+│   │   └── previous-jobs.service.ts
+│   ├── party-memberships/               # 👤 Dev 3 — Employee party/union memberships tab
+│   │   ├── index.ts                     # Routes: CRUD /api/employees/:id/party-memberships
+│   │   └── party-memberships.service.ts
+│   ├── allowances/                      # 👤 Dev 3 — Employee allowances tab
+│   │   ├── index.ts                     # Routes: CRUD /api/employees/:id/allowances
+│   │   └── allowances.service.ts
+│   ├── employees-export/                # 👤 Dev 3 — Employee export/print
+│   │   ├── index.ts                     # Routes: GET /api/employees/:id/export, /api/employees/export
+│   │   └── employees-export.service.ts
+│   ├── evaluations/                     # 🎓 Dev 4 — Employee evaluations (reward/discipline)
+│   │   ├── index.ts                     # Routes: CRUD /api/employees/:id/evaluations
+│   │   └── evaluations.service.ts
+│   ├── terminations/                    # 🎓 Dev 4 — Employee termination workflow
+│   │   ├── index.ts                     # Routes: POST /api/employees/:id/terminate
+│   │   └── terminations.service.ts
+│   ├── training-courses/                # 🎓 Dev 4 — Training course lifecycle
+│   │   ├── index.ts                     # Routes: CRUD /api/training-courses + status transitions
+│   │   └── training-courses.service.ts
+│   ├── training-registrations/          # 🎓 Dev 4 — Training registrations
+│   │   ├── index.ts                     # Routes: CRUD /api/training-courses/:id/registrations
+│   │   └── training-registrations.service.ts
+│   ├── training-results/                # 🎓 Dev 4 — Training results
+│   │   ├── index.ts                     # Routes: CRUD /api/training-courses/:id/results
+│   │   └── training-results.service.ts
+│   └── my/                              # Self-service routes (multiple devs contribute)
+│       ├── training.ts                  # 🎓 Dev 4: GET /api/my/training
+│       ├── profile.ts                   # 👤 Dev 3: GET/PUT /api/my/profile
+│       └── org.ts                       # 🏢 Dev 2: GET /api/my/org
+│
+└── index.ts                             # App entry — registers all module routes
+```
+
+> **Note**: Only `auth/` and `config/contract-types/` are currently implemented. All other modules above are planned — create them following the same pattern (see Section 8.1) when you start working on them. **Do NOT create empty folders or files in advance.**
+
+#### Registering Routes
 
 ```typescript
 // apps/backend/src/index.ts
-import { contractTypeRoutes } from "./routes/config/contract-types";
+import { authRoutes } from "./modules/auth";
+import { contractTypeRoutes } from "./modules/config/contract-types";
 
 const app = new Elysia()
   .use(cors({ origin: env.FRONTEND_URL, credentials: true }))
@@ -557,7 +694,7 @@ const app = new Elysia()
   .use(errorPlugin)    // Global error handler — must be first
   .use(dbPlugin)       // DB connection
   .use(authPlugin)     // Auth macro + better-auth handler
-  .use(indexRoutes)    // Health check
+  .get("/", () => ({ status: "ok", timestamp: new Date().toISOString() }))
   .use(authRoutes)     // /auth/login, /auth/logout, /auth/session
   .use(contractTypeRoutes)  // /api/config/contract-types — add your routes here
   .listen(env.PORT);
@@ -566,7 +703,7 @@ const app = new Elysia()
 **Notes**:
 - `errorPlugin` should be registered before all routes — it uses `{ as: "global" }` to catch errors from all child plugins.
 - `authPlugin` provides the `{ auth: true }` option to all subsequent routes. Routes that `.use(authPlugin)` internally will deduplicate (Elysia deduplicates plugins by `name`).
-- Config catalog routes live in `routes/config/<catalog>.ts` (e.g., `config/contract-types.ts`, `config/salary-grades.ts`).
+- When adding a new module, import its routes in `index.ts` and `.use()` it. Module routes live in `modules/<module>/index.ts`.
 
 ### 8.3 Frontend — Route File Pattern (TanStack Router)
 
@@ -744,21 +881,21 @@ All endpoints MUST return this shape:
 **Throw-based errors**: Throw `AppError` subclasses in service layer or route handlers. The global `errorPlugin` catches them and returns the correct HTTP status + JSON body.
 
 ```typescript
-// Available error classes (apps/backend/src/utils/errors.ts):
+// Available error classes (apps/backend/src/common/utils/errors.ts):
 import {
   BadRequestError,    // 400
   UnauthorizedError,  // 401
   ForbiddenError,     // 403
   NotFoundError,      // 404
   ConflictError,      // 409
-} from "../utils/errors";
+} from "../../common/utils/errors";
 
 // Usage in services:
 if (!item) throw new NotFoundError("Không tìm thấy dữ liệu");
 if (exists) throw new ConflictError("Loại hợp đồng đã tồn tại");
 
 // Usage in routes (role guard):
-import { requireRole } from "../utils/role-guard";
+import { requireRole } from "../../common/utils/role-guard";
 requireRole(user.role, "ADMIN", "TCCB");  // throws ForbiddenError if not allowed
 ```
 

@@ -6,9 +6,9 @@ import {
 } from "@hrms/shared";
 import { Elysia } from "elysia";
 import { z } from "zod";
-import { authPlugin } from "../../plugins/auth";
-import * as contractTypeService from "../../services/contract-type.service";
-import { requireRole } from "../../utils/role-guard";
+import { authPlugin } from "../../../common/plugins/auth";
+import { requireRole } from "../../../common/utils/role-guard";
+import * as contractTypeService from "./contract-type.service";
 
 const listQuerySchema = paginationSchema.extend({
   search: z.string().optional(),

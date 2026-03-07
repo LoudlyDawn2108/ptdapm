@@ -1,5 +1,5 @@
-import type { Database } from "../db";
-import { auditLogs } from "../db/schema/audit";
+import type { Database } from "../../db";
+import { auditLogs } from "../../db/schema/audit";
 
 export function withUserContext(userId: string) {
   return {

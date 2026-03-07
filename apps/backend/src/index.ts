@@ -2,12 +2,11 @@ import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import { env } from "@hrms/env";
 import { Elysia } from "elysia";
-import { authPlugin } from "./plugins/auth";
-import { dbPlugin } from "./plugins/db";
-import { errorPlugin } from "./plugins/error-handler";
-import { indexRoutes } from "./routes";
-import { authRoutes } from "./routes/auth";
-import { contractTypeRoutes } from "./routes/config/contract-types";
+import { authPlugin } from "./common/plugins/auth";
+import { dbPlugin } from "./common/plugins/db";
+import { errorPlugin } from "./common/plugins/error-handler";
+import { authRoutes } from "./modules/auth";
+import { contractTypeRoutes } from "./modules/config/contract-types";
 
 const app = new Elysia()
   .use(cors({ origin: env.FRONTEND_URL, credentials: true }))
@@ -15,7 +14,10 @@ const app = new Elysia()
   .use(errorPlugin)
   .use(dbPlugin)
   .use(authPlugin)
-  .use(indexRoutes)
+  .get("/", () => ({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+  }))
   .use(authRoutes)
   .use(contractTypeRoutes)
   .listen(env.PORT);

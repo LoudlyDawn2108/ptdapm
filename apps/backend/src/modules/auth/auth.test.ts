@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
-import { authPlugin } from "../plugins/auth";
-import { dbPlugin } from "../plugins/db";
-import { errorPlugin } from "../plugins/error-handler";
-import { authRoutes } from "../routes/auth";
+import { authPlugin } from "../../common/plugins/auth";
+import { dbPlugin } from "../../common/plugins/db";
+import { errorPlugin } from "../../common/plugins/error-handler";
+import { authRoutes } from "./index";
 
 const app = new Elysia()
   .use(cors({ origin: "http://localhost:5173", credentials: true }))
@@ -150,8 +150,8 @@ describe("Auth Endpoints — Login/Logout/Session", () => {
   });
 
   test("POST /auth/login updates lastLoginAt", async () => {
-    const { db } = await import("../db");
-    const { authUsers } = await import("../db/schema/auth");
+    const { db } = await import("../../db");
+    const { authUsers } = await import("../../db/schema/auth");
     const { eq } = await import("drizzle-orm");
 
     const before = await db
@@ -290,8 +290,8 @@ describe("Authorization — Role Guard", () => {
 
 describe("Locked Account", () => {
   test("locked user gets 403 and session invalidated", async () => {
-    const { db } = await import("../db");
-    const { authUsers } = await import("../db/schema/auth");
+    const { db } = await import("../../db");
+    const { authUsers } = await import("../../db/schema/auth");
     const { eq } = await import("drizzle-orm");
 
     const signInRes = await signIn("admin", "admin123");

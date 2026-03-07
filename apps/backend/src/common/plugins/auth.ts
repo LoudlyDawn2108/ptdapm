@@ -1,6 +1,10 @@
 import { Elysia, status } from "elysia";
+import {
+  buildAuthUser,
+  getSessionFromHeaders,
+  isUserLocked,
+} from "../../modules/auth/auth.service";
 import { auth } from "../auth";
-import { buildAuthUser, getSessionFromHeaders, isUserLocked } from "../services/auth.service";
 
 export const authPlugin = new Elysia({ name: "better-auth" })
   .all("/api/auth/*", (ctx) => {

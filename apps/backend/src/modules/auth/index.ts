@@ -1,7 +1,8 @@
 import { loginSchema } from "@hrms/shared";
 import type { SessionInfo } from "@hrms/shared";
 import Elysia from "elysia";
-import { authPlugin } from "../plugins/auth";
+import { authPlugin } from "../../common/plugins/auth";
+import { requireRole } from "../../common/utils/role-guard";
 import {
   buildAuthUser,
   forwardCookies,
@@ -9,8 +10,7 @@ import {
   signIn,
   signOut,
   updateLastLogin,
-} from "../services/auth.service";
-import { requireRole } from "../utils/role-guard";
+} from "./auth.service";
 
 export const authRoutes = new Elysia({ prefix: "/auth" })
   .use(authPlugin)

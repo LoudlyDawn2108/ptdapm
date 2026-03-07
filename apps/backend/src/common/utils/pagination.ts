@@ -1,7 +1,7 @@
 import type { PaginatedResponse } from "@hrms/shared";
 import { type SQL, sql } from "drizzle-orm";
 import type { PgSelect, PgTable } from "drizzle-orm/pg-core";
-import { db } from "../db";
+import { db } from "../../db";
 
 export function withPagination<T extends PgSelect>(qb: T, page: number, pageSize: number) {
   return qb.limit(pageSize).offset((page - 1) * pageSize);

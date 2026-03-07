@@ -1,8 +1,8 @@
 import type { AuthUser } from "@hrms/shared";
 import { eq } from "drizzle-orm";
-import { auth } from "../auth";
-import { db } from "../db";
-import { authRoles, authUsers, session as sessionTable } from "../db/schema/auth";
+import { auth } from "../../common/auth";
+import { db } from "../../db";
+import { authRoles, authUsers, session as sessionTable } from "../../db/schema/auth";
 
 export async function buildAuthUser(user: {
   id: string;

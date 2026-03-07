@@ -4,10 +4,10 @@ import type {
   UpdateContractTypeInput,
 } from "@hrms/shared";
 import { type SQL, eq, ilike } from "drizzle-orm";
-import { db } from "../db";
-import { type ContractType, contractTypes } from "../db/schema";
-import { ConflictError, NotFoundError } from "../utils/errors";
-import { buildPaginatedResponse, countRows } from "../utils/pagination";
+import { ConflictError, NotFoundError } from "../../../common/utils/errors";
+import { buildPaginatedResponse, countRows } from "../../../common/utils/pagination";
+import { db } from "../../../db";
+import { type ContractType, contractTypes } from "../../../db/schema";
 
 export async function list(
   page: number,
@@ -30,6 +30,10 @@ export async function list(
   ]);
 
   return buildPaginatedResponse(items, total, page, pageSize);
+}
+
+export async function dropdown(): Promise<ContractType[]> {
+  return db.select().from(contractTypes).orderBy(contractTypes.createdAt);
 }
 
 export async function getById(id: string): Promise<ContractType> {
