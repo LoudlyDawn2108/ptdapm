@@ -37,3 +37,14 @@ export class ConflictError extends AppError {
     super(409, message);
   }
 }
+
+export class FieldValidationError<
+  T extends Record<string, unknown> = Record<string, unknown>,
+> extends AppError {
+  constructor(
+    public fields: Partial<Record<keyof T & string, string>>,
+    message = "Dữ liệu không hợp lệ",
+  ) {
+    super(400, message);
+  }
+}

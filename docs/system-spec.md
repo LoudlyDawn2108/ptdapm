@@ -1,200 +1,200 @@
-[I. BẢN KẾ HOẠCH QUẢN LÝ YÊU CẦU 6](#_Toc223525267)
+[I. BẢN KẾ HOẠCH QUẢN LÝ YÊU CẦU 6]
 
-[1.1. Giới thiệu 6](#_Toc223525268)
+[1.1. Giới thiệu 6]
 
-[1.1.1. Mục đích 6](#_Toc223525269)
+[1.1.1. Mục đích 6]
 
-[1.1.2. Phạm vi áp dụng 6](#_Toc223525270)
+[1.1.2. Phạm vi áp dụng 6]
 
-[1.2. Công cụ sử dụng và các kiểu yêu cầu 6](#_Toc223525271)
+[1.2. Công cụ sử dụng và các kiểu yêu cầu 6]
 
-[1.2.1. Các công cụ sử dụng quản lý yêu cầu 6](#_Toc223525272)
+[1.2.1. Các công cụ sử dụng quản lý yêu cầu 6]
 
-[1.2.2. Các kiểu yêu cầu cho dự án 7](#_Toc223525273)
+[1.2.2. Các kiểu yêu cầu cho dự án 7]
 
-[1.2.3. Loại tài liệu yêu cầu cho dự án 7](#_Toc223525274)
+[1.2.3. Loại tài liệu yêu cầu cho dự án 7]
 
-[1.3. Các nhân tố tham gia dự án phần mềm 8](#_Toc223525275)
+[1.3. Các nhân tố tham gia dự án phần mềm 8]
 
-[1.4. Bảng liên lạc với các nhân tố chính (Stakeholder) 9](#_Toc223525276)
+[1.4. Bảng liên lạc với các nhân tố chính (Stakeholder) 9]
 
-[1.4.1. Các nhân tố chính 9](#_Toc223525277)
+[1.4.1. Các nhân tố chính 9]
 
-[1.4.2. Các bên liên quan khác 9](#_Toc223525278)
+[1.4.2. Các bên liên quan khác 9]
 
-[II. THU THẬP YÊU CẦU TỪ CÁC STAKEHOLDERS (Xác định STRQ, FEAT) 10](#_Toc223525279)
+[II. THU THẬP YÊU CẦU TỪ CÁC STAKEHOLDERS (Xác định STRQ, FEAT) 10]
 
-[2.1. Xác định các STRQ, FEAT 10](#_Toc223525280)
+[2.1. Xác định các STRQ, FEAT 10]
 
-[III. MÔ HÌNH HOÁ YÊU CẦU 14](#_Toc223525281)
+[III. MÔ HÌNH HOÁ YÊU CẦU 14]
 
-[3.1. Xác định các Tác nhân (Actors) 14](#_Toc223525282)
+[3.1. Xác định các Tác nhân (Actors) 14]
 
-[3.2. Xác định các Use Case (UCs) 15](#_Toc223525283)
+[3.2. Xác định các Use Case (UCs) 15]
 
-[3.3. Vẽ biểu đồ UCs (UC tổng quát, UC phân rã theo các tác nhân) 17](#_Toc223525284)
+[3.3. Vẽ biểu đồ UCs (UC tổng quát, UC phân rã theo các tác nhân) 17]
 
-[3.3.1. Biểu đồ Use Case tổng quát 17](#_Toc223525285)
+[3.3.1. Biểu đồ Use Case tổng quát 17]
 
-[3.3.2. Biểu đồ Use Case phân rã theo tác nhân 17](#_Toc223525286)
+[3.3.2. Biểu đồ Use Case phân rã theo tác nhân 17]
 
-[IV. Luồng sự kiện và các UCs chính 21](#_Toc223525287)
+[IV. Luồng sự kiện và các UCs chính 21]
 
-[4.1. Use Case: Đăng nhập 21](#_Toc223525288)
+[4.1. Use Case: Đăng nhập 21]
 
-[4.2. Use Case: Đăng xuất 23](#_Toc223525289)
+[4.2. Use Case: Đăng xuất 23]
 
-[4.3. Use Case: Đổi mật khẩu 25](#_Toc223525290)
+[4.3. Use Case: Đổi mật khẩu 25]
 
-[4.4. Use Case: Tìm kiếm tài khoản người dùng 26](#_Toc223525291)
+[4.4. Use Case: Tìm kiếm tài khoản người dùng 26]
 
-[4.5. Use Case: Thêm mới tài khoản người dùng 28](#_Toc223525292)
+[4.5. Use Case: Thêm mới tài khoản người dùng 28]
 
-[4.6. Use Case: Sửa thông tin tài khoản người dùng 30](#_Toc223525293)
+[4.6. Use Case: Sửa thông tin tài khoản người dùng 30]
 
-[4.7. Use Case: Phân quyền tài khoản người dùng 31](#_Toc223525294)
+[4.7. Use Case: Phân quyền tài khoản người dùng 31]
 
-[4.8. Use Case: Thay đổi trạng thái cho tài khoản người dùng 33](#_Toc223525295)
+[4.8. Use Case: Thay đổi trạng thái cho tài khoản người dùng 33]
 
-[4.9. Use Case: Tạo mới đơn vị tổ chức nhân sự 35](#_Toc223525296)
+[4.9. Use Case: Tạo mới đơn vị tổ chức nhân sự 35]
 
-[4.10. Use Case: Sửa thông tin đơn vị tổ chức nhân sự 37](#_Toc223525297)
+[4.10. Use Case: Sửa thông tin đơn vị tổ chức nhân sự 37]
 
-[4.11. Use Case: Cập nhật trạng thái tình trạng cho đơn vị tổ chức nhân sự 39](#_Toc223525298)
+[4.11. Use Case: Cập nhật trạng thái tình trạng cho đơn vị tổ chức nhân sự 39]
 
-[4.12. Use Case: Thêm mới danh mục hệ số lương 43](#_Toc223525299)
+[4.12. Use Case: Thêm mới danh mục hệ số lương 43]
 
-[4.13. Use Case: Sửa danh mục hệ số lương 45](#_Toc223525300)
+[4.13. Use Case: Sửa danh mục hệ số lương 45]
 
-[4.14. Use Case: Xóa danh mục hệ số lương 47](#_Toc223525301)
+[4.14. Use Case: Xóa danh mục hệ số lương 47]
 
-[4.15. Use Case: Ngừng sử dụng danh mục hệ số lương 48](#_Toc223525302)
+[4.15. Use Case: Ngừng sử dụng danh mục hệ số lương 48]
 
-[4.16. Use Case: Thêm mới danh mục loại phụ cấp 50](#_Toc223525303)
+[4.16. Use Case: Thêm mới danh mục loại phụ cấp 50]
 
-[4.17. Use Case: Sửa danh mục loại phụ cấp 52](#_Toc223525304)
+[4.17. Use Case: Sửa danh mục loại phụ cấp 52]
 
-[4.18. Use Case: Ngừng sử dụng danh mục loại phụ cấp 53](#_Toc223525305)
+[4.18. Use Case: Ngừng sử dụng danh mục loại phụ cấp 53]
 
-[4.19. Use Case: Thêm mới danh mục loại hợp đồng 55](#_Toc223525306)
+[4.19. Use Case: Thêm mới danh mục loại hợp đồng 55]
 
-[4.20. Use Case: Sửa danh mục loại hợp đồng 57](#_Toc223525307)
+[4.20. Use Case: Sửa danh mục loại hợp đồng 57]
 
-[4.21. Use Case: Ngừng sử dụng danh mục loại hợp đồng 59](#_Toc223525308)
+[4.21. Use Case: Ngừng sử dụng danh mục loại hợp đồng 59]
 
-[4.22. Use Case: Thêm mới Hợp đồng lao động 60](#_Toc223525309)
+[4.22. Use Case: Thêm mới Hợp đồng lao động 60]
 
-[4.23. Use Case: Tìm kiếm hồ sơ nhân sự 63](#_Toc223525310)
+[4.23. Use Case: Tìm kiếm hồ sơ nhân sự 63]
 
-[4.24. Use Case: Lọc danh sách hồ sơ nhân sự 64](#_Toc223525311)
+[4.24. Use Case: Lọc danh sách hồ sơ nhân sự 64]
 
-[4.25. Use Case: Thêm mới Hồ sơ nhân sự 66](#_Toc223525312)
+[4.25. Use Case: Thêm mới Hồ sơ nhân sự 66]
 
-[4.26. Use Case: Chỉnh sửa trong chi tiết hồ sơ nhân sự 69](#_Toc223525313)
+[4.26. Use Case: Chỉnh sửa trong chi tiết hồ sơ nhân sự 69]
 
-[4.27. Use Case: Đánh dấu thôi việc nhân sự 72](#_Toc223525314)
+[4.27. Use Case: Đánh dấu thôi việc nhân sự 72]
 
-[4.28. Use Case: Xem Chi tiết thông tin hồ sơ nhân sự 74](#_Toc223525315)
+[4.28. Use Case: Xem Chi tiết thông tin hồ sơ nhân sự 74]
 
-[4.29. Use Case: Ghi nhận đánh giá cho nhân sự 75](#_Toc223525316)
+[4.29. Use Case: Ghi nhận đánh giá cho nhân sự 75]
 
-[4.30. Use Case: Bổ nhiệm nhân sự cho đơn vị tổ chức nhân sự 77](#_Toc223525317)
+[4.30. Use Case: Bổ nhiệm nhân sự cho đơn vị tổ chức nhân sự 77]
 
-[4.31. Use Case: Bãi nhiệm nhân sự khỏi đơn vị tổ chức nhân sự 79](#_Toc223525318)
+[4.31. Use Case: Bãi nhiệm nhân sự khỏi đơn vị tổ chức nhân sự 79]
 
-[4.32. Use Case: Xem chi tiết thông tin đơn vị tổ chức nhân sự 81](#_Toc223525319)
+[4.32. Use Case: Xem chi tiết thông tin đơn vị tổ chức nhân sự 81]
 
-[4.33. Use Case: Mở khóa đào tạo cho cán bộ giảng viên 82](#_Toc223525320)
+[4.33. Use Case: Mở khóa đào tạo cho cán bộ giảng viên 82]
 
-[4.34. Use Case: Sửa thông tin khóa đào tạo đã mở 84](#_Toc223525321)
+[4.34. Use Case: Sửa thông tin khóa đào tạo đã mở 84]
 
-[4.35. Use Case: Xem chi tiết thông tin khóa đào tạo đã mở 86](#_Toc223525322)
+[4.35. Use Case: Xem chi tiết thông tin khóa đào tạo đã mở 86]
 
-[4.36. Use Case: Ghi nhận kết quả đào tạo của cán bộ giảng viên 88](#_Toc223525323)
+[4.36. Use Case: Ghi nhận kết quả đào tạo của cán bộ giảng viên 88]
 
-[4.37. Use Case: Xem chi tiết các thống kê 91](#_Toc223525324)
+[4.37. Use Case: Xem chi tiết các thống kê 91]
 
-[4.38. Use Case: Xem các thông tin trong hồ sơ cá nhân của nhân sự 92](#_Toc223525325)
+[4.38. Use Case: Xem các thông tin trong hồ sơ cá nhân của nhân sự 92]
 
-[4.39. Use Case: Xem thông tin chi tiết đơn vị đang công tác 94](#_Toc223525326)
+[4.39. Use Case: Xem thông tin chi tiết đơn vị đang công tác 94]
 
-[4.40. Use Case: Đăng ký tham gia khóa đào tạo 95](#_Toc223525327)
+[4.40. Use Case: Đăng ký tham gia khóa đào tạo 95]
 
-[4.41. Use Case: Xem danh sách các khóa đào tạo đã đăng ký 97](#_Toc223525328)
+[4.41. Use Case: Xem danh sách các khóa đào tạo đã đăng ký 97]
 
-[4.42. Use Case: Xem nhật ký hệ thống (Audit Log) 99](#_Toc223525329)
+[4.42. Use Case: Xem nhật ký hệ thống (Audit Log) 99]
 
-[V. XÁC ĐỊNH CÁC LỚP, XÂY DỰNG BIỂU ĐỒ LỚP 101](#_Toc223525330)
+[V. XÁC ĐỊNH CÁC LỚP, XÂY DỰNG BIỂU ĐỒ LỚP 101]
 
-[5.1. Xác định các lớp — Biểu đồ lớp Hệ thống HRMS 101](#_Toc223525331)
+[5.1. Xác định các lớp — Biểu đồ lớp Hệ thống HRMS 101]
 
-[5.1.1. VaiTro (Vai trò) 101](#_Toc223525332)
+[5.1.1. VaiTro (Vai trò) 101]
 
-[5.1.2. TrangThaiTaiKhoan (Trạng thái tài khoản) 102](#_Toc223525333)
+[5.1.2. TrangThaiTaiKhoan (Trạng thái tài khoản) 102]
 
-[5.1.3. TrangThaiLamViec (Trạng thái làm việc) 102](#_Toc223525334)
+[5.1.3. TrangThaiLamViec (Trạng thái làm việc) 102]
 
-[5.1.4. TrangThaiHopDongNS (Trạng thái hợp đồng nhân sự) 102](#_Toc223525335)
+[5.1.4. TrangThaiHopDongNS (Trạng thái hợp đồng nhân sự) 102]
 
-[5.1.5. LoaiDonVi (Loại đơn vị) 102](#_Toc223525336)
+[5.1.5. LoaiDonVi (Loại đơn vị) 102]
 
-[5.1.6. TrangThaiDonVi (Trạng thái đơn vị) 102](#_Toc223525337)
+[5.1.6. TrangThaiDonVi (Trạng thái đơn vị) 102]
 
-[5.1.7. TrangThaiHopDong (Trạng thái hợp đồng) 103](#_Toc223525338)
+[5.1.7. TrangThaiHopDong (Trạng thái hợp đồng) 103]
 
-[5.1.8. TrangThaiDanhMuc (Trạng thái danh mục) 103](#_Toc223525339)
+[5.1.8. TrangThaiDanhMuc (Trạng thái danh mục) 103]
 
-[5.1.9. TrangThaiKhoaDaoTao (Trạng thái khóa đào tạo) 103](#_Toc223525340)
+[5.1.9. TrangThaiKhoaDaoTao (Trạng thái khóa đào tạo) 103]
 
-[5.1.10. TrangThaiThamGia (Trạng thái tham gia) 103](#_Toc223525341)
+[5.1.10. TrangThaiThamGia (Trạng thái tham gia) 103]
 
-[5.1.11. TaiKhoan (Tài khoản) 103](#_Toc223525342)
+[5.1.11. TaiKhoan (Tài khoản) 103]
 
-[5.1.12. NhanSu (Nhân sự) 104](#_Toc223525343)
+[5.1.12. NhanSu (Nhân sự) 104]
 
-[5.1.13. ThongTinNguoiNuocNgoai (Thông tin người nước ngoài) 104](#_Toc223525344)
+[5.1.13. ThongTinNguoiNuocNgoai (Thông tin người nước ngoài) 104]
 
-[5.1.14. ThongTinGiaDinh (Thông tin gia đình) 105](#_Toc223525345)
+[5.1.14. ThongTinGiaDinh (Thông tin gia đình) 105]
 
-[5.1.15. ThongTinNganHang (Thông tin ngân hàng) 105](#_Toc223525346)
+[5.1.15. ThongTinNganHang (Thông tin ngân hàng) 105]
 
-[5.1.16. QuaTrinhCongTac (Quá trình công tác) 105](#_Toc223525347)
+[5.1.16. QuaTrinhCongTac (Quá trình công tác) 105]
 
-[5.1.17. ThongTinDangDoan (Thông tin Đảng / Đoàn) 105](#_Toc223525348)
+[5.1.17. ThongTinDangDoan (Thông tin Đảng / Đoàn) 105]
 
-[5.1.18. BangCap (Bằng cấp) 105](#_Toc223525349)
+[5.1.18. BangCap (Bằng cấp) 105]
 
-[5.1.19. ChungChi (Chứng chỉ) 106](#_Toc223525350)
+[5.1.19. ChungChi (Chứng chỉ) 106]
 
-[5.1.20. DonViToChuc (Đơn vị tổ chức) 106](#_Toc223525351)
+[5.1.20. DonViToChuc (Đơn vị tổ chức) 106]
 
-[5.1.21. QuyetDinhDonVi (Quyết định đơn vị) 106](#_Toc223525352)
+[5.1.21. QuyetDinhDonVi (Quyết định đơn vị) 106]
 
-[5.1.22. BoNhiem (Bổ nhiệm) 107](#_Toc223525353)
+[5.1.22. BoNhiem (Bổ nhiệm) 107]
 
-[5.1.23. HeSoLuong (Hệ số lương) 107](#_Toc223525354)
+[5.1.23. HeSoLuong (Hệ số lương) 107]
 
-[5.1.24. LoaiPhuCap (Loại phụ cấp) 107](#_Toc223525355)
+[5.1.24. LoaiPhuCap (Loại phụ cấp) 107]
 
-[5.1.25. LoaiHopDong (Loại hợp đồng) 107](#_Toc223525356)
+[5.1.25. LoaiHopDong (Loại hợp đồng) 107]
 
-[5.1.26. HopDongLaoDong (Hợp đồng lao động) 107](#_Toc223525357)
+[5.1.26. HopDongLaoDong (Hợp đồng lao động) 107]
 
-[5.1.27. PhuLucHopDong (Phụ lục hợp đồng) 108](#_Toc223525358)
+[5.1.27. PhuLucHopDong (Phụ lục hợp đồng) 108]
 
-[5.1.28. DanhGia (Đánh giá) — *<>* 108](#_Toc223525359)
+[5.1.28. DanhGia (Đánh giá) — *<>* 108]
 
-[5.1.29. KhenThuong (Khen thưởng) — *kế thừa DanhGia* 108](#_Toc223525360)
+[5.1.29. KhenThuong (Khen thưởng) — *kế thừa DanhGia* 108]
 
-[5.1.30. KyLuat (Kỷ luật) — *kế thừa DanhGia* 108](#_Toc223525361)
+[5.1.30. KyLuat (Kỷ luật) — *kế thừa DanhGia* 108]
 
-[5.1.31. KhoaDaoTao (Khóa đào tạo) 109](#_Toc223525362)
+[5.1.31. KhoaDaoTao (Khóa đào tạo) 109]
 
-[5.1.32. DangKyDaoTao (Đăng ký đào tạo) 109](#_Toc223525363)
+[5.1.32. DangKyDaoTao (Đăng ký đào tạo) 109]
 
-[5.1.33. NhatKyHeThong (Nhật ký hệ thống) 109](#_Toc223525364)
+[5.1.33. NhatKyHeThong (Nhật ký hệ thống) 109]
 
-[5.2. Xây dựng biểu đồ lớp 112](#_Toc223525365)
+[5.2. Xây dựng biểu đồ lớp 112]
 
 # I. BẢN KẾ HOẠCH QUẢN LÝ YÊU CẦU
 
@@ -365,8 +365,6 @@ Từ các FEAT đã được phân tách và xác định, chi tiết thành cá
 
 ### 3.3.1. Biểu đồ Use Case tổng quát
 
-![placeholder](./nhom8 (2) _images/image_002.png)
-
 ### 3.3.2. Biểu đồ Use Case phân rã theo tác nhân
 
 **a. Phân rã cho Quản trị viên (Admin)**
@@ -380,7 +378,6 @@ Từ các FEAT đã được phân tách và xác định, chi tiết thành cá
   + Nhóm UC Quản lý Đơn vị tổ chức
   + Xem nhật ký hệ thống (Audit Log)
 
-![placeholder](./nhom8 (2) _images/image_003.png)
 
 **b. Phân rã cho Phòng Tổ chức - Cán bộ**
 
@@ -395,7 +392,6 @@ Từ các FEAT đã được phân tách và xác định, chi tiết thành cá
   + Nhóm UC Cấu hình danh mục (lương, phụ cấp, HD)
   + Xem báo cáo thống kê, xem chi tiết đơn vị
 
-![placeholder](./nhom8 (2) _images/image_004.png)
 
 **c. Phân rã cho Phòng Tài chính - Kế toán**
 
@@ -404,8 +400,6 @@ Từ các FEAT đã được phân tách và xác định, chi tiết thành cá
   + Đăng nhập / Đăng xuất / Đổi mật khẩu
   + Chế độ xem: Tìm kiếm, Xem và Lọc chi tiết hồ sơ nhân sự
   + Xem chi tiết các thống kê
-
-![placeholder](./nhom8 (2) _images/image_005.png)
 
 **d. Phân rã cho Người dùng (Cán bộ/Giảng viên/Nhân viên)**
 
@@ -416,8 +410,6 @@ Từ các FEAT đã được phân tách và xác định, chi tiết thành cá
   + Xem thông tin chi tiết đơn vị công tác
   + Đăng ký tham gia đào tạo
   + Xem danh sách các khóa đào tạo đã đăng ký
-
-![placeholder](./nhom8 (2) _images/image_006.png)
 
 # IV. Luồng sự kiện và các UCs chính
 
@@ -1462,7 +1454,3 @@ Từ các FEAT đã được phân tách và xác định, chi tiết thành cá
 | 21 | DangKyDaoTao | 0..\* → 1 | NhanSu | Người đăng ký đào tạo |
 | 22 | DangKyDaoTao | 0..\* → 1 | KhoaDaoTao | Đăng ký khóa đào tạo |
 | 23 | TaiKhoan | 1 → 0..\* | NhatKyHeThong | Tài khoản tạo nhiều nhật ký |
-
-## 5.2. Xây dựng biểu đồ lớp
-
-![placeholder](./nhom8 (2) _images/image_007.png)

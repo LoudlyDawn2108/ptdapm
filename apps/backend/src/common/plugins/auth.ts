@@ -6,27 +6,32 @@ import {
 } from "../../modules/auth/auth.service";
 import { auth } from "../auth";
 
-export const authPlugin = new Elysia({ name: "better-auth" })
-  .all("/api/auth/*", (ctx) => {
+// --- Better-auth catch-all handler — register ONCE at app level (src/index.ts)
+export const betterAuthHandler = new Elysia({ name: "better-auth-handler" }).all(
+  "/api/auth/*",
+  (ctx) => {
     if (["POST", "GET"].includes(ctx.request.method)) {
       return auth.handler(ctx.request);
     }
     return new Response("Method Not Allowed", { status: 405 });
-  })
-  .macro({
-    auth: {
-      async resolve({ request: { headers } }) {
-        const result = await getSessionFromHeaders(headers);
+  },
+);
 
-        if (!result) return status(401, "Unauthorized");
+// --- Auth macro — safe to .use() in every module (no routes, only macro)
+export const authPlugin = new Elysia({ name: "auth-macro" }).macro({
+  auth: {
+    async resolve({ request: { headers } }) {
+      const result = await getSessionFromHeaders(headers);
 
-        const { user, session } = result;
+      if (!result) return status(401, "Unauthorized");
 
-        if (await isUserLocked(user.id, user.status)) {
-          return status(403, "Account is locked");
-        }
+      const { user, session } = result;
 
-        return { user: await buildAuthUser(user), session };
-      },
+      if (await isUserLocked(user.id, user.status)) {
+        return status(403, "Account is locked");
+      }
+
+      return { user: await buildAuthUser(user), session };
     },
-  });
+  },
+});

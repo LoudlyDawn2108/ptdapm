@@ -1,20 +1,20 @@
 import { z } from "zod";
 
 export const paginationSchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  page: z.coerce.number({ error: "Page must be a number" }).int().min(1).default(1),
+  pageSize: z.coerce.number({ error: "Page size must be a number" }).int().min(1).max(100).default(20),
 });
 
 export type PaginationQuery = z.infer<typeof paginationSchema>;
 
 export const idParamSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
 });
 
 export type IdParam = z.infer<typeof idParamSchema>;
 
 export const employeeIdParamSchema = z.object({
-  employeeId: z.string().uuid(),
+  employeeId: z.uuid(),
 });
 
 export type EmployeeIdParam = z.infer<typeof employeeIdParamSchema>;

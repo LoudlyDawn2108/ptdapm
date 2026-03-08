@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
-import { authPlugin } from "../../common/plugins/auth";
+import { authPlugin, betterAuthHandler } from "../../common/plugins/auth";
 import { dbPlugin } from "../../common/plugins/db";
 import { errorPlugin } from "../../common/plugins/error-handler";
 import { authRoutes } from "./index";
@@ -10,6 +10,7 @@ const app = new Elysia()
   .use(cors({ origin: "http://localhost:5173", credentials: true }))
   .use(errorPlugin)
   .use(dbPlugin)
+  .use(betterAuthHandler)
   .use(authPlugin)
   .use(authRoutes);
 

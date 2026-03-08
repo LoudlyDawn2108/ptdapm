@@ -4,3 +4,17 @@ export interface PaginatedResponse<T> {
   page: number;
   pageSize: number;
 }
+
+// --- Error response discriminated union (frontend uses this to pick toast vs inline field errors)
+export interface ToastErrorResponse {
+  type: "toast";
+  error: string;
+}
+
+export interface FieldErrorResponse {
+  type: "field";
+  error: string;
+  fields: Record<string, string>;
+}
+
+export type ErrorResponse = ToastErrorResponse | FieldErrorResponse;

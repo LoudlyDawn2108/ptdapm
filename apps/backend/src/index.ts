@@ -1,18 +1,30 @@
 import { cors } from "@elysiajs/cors";
-import { swagger } from "@elysiajs/swagger";
+import { openapi } from "@elysiajs/openapi";
 import { env } from "@hrms/env";
 import { Elysia } from "elysia";
-import { authPlugin } from "./common/plugins/auth";
+import z from "zod";
+import { authPlugin, betterAuthHandler } from "./common/plugins/auth";
 import { dbPlugin } from "./common/plugins/db";
 import { errorPlugin } from "./common/plugins/error-handler";
+import { globalRateLimit, loginRateLimit } from "./common/plugins/rate-limit";
 import { authRoutes } from "./modules/auth";
 import { contractTypeRoutes } from "./modules/config/contract-types";
 
 const app = new Elysia()
   .use(cors({ origin: env.FRONTEND_URL, credentials: true }))
-  .use(swagger())
+  .use(
+    openapi({
+      mapJsonSchema: {
+        zod: z.toJSONSchema,
+      },
+      exclude: { paths: ["/api/auth/*"] }, // Better-auth handles its own docs
+    }),
+  )
   .use(errorPlugin)
+  .use(globalRateLimit)
+  .use(loginRateLimit)
   .use(dbPlugin)
+  .use(betterAuthHandler)
   .use(authPlugin)
   .get("/", () => ({
     status: "ok",
