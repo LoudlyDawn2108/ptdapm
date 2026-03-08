@@ -5,6 +5,12 @@ export interface PaginatedResponse<T> {
   pageSize: number;
 }
 
+// --- Dropdown option (used by lazy-loaded combobox/autocomplete selects)
+export interface DropdownOption {
+  value: string;
+  label: string;
+}
+
 // --- Error response discriminated union (frontend uses this to pick toast vs inline field errors)
 export interface ToastErrorResponse {
   type: "toast";

@@ -1,9 +1,11 @@
 import type {
   CreateContractTypeInput,
+  DropdownOption,
   PaginatedResponse,
   UpdateContractTypeInput,
 } from "@hrms/shared";
 import { type SQL, eq, ilike } from "drizzle-orm";
+import { queryDropdown } from "../../../common/utils/dropdown";
 import { ConflictError, NotFoundError } from "../../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../../common/utils/pagination";
 import { db } from "../../../db";
@@ -32,8 +34,17 @@ export async function list(
   return buildPaginatedResponse(items, total, page, pageSize);
 }
 
-export async function dropdown(): Promise<ContractType[]> {
-  return db.select().from(contractTypes).orderBy(contractTypes.createdAt);
+export async function dropdown(search?: string, limit?: number): Promise<DropdownOption[]> {
+  return queryDropdown(
+    {
+      table: contractTypes,
+      valueColumn: contractTypes.id,
+      labelColumns: [contractTypes.contractTypeName],
+      statusColumn: contractTypes.status,
+    },
+    search,
+    limit,
+  );
 }
 
 export async function getById(id: string): Promise<ContractType> {

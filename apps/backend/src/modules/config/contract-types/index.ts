@@ -1,5 +1,6 @@
 import {
   createContractTypeSchema,
+  dropdownQuerySchema,
   idParamSchema,
   paginationSchema,
   updateContractTypeSchema,
@@ -16,6 +17,14 @@ const listQuerySchema = paginationSchema.extend({
 
 export const contractTypeRoutes = new Elysia({ prefix: "/api/config/contract-types" })
   .use(authPlugin)
+  .get(
+    "/dropdown",
+    async ({ query }) => {
+      const data = await contractTypeService.dropdown(query.search, query.limit);
+      return { data };
+    },
+    { auth: true, query: dropdownQuerySchema },
+  )
   .get(
     "/",
     async ({ query }) => {
