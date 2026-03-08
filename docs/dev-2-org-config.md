@@ -85,4 +85,4 @@ Dev 2 must deliver **Org Unit API** and **Config Catalog APIs** in Phase 1 — o
 - **Org unit tree UI**: Render hierarchical tree + drag-and-drop or manual move
 - **Config catalog pattern**: Reusable CRUD pattern for all config tables (template for other devs)
 - **Statistics dashboard**: Aggregation queries, chart components
-- **Shared dropdown data APIs**: `/api/org-units/select`, `/api/config/*/select` (used by all)
+- **Shared dropdown data APIs**: `/api/org-units/dropdown`, `/api/config/*/dropdown` (used by all)
