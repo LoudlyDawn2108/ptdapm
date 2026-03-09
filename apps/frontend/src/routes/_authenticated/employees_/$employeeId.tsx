@@ -179,7 +179,7 @@ function EmployeeDetailLayout() {
     setDeleteLoading(false);
     setConfirmOpen(false);
     if (response.data?.data) {
-      navigate({ to: "/_authenticated/employees" });
+      navigate({ to: "/employees" });
     }
   };
 
