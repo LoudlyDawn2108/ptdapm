@@ -108,15 +108,34 @@ function EmployeeAllowancesTab() {
 
   React.useEffect(() => {
     let active = true;
-    const load = async () => {
-      await loadItems();
-    };
-    load();
+    setLoading(true);
+    employeesApi.$employeeId.allowances
+      .get({ params: { employeeId }, query: queryParams })
+      .then((response) => {
+        if (!active) return;
+        const payload = response.data?.data;
+        if (payload) {
+          setItems(payload.items ?? []);
+          setPagination((prev) => ({
+            ...prev,
+            page: payload.page ?? prev.page,
+            pageSize: payload.pageSize ?? prev.pageSize,
+            total: payload.total ?? 0,
+          }));
+        } else {
+          setItems([]);
+          setPagination((prev) => ({ ...prev, total: 0 }));
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setLoading(false);
+      });
     return () => {
       active = false;
-      if (!active) return;
     };
-  }, [loadItems]);
+  }, [employeeId, queryParams]);
 
   const columns = React.useMemo<Column<AllowanceItem>[]>(
     () => [
