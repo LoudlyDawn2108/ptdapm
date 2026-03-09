@@ -79,37 +79,38 @@ function EmployeeWorkHistoryTab() {
     [pagination.page, pagination.pageSize],
   );
 
-  const loadItems = React.useCallback(async () => {
-    setLoading(true);
-    const response = await employeesApi.$employeeId["previous-jobs"].get({
-      params: { employeeId },
-      query: queryParams,
-    });
-    const payload = response.data?.data;
-    if (payload) {
-      setItems(payload.items ?? []);
-      setPagination((prev) => ({
-        ...prev,
-        page: payload.page ?? prev.page,
-        pageSize: payload.pageSize ?? prev.pageSize,
-        total: payload.total ?? 0,
-      }));
-    } else {
-      setItems([]);
-      setPagination((prev) => ({ ...prev, total: 0 }));
-    }
-    setLoading(false);
-  }, [employeeId, queryParams]);
+  const loadItems = React.useCallback(
+    async (getActive?: () => boolean) => {
+      setLoading(true);
+      const response = await employeesApi.$employeeId["previous-jobs"].get({
+        params: { employeeId },
+        query: queryParams,
+      });
+      if (getActive?.() === false) return;
+      const payload = response.data?.data;
+      if (payload) {
+        setItems(payload.items ?? []);
+        setPagination((prev) => ({
+          ...prev,
+          page: payload.page ?? prev.page,
+          pageSize: payload.pageSize ?? prev.pageSize,
+          total: payload.total ?? 0,
+        }));
+      } else {
+        setItems([]);
+        setPagination((prev) => ({ ...prev, total: 0 }));
+      }
+      if (getActive?.() === false) return;
+      setLoading(false);
+    },
+    [employeeId, queryParams],
+  );
 
   React.useEffect(() => {
     let active = true;
-    const load = async () => {
-      await loadItems();
-    };
-    load();
+    loadItems(() => active);
     return () => {
       active = false;
-      if (!active) return;
     };
   }, [loadItems]);
 
