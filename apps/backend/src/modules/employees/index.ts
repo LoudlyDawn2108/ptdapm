@@ -43,12 +43,12 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
     { auth: true, query: listQuerySchema },
   )
   .get(
-    "/:id",
+    "/:employeeId",
     async ({ params }) => {
-      const data = await employeeService.getAggregateById(params.id);
+      const data = await employeeService.getAggregateById(params.employeeId);
       return { data };
     },
-    { auth: true, params: idParamSchema },
+    { auth: true, params: z.object({ employeeId: z.string().uuid() }) },
   )
   .post(
     "/",
@@ -60,20 +60,20 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
     { auth: true, body: createEmployeeSchema },
   )
   .put(
-    "/:id",
+    "/:employeeId",
     async ({ params, body, user }) => {
       requireRole(user.role, "ADMIN", "TCCB");
-      const data = await employeeService.update(params.id, body);
+      const data = await employeeService.update(params.employeeId, body);
       return { data };
     },
-    { auth: true, params: idParamSchema, body: updateEmployeeSchema },
+    { auth: true, params: z.object({ employeeId: z.string().uuid() }), body: updateEmployeeSchema },
   )
   .delete(
-    "/:id",
+    "/:employeeId",
     async ({ params, user }) => {
       requireRole(user.role, "ADMIN", "TCCB");
-      const data = await employeeService.remove(params.id);
+      const data = await employeeService.remove(params.employeeId);
       return { data };
     },
-    { auth: true, params: idParamSchema },
+    { auth: true, params: z.object({ employeeId: z.string().uuid() }) },
   );

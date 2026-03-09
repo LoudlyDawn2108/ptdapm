@@ -126,11 +126,11 @@ export const employeeExportRoutes = new Elysia({ prefix: "/api/employees" })
     { auth: true, query: exportListQuerySchema },
   )
   .get(
-    "/:id/export",
+    "/:employeeId/export",
     async ({ params, query }) => {
       ensureCsvFormat(query.format);
 
-      const aggregate = await employeeService.getAggregateById(params.id);
+      const aggregate = await employeeService.getAggregateById(params.employeeId);
       const employee = aggregate.employee;
 
       const employeeHeaders = [
@@ -224,9 +224,9 @@ export const employeeExportRoutes = new Elysia({ prefix: "/api/employees" })
       return new Response(csv, {
         headers: {
           "Content-Type": "text/csv",
-          "Content-Disposition": `attachment; filename="employee-${params.id}.csv"`,
+          "Content-Disposition": `attachment; filename="employee-${params.employeeId}.csv"`,
         },
       });
     },
-    { auth: true, params: idParamSchema, query: exportDetailQuerySchema },
+    { auth: true, params: z.object({ employeeId: z.string().uuid() }), query: exportDetailQuerySchema },
   );
