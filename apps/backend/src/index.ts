@@ -7,7 +7,7 @@ import { authPlugin, betterAuthHandler } from "./common/plugins/auth";
 import { dbPlugin } from "./common/plugins/db";
 import { errorPlugin } from "./common/plugins/error-handler";
 import { globalRateLimit, loginRateLimit } from "./common/plugins/rate-limit";
-import { allowanceRoutes } from "./modules/allowances";
+import { accountRoutes } from "./modules/accounts";
 import { authRoutes } from "./modules/auth";
 import { bankAccountRoutes } from "./modules/bank-accounts";
 import { contractTypeRoutes } from "./modules/config/contract-types";
@@ -42,10 +42,7 @@ const app = new Elysia()
   .use(familyMemberRoutes)
   .use(bankAccountRoutes)
   .use(contractTypeRoutes)
-  .use(employeeExportRoutes)
-  .use(employeeRoutes)
-  .use(previousJobRoutes)
-  .use(partyMembershipRoutes)
+  .use(accountRoutes)
   .listen(env.PORT);
 
 console.log(`🦊 Server running at http://localhost:${app.server?.port}`);

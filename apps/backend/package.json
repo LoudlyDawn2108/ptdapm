@@ -18,10 +18,10 @@
     "seed:roles": "bun run --env-file ../../.env src/db/seed/roles.ts",
     "seed:users": "bun run --env-file ../../.env src/db/seed/users.ts",
     "seed": "bun run seed:roles && bun run seed:users",
-    "db:push": "bun --env-file ../../.env x drizzle-kit push",
-    "db:generate": "bun --env-file ../../.env x drizzle-kit generate",
-    "db:migrate": "bun --env-file ../../.env x drizzle-kit migrate",
-    "db:studio": "bun --env-file ../../.env x drizzle-kit studio"
+    "db:push": "bun run --bun --env-file ../../.env drizzle-kit push",
+    "db:generate": "bun run --bun --env-file ../../.env drizzle-kit generate",
+    "db:migrate": "bun run --bun --env-file ../../.env drizzle-kit migrate",
+    "db:studio": "bun run --bun --env-file ../../.env drizzle-kit studio"
   },
   "dependencies": {
     "@elysiajs/cors": "^1.4.1",
@@ -31,12 +31,14 @@
     "better-auth": "1.5.4",
     "drizzle-orm": "0.38.4",
     "elysia": "^1.4.27",
+    "nodemailer": "^8.0.2",
     "postgres": "3.4.5",
     "zod": "4.3.6"
   },
   "devDependencies": {
+    "@types/nodemailer": "^7.0.11",
     "bun-types": "1.2.4",
-    "drizzle-kit": "0.30.4",
+    "drizzle-kit": "0.30.6",
     "typescript": "5.7.3"
   }
 }
