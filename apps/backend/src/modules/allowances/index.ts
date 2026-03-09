@@ -1,7 +1,7 @@
 import {
   createEmployeeAllowanceSchema,
   employeeIdParamSchema,
-  idParamSchema,
+  employeeSubResourceParamSchema,
   paginationSchema,
   updateEmployeeAllowanceSchema,
 } from "@hrms/shared";
@@ -36,16 +36,16 @@ export const allowanceRoutes = new Elysia({
   .put(
     "/:id",
     async ({ params, body }) => {
-      const data = await allowanceService.update(params.id, body);
+      const data = await allowanceService.update(params.employeeId, params.id, body);
       return { data };
     },
-    { auth: true, params: idParamSchema, body: updateEmployeeAllowanceSchema },
+    { auth: true, params: employeeSubResourceParamSchema, body: updateEmployeeAllowanceSchema },
   )
   .delete(
     "/:id",
     async ({ params }) => {
-      const data = await allowanceService.remove(params.id);
+      const data = await allowanceService.remove(params.employeeId, params.id);
       return { data };
     },
-    { auth: true, params: idParamSchema },
+    { auth: true, params: employeeSubResourceParamSchema },
   );

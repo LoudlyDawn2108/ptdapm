@@ -1,7 +1,7 @@
 import {
   createEmployeePartyMembershipSchema,
   employeeIdParamSchema,
-  idParamSchema,
+  employeeSubResourceParamSchema,
   paginationSchema,
   updateEmployeePartyMembershipSchema,
 } from "@hrms/shared";
@@ -36,20 +36,20 @@ export const partyMembershipRoutes = new Elysia({
   .put(
     "/:id",
     async ({ params, body }) => {
-      const data = await partyMembershipService.update(params.id, body);
+      const data = await partyMembershipService.update(params.employeeId, params.id, body);
       return { data };
     },
     {
       auth: true,
-      params: employeeIdParamSchema.merge(idParamSchema),
+      params: employeeSubResourceParamSchema,
       body: updateEmployeePartyMembershipSchema,
     },
   )
   .delete(
     "/:id",
     async ({ params }) => {
-      const data = await partyMembershipService.remove(params.id);
+      const data = await partyMembershipService.remove(params.employeeId, params.id);
       return { data };
     },
-    { auth: true, params: employeeIdParamSchema.merge(idParamSchema) },
+    { auth: true, params: employeeSubResourceParamSchema },
   );

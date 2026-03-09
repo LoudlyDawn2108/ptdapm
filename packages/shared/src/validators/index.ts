@@ -6,6 +6,8 @@ export {
   type IdParam,
   employeeIdParamSchema,
   type EmployeeIdParam,
+  employeeSubResourceParamSchema,
+  type EmployeeSubResourceParam,
   dropdownQuerySchema,
   type DropdownQuery,
 } from "./common";

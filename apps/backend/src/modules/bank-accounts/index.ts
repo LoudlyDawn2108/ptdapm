@@ -1,7 +1,7 @@
 import {
   createEmployeeBankAccountSchema,
   employeeIdParamSchema,
-  idParamSchema,
+  employeeSubResourceParamSchema,
   paginationSchema,
   updateEmployeeBankAccountSchema,
 } from "@hrms/shared";
@@ -36,20 +36,20 @@ export const bankAccountRoutes = new Elysia({
   .put(
     "/:id",
     async ({ params, body }) => {
-      const data = await bankAccountService.update(params.id, body);
+      const data = await bankAccountService.update(params.employeeId, params.id, body);
       return { data };
     },
     {
       auth: true,
-      params: employeeIdParamSchema.merge(idParamSchema),
+      params: employeeSubResourceParamSchema,
       body: updateEmployeeBankAccountSchema,
     },
   )
   .delete(
     "/:id",
     async ({ params }) => {
-      const data = await bankAccountService.remove(params.id);
+      const data = await bankAccountService.remove(params.employeeId, params.id);
       return { data };
     },
-    { auth: true, params: employeeIdParamSchema.merge(idParamSchema) },
+    { auth: true, params: employeeSubResourceParamSchema },
   );

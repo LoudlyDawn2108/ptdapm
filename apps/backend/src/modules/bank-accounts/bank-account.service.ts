@@ -64,28 +64,41 @@ export async function create(
 }
 
 export async function update(
+  employeeId: string,
   id: string,
   data: UpdateEmployeeBankAccountInput,
 ): Promise<EmployeeBankAccount> {
-  const existing = await getById(id);
+  const [existing] = await db
+    .select()
+    .from(employeeBankAccounts)
+    .where(and(eq(employeeBankAccounts.id, id), eq(employeeBankAccounts.employeeId, employeeId)));
+
+  if (!existing) throw new NotFoundError("Không tìm thấy tài khoản ngân hàng");
 
   if (data.isPrimary) {
-    await clearOtherPrimary(existing.employeeId, id);
+    await clearOtherPrimary(employeeId, id);
   }
 
   const [updated] = await db
     .update(employeeBankAccounts)
     .set({ ...data, updatedAt: new Date() })
-    .where(eq(employeeBankAccounts.id, id))
+    .where(and(eq(employeeBankAccounts.id, id), eq(employeeBankAccounts.employeeId, employeeId)))
     .returning();
 
   if (!updated) throw new Error("Update failed");
   return updated;
 }
 
-export async function remove(id: string): Promise<{ id: string }> {
-  await getById(id);
+export async function remove(employeeId: string, id: string): Promise<{ id: string }> {
+  const [existing] = await db
+    .select()
+    .from(employeeBankAccounts)
+    .where(and(eq(employeeBankAccounts.id, id), eq(employeeBankAccounts.employeeId, employeeId)));
 
-  await db.delete(employeeBankAccounts).where(eq(employeeBankAccounts.id, id));
+  if (!existing) throw new NotFoundError("Không tìm thấy tài khoản ngân hàng");
+
+  await db
+    .delete(employeeBankAccounts)
+    .where(and(eq(employeeBankAccounts.id, id), eq(employeeBankAccounts.employeeId, employeeId)));
   return { id };
 }

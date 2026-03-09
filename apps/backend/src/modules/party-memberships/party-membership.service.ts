@@ -3,7 +3,7 @@ import type {
   PaginatedResponse,
   UpdateEmployeePartyMembershipInput,
 } from "@hrms/shared";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { NotFoundError } from "../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
 import { db } from "../../db";
@@ -53,23 +53,45 @@ export async function create(
 }
 
 export async function update(
+  employeeId: string,
   id: string,
   data: UpdateEmployeePartyMembershipInput,
 ): Promise<EmployeePartyMembership> {
-  await getById(id);
+  const [existing] = await db
+    .select()
+    .from(employeePartyMemberships)
+    .where(
+      and(eq(employeePartyMemberships.id, id), eq(employeePartyMemberships.employeeId, employeeId)),
+    );
+
+  if (!existing) throw new NotFoundError("Không tìm thấy thông tin đoàn/đảng");
 
   const [updated] = await db
     .update(employeePartyMemberships)
     .set({ ...data, updatedAt: new Date() })
-    .where(eq(employeePartyMemberships.id, id))
+    .where(
+      and(eq(employeePartyMemberships.id, id), eq(employeePartyMemberships.employeeId, employeeId)),
+    )
     .returning();
 
   if (!updated) throw new Error("Update failed");
   return updated;
 }
 
-export async function remove(id: string): Promise<{ id: string }> {
-  await getById(id);
-  await db.delete(employeePartyMemberships).where(eq(employeePartyMemberships.id, id));
+export async function remove(employeeId: string, id: string): Promise<{ id: string }> {
+  const [existing] = await db
+    .select()
+    .from(employeePartyMemberships)
+    .where(
+      and(eq(employeePartyMemberships.id, id), eq(employeePartyMemberships.employeeId, employeeId)),
+    );
+
+  if (!existing) throw new NotFoundError("Không tìm thấy thông tin đoàn/đảng");
+
+  await db
+    .delete(employeePartyMemberships)
+    .where(
+      and(eq(employeePartyMemberships.id, id), eq(employeePartyMemberships.employeeId, employeeId)),
+    );
   return { id };
 }
