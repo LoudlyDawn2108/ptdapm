@@ -36,16 +36,20 @@ export const familyMemberRoutes = new Elysia({
   .put(
     "/:id",
     async ({ params, body }) => {
-      const data = await familyMemberService.update(params.id, body);
+      const data = await familyMemberService.update(params.employeeId, params.id, body);
       return { data };
     },
-    { auth: true, params: idParamSchema, body: updateEmployeeFamilyMemberSchema },
+    {
+      auth: true,
+      params: employeeIdParamSchema.merge(idParamSchema),
+      body: updateEmployeeFamilyMemberSchema,
+    },
   )
   .delete(
     "/:id",
     async ({ params }) => {
-      const data = await familyMemberService.remove(params.id);
+      const data = await familyMemberService.remove(params.employeeId, params.id);
       return { data };
     },
-    { auth: true, params: idParamSchema },
+    { auth: true, params: employeeIdParamSchema.merge(idParamSchema) },
   );
