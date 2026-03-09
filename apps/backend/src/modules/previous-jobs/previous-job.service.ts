@@ -53,10 +53,13 @@ export async function create(
 }
 
 export async function update(
+  employeeId: string,
   id: string,
   data: UpdateEmployeePreviousJobInput,
 ): Promise<EmployeePreviousJob> {
-  await getById(id);
+  const existing = await getById(id);
+  if (existing.employeeId !== employeeId)
+    throw new NotFoundError("Không tìm thấy quá trình công tác");
 
   const [updated] = await db
     .update(employeePreviousJobs)
@@ -68,8 +71,10 @@ export async function update(
   return updated;
 }
 
-export async function remove(id: string): Promise<{ id: string }> {
-  await getById(id);
+export async function remove(employeeId: string, id: string): Promise<{ id: string }> {
+  const existing = await getById(id);
+  if (existing.employeeId !== employeeId)
+    throw new NotFoundError("Không tìm thấy quá trình công tác");
   await db.delete(employeePreviousJobs).where(eq(employeePreviousJobs.id, id));
   return { id };
 }

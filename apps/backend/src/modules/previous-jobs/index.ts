@@ -36,11 +36,7 @@ export const previousJobRoutes = new Elysia({
   .put(
     "/:id",
     async ({ params, body }) => {
-      const data = await previousJobService.update(
-        params.employeeId,
-        params.id,
-        body,
-      );
+      const data = await previousJobService.update(params.employeeId, params.id, body);
       return { data };
     },
     {
@@ -52,10 +48,7 @@ export const previousJobRoutes = new Elysia({
   .delete(
     "/:id",
     async ({ params }) => {
-      const data = await previousJobService.remove(
-        params.employeeId,
-        params.id,
-      );
+      const data = await previousJobService.remove(params.employeeId, params.id);
       return { data };
     },
     { auth: true, params: employeeIdParamSchema.and(idParamSchema) },

@@ -71,10 +71,12 @@ export async function create(
 }
 
 export async function update(
+  employeeId: string,
   id: string,
   data: UpdateEmployeeAllowanceInput,
 ): Promise<EmployeeAllowance> {
-  await getById(id);
+  const existing = await getById(id);
+  if (existing.employeeId !== employeeId) throw new NotFoundError("Không tìm thấy phụ cấp");
 
   if (data.allowanceTypeId) {
     await ensureAllowanceTypeExists(data.allowanceTypeId);
@@ -97,8 +99,9 @@ export async function update(
   return updated;
 }
 
-export async function remove(id: string): Promise<{ id: string }> {
-  await getById(id);
+export async function remove(employeeId: string, id: string): Promise<{ id: string }> {
+  const existing = await getById(id);
+  if (existing.employeeId !== employeeId) throw new NotFoundError("Không tìm thấy phụ cấp");
   await db.delete(employeeAllowances).where(eq(employeeAllowances.id, id));
   return { id };
 }
