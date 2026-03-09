@@ -167,7 +167,7 @@ export async function create(
 
   if (!roleRow) throw new BadRequestError("Vai trò không hợp lệ");
 
-  const username = employee.staffCode;
+  const username = data.email.split("@")[0] ?? employee.staffCode;
   const name = employee.fullName;
   const password = generateRandomPassword(12);
 
@@ -190,7 +190,9 @@ export async function create(
     .set({ employeeId: data.employeeId })
     .where(eq(authUsers.id, result.user.id));
 
-  await sendNewAccountEmail(data.email, username, password);
+  await sendNewAccountEmail(data.email, username, password).catch(() => {
+    /* Email delivery is best-effort; do not fail account creation */
+  });
 
   await withAuditLog(db, actorUserId, "CREATE", "auth_user", result.user.id, undefined, {
     username,
