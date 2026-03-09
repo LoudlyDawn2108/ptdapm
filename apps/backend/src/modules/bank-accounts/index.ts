@@ -36,7 +36,10 @@ export const bankAccountRoutes = new Elysia({
   .put(
     "/:id",
     async ({ params, body }) => {
-      const data = await bankAccountService.update(params.id, body);
+      const data = await bankAccountService.update(params.id, {
+        ...body,
+        employeeId: params.employeeId,
+      });
       return { data };
     },
     {
