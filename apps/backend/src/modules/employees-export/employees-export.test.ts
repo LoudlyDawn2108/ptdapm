@@ -155,9 +155,6 @@ describe("Employee Export API", () => {
   });
 
   test("GET /api/employees/:id/export?format=csv returns multi-section CSV", async () => {
-    const employeeId = "11111111-1111-1111-1111-111111111111"; // this one is used in the mock
-    // if Zod blocks this 1111... we should use a proper uuid in the mock too
-    // wait! the mock doesn't care about the uuid format, but the route DOES.
     const validUuid = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
     const res = await app.handle(
       new Request(`http://localhost/api/employees/${validUuid}/export?format=csv`),
