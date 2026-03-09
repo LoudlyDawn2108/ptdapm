@@ -7,6 +7,7 @@ import { authPlugin, betterAuthHandler } from "./common/plugins/auth";
 import { dbPlugin } from "./common/plugins/db";
 import { errorPlugin } from "./common/plugins/error-handler";
 import { globalRateLimit, loginRateLimit } from "./common/plugins/rate-limit";
+import { accountRoutes } from "./modules/accounts";
 import { authRoutes } from "./modules/auth";
 import { contractTypeRoutes } from "./modules/config/contract-types";
 
@@ -32,6 +33,7 @@ const app = new Elysia()
   }))
   .use(authRoutes)
   .use(contractTypeRoutes)
+  .use(accountRoutes)
   .listen(env.PORT);
 
 console.log(`🦊 Server running at http://localhost:${app.server?.port}`);
