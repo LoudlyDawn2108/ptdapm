@@ -1,6 +1,5 @@
 import { describe, expect, mock, test } from "bun:test";
 import { Elysia } from "elysia";
-import { z } from "zod";
 import { errorPlugin } from "../../common/plugins/error-handler";
 
 // Mock the employee service to return fake data without hitting DB
