@@ -3,7 +3,7 @@ import type {
   PaginatedResponse,
   UpdateEmployeePreviousJobInput,
 } from "@hrms/shared";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { NotFoundError } from "../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
 import { db } from "../../db";
@@ -53,10 +53,21 @@ export async function create(
 }
 
 export async function update(
+  employeeId: string,
   id: string,
   data: UpdateEmployeePreviousJobInput,
 ): Promise<EmployeePreviousJob> {
-  await getById(id);
+  const [existing] = await db
+    .select()
+    .from(employeePreviousJobs)
+    .where(
+      and(
+        eq(employeePreviousJobs.id, id),
+        eq(employeePreviousJobs.employeeId, employeeId),
+      ),
+    );
+
+  if (!existing) throw new NotFoundError("Không tìm thấy quá trình công tác");
 
   const [updated] = await db
     .update(employeePreviousJobs)
@@ -68,8 +79,26 @@ export async function update(
   return updated;
 }
 
-export async function remove(id: string): Promise<{ id: string }> {
-  await getById(id);
-  await db.delete(employeePreviousJobs).where(eq(employeePreviousJobs.id, id));
+export async function remove(employeeId: string, id: string): Promise<{ id: string }> {
+  const [existing] = await db
+    .select()
+    .from(employeePreviousJobs)
+    .where(
+      and(
+        eq(employeePreviousJobs.id, id),
+        eq(employeePreviousJobs.employeeId, employeeId),
+      ),
+    );
+
+  if (!existing) throw new NotFoundError("Không tìm thấy quá trình công tác");
+
+  await db
+    .delete(employeePreviousJobs)
+    .where(
+      and(
+        eq(employeePreviousJobs.id, id),
+        eq(employeePreviousJobs.employeeId, employeeId),
+      ),
+    );
   return { id };
 }
