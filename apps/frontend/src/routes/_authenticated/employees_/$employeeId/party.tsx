@@ -108,14 +108,32 @@ function EmployeePartyTab() {
   React.useEffect(() => {
     let active = true;
     const load = async () => {
-      await loadItems();
+      setLoading(true);
+      const response = await employeesApi.$employeeId["party-memberships"].get({
+        params: { employeeId },
+        query: queryParams,
+      });
+      if (!active) return;
+      const payload = response.data?.data;
+      if (payload) {
+        setItems(payload.items ?? []);
+        setPagination((prev) => ({
+          ...prev,
+          page: payload.page ?? prev.page,
+          pageSize: payload.pageSize ?? prev.pageSize,
+          total: payload.total ?? 0,
+        }));
+      } else {
+        setItems([]);
+        setPagination((prev) => ({ ...prev, total: 0 }));
+      }
+      setLoading(false);
     };
     load();
     return () => {
       active = false;
-      if (!active) return;
     };
-  }, [loadItems]);
+  }, [employeeId, queryParams]);
 
   const columns = React.useMemo<Column<PartyMembershipItem>[]>(
     () => [
