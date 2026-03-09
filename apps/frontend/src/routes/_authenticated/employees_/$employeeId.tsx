@@ -121,7 +121,7 @@ function EmployeeDetailLayout() {
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [deleteLoading, setDeleteLoading] = React.useState(false);
 
-  const loadEmployee = React.useCallback(async () => {
+  const loadEmployee = React.useCallback(async (signal?: AbortSignal) => {
     setIsLoading(true);
     const response = await employeesApi["$employeeId"].get({ params: { employeeId } });
     const payload = response.data?.data?.employee;
@@ -138,17 +138,10 @@ function EmployeeDetailLayout() {
   }, [employeeId]);
 
   React.useEffect(() => {
-    let active = true;
-
-    const load = async () => {
-      await loadEmployee();
-    };
-
-    load();
-
+    const controller = new AbortController();
+    loadEmployee(controller.signal);
     return () => {
-      active = false;
-      if (!active) return;
+      controller.abort();
     };
   }, [loadEmployee]);
 
