@@ -6,11 +6,7 @@ import { ContractStatus, Gender, WorkStatus, enumToSortedList } from "@hrms/shar
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 
-const createRoute = createFileRoute as unknown as (
-  path: string,
-) => (config: { component: React.ComponentType }) => unknown;
-
-export const Route = createRoute("/_authenticated/employees/")({ component: EmployeeListPage });
+export const Route = createFileRoute("/_authenticated/employees/")({ component: EmployeeListPage });
 
 interface EmployeeListItem {
   id: string;

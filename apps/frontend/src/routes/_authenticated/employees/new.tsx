@@ -5,11 +5,7 @@ import type { CreateEmployeeInput } from "@hrms/shared";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 
-const createRoute = createFileRoute as unknown as (
-  path: string,
-) => (config: { component: React.ComponentType }) => unknown;
-
-export const Route = createRoute("/_authenticated/employees/new")({
+export const Route = createFileRoute("/_authenticated/employees/new")({
   component: EmployeeCreatePage,
 });
 

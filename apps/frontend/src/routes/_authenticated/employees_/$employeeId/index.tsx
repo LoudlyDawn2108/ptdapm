@@ -7,15 +7,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { type EmployeeDetailContextValue, useEmployeeDetail } from "../$employeeId";
 
-const createRoute = createFileRoute as unknown as (
-  path: string,
-) => (config: { component: React.ComponentType }) => unknown;
-
-export const Route = createRoute("/_authenticated/employees_/$employeeId/")({
+export const Route = createFileRoute("/_authenticated/employees_/$employeeId/")({
   component: EmployeePersonalInfoTab,
-}) as unknown as {
-  useParams: () => { employeeId: string };
-};
+});
 
 type EmployeeUpdateResponse = {
   data?: {

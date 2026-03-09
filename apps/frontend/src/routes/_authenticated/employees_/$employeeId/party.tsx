@@ -7,15 +7,9 @@ import { type CreateEmployeePartyMembershipInput, PartyOrgType } from "@hrms/sha
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 
-const createRoute = createFileRoute as unknown as (
-  path: string,
-) => (config: { component: React.ComponentType }) => unknown;
-
-export const Route = createRoute("/_authenticated/employees_/$employeeId/party")({
+export const Route = createFileRoute("/_authenticated/employees_/$employeeId/party")({
   component: EmployeePartyTab,
-}) as unknown as {
-  useParams: () => { employeeId: string };
-};
+});
 
 interface PartyMembershipItem {
   id: string;

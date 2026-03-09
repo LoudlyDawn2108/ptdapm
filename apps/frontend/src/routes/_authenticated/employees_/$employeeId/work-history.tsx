@@ -7,15 +7,9 @@ import type { CreateEmployeePreviousJobInput } from "@hrms/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 
-const createRoute = createFileRoute as unknown as (
-  path: string,
-) => (config: { component: React.ComponentType }) => unknown;
-
-export const Route = createRoute("/_authenticated/employees_/$employeeId/work-history")({
+export const Route = createFileRoute("/_authenticated/employees_/$employeeId/work-history")({
   component: EmployeeWorkHistoryTab,
-}) as unknown as {
-  useParams: () => { employeeId: string };
-};
+});
 
 interface WorkHistoryItem {
   id: string;

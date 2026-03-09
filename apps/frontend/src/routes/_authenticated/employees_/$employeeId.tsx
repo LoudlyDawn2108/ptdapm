@@ -6,9 +6,9 @@ import { type CreateEmployeeInput, WorkStatus } from "@hrms/shared";
 import { Link, Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import * as React from "react";
 
-const createRoute = createFileRoute as unknown as (
-  path: string,
-) => (config: { component: React.ComponentType }) => unknown;
+export const Route = createFileRoute("/_authenticated/employees_/$employeeId")({
+  component: EmployeeDetailLayout,
+});
 
 interface EmployeeDetailData {
   id: string;
@@ -96,10 +96,6 @@ const tabs = [
     to: "/_authenticated/employees_/$employeeId/allowances",
   },
 ];
-
-export const Route = createRoute("/_authenticated/employees_/$employeeId")({
-  component: EmployeeDetailLayout,
-});
 
 function getTabFromPath(pathname: string) {
   if (pathname.includes("/family")) return "family";

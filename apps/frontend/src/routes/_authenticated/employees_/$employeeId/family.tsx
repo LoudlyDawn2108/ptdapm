@@ -7,15 +7,9 @@ import { type CreateEmployeeFamilyMemberInput, FamilyRelation } from "@hrms/shar
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 
-const createRoute = createFileRoute as unknown as (
-  path: string,
-) => (config: { component: React.ComponentType }) => unknown;
-
-export const Route = createRoute("/_authenticated/employees_/$employeeId/family")({
+export const Route = createFileRoute("/_authenticated/employees_/$employeeId/family")({
   component: EmployeeFamilyTab,
-}) as unknown as {
-  useParams: () => { employeeId: string };
-};
+});
 
 interface FamilyMemberItem {
   id: string;

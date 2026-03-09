@@ -7,15 +7,9 @@ import type { CreateEmployeeAllowanceInput } from "@hrms/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 
-const createRoute = createFileRoute as unknown as (
-  path: string,
-) => (config: { component: React.ComponentType }) => unknown;
-
-export const Route = createRoute("/_authenticated/employees_/$employeeId/allowances")({
+export const Route = createFileRoute("/_authenticated/employees_/$employeeId/allowances")({
   component: EmployeeAllowancesTab,
-}) as unknown as {
-  useParams: () => { employeeId: string };
-};
+});
 
 interface AllowanceItem {
   id: string;
