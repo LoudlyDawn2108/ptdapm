@@ -1,6 +1,5 @@
 import {
   createEmployeeSchema,
-  idParamSchema,
   paginationSchema,
   updateEmployeeSchema,
 } from "@hrms/shared";
