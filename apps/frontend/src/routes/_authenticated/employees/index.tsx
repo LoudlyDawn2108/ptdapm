@@ -35,7 +35,7 @@ type EmployeesApi = {
   }) => Promise<EmployeeListResponse>;
 };
 
-const employeesApi = (api as unknown as { employees: EmployeesApi }).employees;
+const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
 
 const workStatusOptions = enumToSortedList(WorkStatus);
 const contractStatusOptions = enumToSortedList(ContractStatus);

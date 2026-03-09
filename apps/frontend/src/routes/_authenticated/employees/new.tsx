@@ -21,7 +21,7 @@ type EmployeesApi = {
   post: (args: { body: CreateEmployeeInput }) => Promise<EmployeeCreateResponse>;
 };
 
-const employeesApi = (api as unknown as { employees: EmployeesApi }).employees;
+const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
 
 function EmployeeCreatePage() {
   const navigate = useNavigate();

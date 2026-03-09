@@ -3,7 +3,7 @@ import { AllowanceForm } from "@/components/employees/AllowanceForm";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { type Column, DataTable } from "@/components/ui/DataTable";
 import { cn } from "@/lib/utils";
-import type { CreateEmployeeAllowanceInput } from "@hrms/shared";
+import type { CreateEmployeeAllowanceInput, UpdateEmployeeAllowanceInput } from "@hrms/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 
@@ -46,7 +46,7 @@ type AllowancesApi = {
   }) => Promise<AllowanceMutationResponse>;
   put: (args: {
     params: { employeeId: string; id: string };
-    body: CreateEmployeeAllowanceInput;
+    body: UpdateEmployeeAllowanceInput;
   }) => Promise<AllowanceMutationResponse>;
   delete: (args: { params: { employeeId: string; id: string } }) => Promise<unknown>;
 };
@@ -57,7 +57,7 @@ type EmployeesApi = {
   };
 };
 
-const employeesApi = (api as unknown as { employees: EmployeesApi }).employees;
+const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
 
 const displayValue = (value?: string | null) => (value && value.length > 0 ? value : "—");
 const displayAmount = (value?: string | number | null) => {
@@ -84,58 +84,39 @@ function EmployeeAllowancesTab() {
     [pagination.page, pagination.pageSize],
   );
 
-  const loadItems = React.useCallback(async () => {
-    setLoading(true);
-    const response = await employeesApi.$employeeId.allowances.get({
-      params: { employeeId },
-      query: queryParams,
-    });
-    const payload = response.data?.data;
-    if (payload) {
-      setItems(payload.items ?? []);
-      setPagination((prev) => ({
-        ...prev,
-        page: payload.page ?? prev.page,
-        pageSize: payload.pageSize ?? prev.pageSize,
-        total: payload.total ?? 0,
-      }));
-    } else {
-      setItems([]);
-      setPagination((prev) => ({ ...prev, total: 0 }));
-    }
-    setLoading(false);
-  }, [employeeId, queryParams]);
+  const loadItems = React.useCallback(
+    async (isActive?: () => boolean) => {
+      setLoading(true);
+      const response = await employeesApi.$employeeId.allowances.get({
+        params: { employeeId },
+        query: queryParams,
+      });
+      if (isActive && !isActive()) return;
+      const payload = response.data?.data;
+      if (payload) {
+        setItems(payload.items ?? []);
+        setPagination((prev) => ({
+          ...prev,
+          page: payload.page ?? prev.page,
+          pageSize: payload.pageSize ?? prev.pageSize,
+          total: payload.total ?? 0,
+        }));
+      } else {
+        setItems([]);
+        setPagination((prev) => ({ ...prev, total: 0 }));
+      }
+      setLoading(false);
+    },
+    [employeeId, queryParams],
+  );
 
   React.useEffect(() => {
     let active = true;
-    setLoading(true);
-    employeesApi.$employeeId.allowances
-      .get({ params: { employeeId }, query: queryParams })
-      .then((response) => {
-        if (!active) return;
-        const payload = response.data?.data;
-        if (payload) {
-          setItems(payload.items ?? []);
-          setPagination((prev) => ({
-            ...prev,
-            page: payload.page ?? prev.page,
-            pageSize: payload.pageSize ?? prev.pageSize,
-            total: payload.total ?? 0,
-          }));
-        } else {
-          setItems([]);
-          setPagination((prev) => ({ ...prev, total: 0 }));
-        }
-        setLoading(false);
-      })
-      .catch(() => {
-        if (!active) return;
-        setLoading(false);
-      });
+    loadItems(() => active);
     return () => {
       active = false;
     };
-  }, [employeeId, queryParams]);
+  }, [loadItems]);
 
   const columns = React.useMemo<Column<AllowanceItem>[]>(
     () => [

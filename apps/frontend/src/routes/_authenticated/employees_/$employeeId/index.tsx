@@ -28,7 +28,7 @@ type EmployeesApi = {
   };
 };
 
-const employeesApi = (api as unknown as { employees: EmployeesApi }).employees;
+const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
 
 function EmployeePersonalInfoTab() {
   const { employeeId } = Route.useParams();

@@ -8,6 +8,7 @@ import { dbPlugin } from "./common/plugins/db";
 import { errorPlugin } from "./common/plugins/error-handler";
 import { globalRateLimit, loginRateLimit } from "./common/plugins/rate-limit";
 import { accountRoutes } from "./modules/accounts";
+import { allowanceRoutes } from "./modules/allowances";
 import { authRoutes } from "./modules/auth";
 import { bankAccountRoutes } from "./modules/bank-accounts";
 import { contractTypeRoutes } from "./modules/config/contract-types";
@@ -39,9 +40,13 @@ const app = new Elysia()
   }))
   .use(authRoutes)
   .use(allowanceRoutes)
+  .use(employeeRoutes)
+  .use(employeeExportRoutes)
   .use(familyMemberRoutes)
   .use(bankAccountRoutes)
   .use(contractTypeRoutes)
+  .use(previousJobRoutes)
+  .use(partyMembershipRoutes)
   .use(accountRoutes)
   .listen(env.PORT);
 

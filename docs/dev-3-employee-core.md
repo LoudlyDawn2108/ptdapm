@@ -1,56 +1,56 @@
 # Dev 3 — 👤 Nhân sự Core
 
-> **Prerequisites**: Read `conventions.md` first for shared patterns and architecture.
+> **Lưu ý trước khi đọc**: Đọc file `conventions.md` trước để nắm được các quy ước chung và kiến trúc.
 
-**Theme**: Employee entity + personal sub-entity tabs + shared layout/UI components
+**Chủ đề**: Thực thể Nhân sự (Employee) + các tab chứa thực thể phụ cá nhân + bố cục/dùng chung (UI components)
 
 ---
 
-## Owned Tables (6)
+## Các bảng đảm nhiệm (6)
 
-| Table | Size | Notes |
+| Bảng | Kích thước | Ghi chú |
 |-------|------|-------|
-| `employees` | L(3) | Main entity — complex form with many fields, create + edit |
-| `employee_family_members` | M(2) | Sub-entity tab with add/edit/delete |
-| `employee_bank_accounts` | S(1) | Simple sub-entity tab |
-| `employee_previous_jobs` | S(1) | Simple sub-entity tab |
-| `employee_party_memberships` | M(2) | Sub-entity with date ranges, status tracking |
-| `employee_allowances` | M(2) | Sub-entity linked to allowance_types (Dev 2's catalog) |
-| | **Total: 16** (includes 5 pts for layout/components/view/export) | |
+| `employees` | Lớn (3) | Thực thể chính — form phức tạp với nhiều trường, thêm mới + chỉnh sửa |
+| `employee_family_members` | Vừa (2) | Tab thực thể phụ với thêm/sửa/xóa (Gia đình) |
+| `employee_bank_accounts` | Nhỏ (1) | Tab thực thể phụ đơn giản (Tài khoản ngân hàng) |
+| `employee_previous_jobs` | Nhỏ (1) | Tab thực thể phụ đơn giản (Quá trình công tác) |
+| `employee_party_memberships` | Vừa (2) | Thực thể phụ có khoảng thời gian, theo dõi trạng thái (Đảng/Đoàn) |
+| `employee_allowances` | Vừa (2) | Thực thể phụ liên kết với allowance_types (Danh mục của Dev 2) (Phụ cấp) |
+| | **Tổng: 16 điểm** (bao gồm 5 điểm cho layout/components/xem/xuất file) | |
 
 ---
 
-## Owned Routes
+## Các Route đảm nhiệm
 
 **Backend** (`apps/backend/src/modules/`):
 
-| Module folder | Endpoints |
+| Thư mục module | Endpoints |
 |------------|-----------|
-| `employees/` | CRUD `/api/employees`, `GET /api/employees/:id` (aggregate detail) |
+| `employees/` | CRUD `/api/employees`, `GET /api/employees/:id` (chi tiết tổng hợp) |
 | `family-members/` | CRUD `/api/employees/:id/family-members` |
 | `bank-accounts/` | CRUD `/api/employees/:id/bank-accounts` |
 | `previous-jobs/` | CRUD `/api/employees/:id/previous-jobs` |
 | `party-memberships/` | CRUD `/api/employees/:id/party-memberships` |
 | `allowances/` | CRUD `/api/employees/:id/allowances` |
-| `employees-export/` | `GET /api/employees/:id/export`, `GET /api/employees/export` (list export) |
+| `employees-export/` | `GET /api/employees/:id/export`, `GET /api/employees/export` (xuất file danh sách) |
 
 **Frontend** (`apps/frontend/src/routes/`):
 
-| Route file / folder | Description |
+| File/thư mục route | Mô tả |
 |---------------------|-------------|
-| `_authenticated/employees_/$employeeId.tsx` | Employee detail **layout container** (tab navigation) |
-| `_authenticated/employees_/$employeeId/index.tsx` | Personal info tab (default) |
-| `_authenticated/employees_/$employeeId/family.tsx` | Family members tab |
-| `_authenticated/employees_/$employeeId/bank-accounts.tsx` | Bank accounts tab |
-| `_authenticated/employees_/$employeeId/work-history.tsx` | Previous jobs tab |
-| `_authenticated/employees_/$employeeId/party.tsx` | Party memberships tab |
-| `_authenticated/employees_/$employeeId/allowances.tsx` | Allowances tab |
-| `_authenticated/employees/new.tsx` | Create new employee |
-| `_authenticated/my/profile.tsx` | Self-service: view/edit own profile |
+| `_authenticated/employees_/$employeeId.tsx` | **Layout chứa** chi tiết nhân viên (điều hướng bằng tab) |
+| `_authenticated/employees_/$employeeId/index.tsx` | Tab thông tin cá nhân (mặc định) |
+| `_authenticated/employees_/$employeeId/family.tsx` | Tab thành viên gia đình |
+| `_authenticated/employees_/$employeeId/bank-accounts.tsx` | Tab tài khoản ngân hàng |
+| `_authenticated/employees_/$employeeId/work-history.tsx` | Tab quá trình công tác |
+| `_authenticated/employees_/$employeeId/party.tsx` | Tab thông tin Đảng/Đoàn |
+| `_authenticated/employees_/$employeeId/allowances.tsx` | Tab phụ cấp |
+| `_authenticated/employees/new.tsx` | Tạo nhân viên mới |
+| `_authenticated/my/profile.tsx` | Tự phục vụ: xem/sửa hồ sơ của chính mình |
 
 ---
 
-## Use Cases Covered (from `system-spec.md`)
+## Các Use Case phụ trách (từ `system-spec.md`)
 
 | UC | Tên UC | Mô tả |
 |----|--------|-------|
@@ -59,15 +59,15 @@
 | 4.25 | Thêm mới hồ sơ nhân sự | Tạo hồ sơ nhân sự mới (nhập tay hoặc upload Excel) |
 | 4.26 | Chỉnh sửa chi tiết hồ sơ nhân sự | Sửa thông tin cá nhân, trình độ, quá trình công tác |
 | 4.28 | Xem chi tiết thông tin hồ sơ nhân sự | Xem chi tiết theo chế độ tab + in/xuất Excel hồ sơ |
-| 4.38 | Xem thông tin hồ sơ cá nhân | Self-service: nhân sự xem hồ sơ của chính mình |
+| 4.38 | Xem thông tin hồ sơ cá nhân | Tự phục vụ: nhân sự xem hồ sơ của chính mình |
 
-> **Note**: UC 4.26 bao gồm nhiều tab con — Dev 3 owns các tab: thông tin cá nhân, gia đình, ngân hàng, quá trình công tác, đảng/đoàn, phụ cấp. Các tab khác (bằng cấp, chứng chỉ, hợp đồng, đánh giá) thuộc Dev 1 và Dev 4.
+> **Ghi chú**: UC 4.26 bao gồm nhiều tab con — Dev 3 phụ trách các tab: thông tin cá nhân, gia đình, ngân hàng, quá trình công tác, đảng/đoàn, phụ cấp. Các tab khác (bằng cấp, chứng chỉ, hợp đồng, đánh giá) thuộc Dev 1 và Dev 4.
 
 ---
 
-## Key Responsibilities
+## Các Trách nhiệm Chính
 
-- **Employee detail layout**: Tab-based container layout — **all devs add their tabs into this layout**
-- **Shared UI components**: Table component, form components, modal pattern, tab pattern
-- **Employee view/print/export**: PDF/print view of employee record
-- **Reusable sub-entity CRUD pattern**: Template for tab-level CRUD (used by Dev 1 and Dev 4)
+- **Layout chi tiết nhân sự**: Layout dùng chế độ tab — **tất cả các dev khác sẽ thêm tab của họ vào layout này**
+- **UI Components dùng chung**: Component bảng (Table), form components, mẫu modal, mẫu tab
+- **Xem/In/Xuất nhân viên**: Xem dưới dạng PDF/bản in của hồ sơ nhân viên
+- **Mẫu CRUD dùng lại cho các thực thể phụ**: Mẫu chuẩn cho các thao tác CRUD ở cấp độ tab (để Dev 1 và Dev 4 có thể dùng lại)

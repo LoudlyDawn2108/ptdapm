@@ -58,7 +58,7 @@ type EmployeeDetailApi = {
   };
 };
 
-const employeesApi = (api as unknown as { employees: EmployeeDetailApi }).employees;
+const employeesApi = (api.api as unknown as { employees: EmployeeDetailApi }).employees;
 
 export interface EmployeeDetailContextValue {
   employee: EmployeeDetailData | null;
@@ -121,27 +121,31 @@ function EmployeeDetailLayout() {
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [deleteLoading, setDeleteLoading] = React.useState(false);
 
-  const loadEmployee = React.useCallback(async (signal?: AbortSignal) => {
-    setIsLoading(true);
-    const response = await employeesApi["$employeeId"].get({ params: { employeeId } });
-    const payload = response.data?.data?.employee;
+  const loadEmployee = React.useCallback(
+    async (isActive?: () => boolean) => {
+      setIsLoading(true);
+      const response = await employeesApi["$employeeId"].get({ params: { employeeId } });
+      if (isActive && !isActive()) return;
+      const payload = response.data?.data?.employee;
 
-    if (payload) {
-      setEmployee(payload ?? null);
-      setHasEmployee(true);
-    } else {
-      setEmployee(null);
-      setHasEmployee(false);
-    }
+      if (payload) {
+        setEmployee(payload ?? null);
+        setHasEmployee(true);
+      } else {
+        setEmployee(null);
+        setHasEmployee(false);
+      }
 
-    setIsLoading(false);
-  }, [employeeId]);
+      setIsLoading(false);
+    },
+    [employeeId],
+  );
 
   React.useEffect(() => {
-    const controller = new AbortController();
-    loadEmployee(controller.signal);
+    let active = true;
+    loadEmployee(() => active);
     return () => {
-      controller.abort();
+      active = false;
     };
   }, [loadEmployee]);
 

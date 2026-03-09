@@ -3,7 +3,7 @@ import { PreviousJobForm } from "@/components/employees/PreviousJobForm";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { type Column, DataTable } from "@/components/ui/DataTable";
 import { cn } from "@/lib/utils";
-import type { CreateEmployeePreviousJobInput } from "@hrms/shared";
+import type { CreateEmployeePreviousJobInput, UpdateEmployeePreviousJobInput } from "@hrms/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 
@@ -47,7 +47,7 @@ type PreviousJobsApi = {
   }) => Promise<WorkHistoryMutationResponse>;
   put: (args: {
     params: { employeeId: string; id: string };
-    body: CreateEmployeePreviousJobInput;
+    body: UpdateEmployeePreviousJobInput;
   }) => Promise<WorkHistoryMutationResponse>;
   delete: (args: { params: { employeeId: string; id: string } }) => Promise<unknown>;
 };
@@ -58,7 +58,7 @@ type EmployeesApi = {
   };
 };
 
-const employeesApi = (api as unknown as { employees: EmployeesApi }).employees;
+const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
 
 const displayValue = (value?: string | null) => (value && value.length > 0 ? value : "—");
 
@@ -79,37 +79,37 @@ function EmployeeWorkHistoryTab() {
     [pagination.page, pagination.pageSize],
   );
 
-  const loadItems = React.useCallback(async () => {
-    setLoading(true);
-    const response = await employeesApi.$employeeId["previous-jobs"].get({
-      params: { employeeId },
-      query: queryParams,
-    });
-    const payload = response.data?.data;
-    if (payload) {
-      setItems(payload.items ?? []);
-      setPagination((prev) => ({
-        ...prev,
-        page: payload.page ?? prev.page,
-        pageSize: payload.pageSize ?? prev.pageSize,
-        total: payload.total ?? 0,
-      }));
-    } else {
-      setItems([]);
-      setPagination((prev) => ({ ...prev, total: 0 }));
-    }
-    setLoading(false);
-  }, [employeeId, queryParams]);
+  const loadItems = React.useCallback(
+    async (isActive?: () => boolean) => {
+      setLoading(true);
+      const response = await employeesApi.$employeeId["previous-jobs"].get({
+        params: { employeeId },
+        query: queryParams,
+      });
+      if (isActive && !isActive()) return;
+      const payload = response.data?.data;
+      if (payload) {
+        setItems(payload.items ?? []);
+        setPagination((prev) => ({
+          ...prev,
+          page: payload.page ?? prev.page,
+          pageSize: payload.pageSize ?? prev.pageSize,
+          total: payload.total ?? 0,
+        }));
+      } else {
+        setItems([]);
+        setPagination((prev) => ({ ...prev, total: 0 }));
+      }
+      setLoading(false);
+    },
+    [employeeId, queryParams],
+  );
 
   React.useEffect(() => {
     let active = true;
-    const load = async () => {
-      await loadItems();
-    };
-    load();
+    loadItems(() => active);
     return () => {
       active = false;
-      if (!active) return;
     };
   }, [loadItems]);
 
