@@ -5,12 +5,15 @@ import {
   date,
   integer,
   numeric,
+  pgSequence,
   pgTable,
   text,
   timestamp,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+
+export const employeeStaffCodeSeq = pgSequence("employee_staff_code_seq");
 import { allowanceTypes } from "./contracts";
 import { files } from "./files";
 import { orgUnits } from "./organization";
