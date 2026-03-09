@@ -36,16 +36,25 @@ export const allowanceRoutes = new Elysia({
   .put(
     "/:id",
     async ({ params, body }) => {
-      const data = await allowanceService.update(params.id, body);
+      const { employeeId, id } = params;
+      const data = await allowanceService.update(id, body);
       return { data };
     },
-    { auth: true, params: idParamSchema, body: updateEmployeeAllowanceSchema },
+    {
+      auth: true,
+      params: employeeIdParamSchema.and(idParamSchema),
+      body: updateEmployeeAllowanceSchema,
+    },
   )
   .delete(
     "/:id",
     async ({ params }) => {
-      const data = await allowanceService.remove(params.id);
+      const { employeeId, id } = params;
+      const data = await allowanceService.remove(id);
       return { data };
     },
-    { auth: true, params: idParamSchema },
+    {
+      auth: true,
+      params: employeeIdParamSchema.and(idParamSchema),
+    },
   );
