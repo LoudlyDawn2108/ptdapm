@@ -77,23 +77,23 @@ export function useEmployeeDetail() {
 }
 
 const tabs = [
-  { key: "personal", label: "Thông tin cá nhân", to: "/_authenticated/employees_/$employeeId" },
-  { key: "family", label: "Gia đình", to: "/_authenticated/employees_/$employeeId/family" },
+  { key: "personal", label: "Thông tin cá nhân", to: "/employees/$employeeId" },
+  { key: "family", label: "Gia đình", to: "/employees/$employeeId/family" },
   {
     key: "bank-accounts",
     label: "Tài khoản ngân hàng",
-    to: "/_authenticated/employees_/$employeeId/bank-accounts",
+    to: "/employees/$employeeId/bank-accounts",
   },
   {
     key: "work-history",
     label: "Quá trình công tác",
-    to: "/_authenticated/employees_/$employeeId/work-history",
+    to: "/employees/$employeeId/work-history",
   },
-  { key: "party", label: "Đảng/Đoàn", to: "/_authenticated/employees_/$employeeId/party" },
+  { key: "party", label: "Đảng/Đoàn", to: "/employees/$employeeId/party" },
   {
     key: "allowances",
     label: "Phụ cấp",
-    to: "/_authenticated/employees_/$employeeId/allowances",
+    to: "/employees/$employeeId/allowances",
   },
 ];
 
