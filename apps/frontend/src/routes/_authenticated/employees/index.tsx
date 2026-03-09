@@ -130,7 +130,7 @@ function EmployeeListPage() {
             className="rounded-full border border-border px-4 py-1 text-xs font-medium text-foreground transition hover:bg-muted"
             onClick={(event) => {
               event.stopPropagation();
-              navigate({ to: "/employees/$id", params: { id: item.id } });
+              navigate({ to: "/_authenticated/employees_/$employeeId", params: { employeeId: item.id } });
             }}
           >
             Xem

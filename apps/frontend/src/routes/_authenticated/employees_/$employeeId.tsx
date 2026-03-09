@@ -48,11 +48,11 @@ type EmployeeDetailResponse = {
 };
 
 type EmployeeDetailApi = {
-  $id: {
-    get: (args: { params: { id: string } }) => Promise<EmployeeDetailResponse>;
-    delete: (args: { params: { id: string } }) => Promise<EmployeeDetailResponse>;
+  $employeeId: {
+    get: (args: { params: { employeeId: string } }) => Promise<EmployeeDetailResponse>;
+    delete: (args: { params: { employeeId: string } }) => Promise<EmployeeDetailResponse>;
     put: (args: {
-      params: { id: string };
+      params: { employeeId: string };
       body: CreateEmployeeInput;
     }) => Promise<EmployeeDetailResponse>;
   };
@@ -123,10 +123,7 @@ function EmployeeDetailLayout() {
 
   const loadEmployee = React.useCallback(async (signal?: AbortSignal) => {
     setIsLoading(true);
-    const response = await employeesApi["$id"].get({ params: { id: employeeId } });
-
-    if (signal?.aborted) return;
-
+    const response = await employeesApi["$employeeId"].get({ params: { employeeId } });
     const payload = response.data?.data?.employee;
 
     if (payload) {
@@ -171,11 +168,11 @@ function EmployeeDetailLayout() {
 
   const handleDelete = async () => {
     setDeleteLoading(true);
-    const response = await employeesApi["$id"].delete({ params: { id: employeeId } });
+    const response = await employeesApi["$employeeId"].delete({ params: { employeeId } });
     setDeleteLoading(false);
     setConfirmOpen(false);
     if (response.data?.data) {
-      navigate({ to: "/_authenticated/employees" });
+      navigate({ to: "/employees" });
     }
   };
 
