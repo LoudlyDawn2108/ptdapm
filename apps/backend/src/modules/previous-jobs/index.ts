@@ -7,6 +7,7 @@ import {
 } from "@hrms/shared";
 import { Elysia } from "elysia";
 import { authPlugin } from "../../common/plugins/auth";
+import { requireRole } from "../../common/utils/role-guard";
 import * as previousJobService from "./previous-job.service";
 
 export const previousJobRoutes = new Elysia({
@@ -27,7 +28,8 @@ export const previousJobRoutes = new Elysia({
   )
   .post(
     "/",
-    async ({ params, body }) => {
+    async ({ params, body, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
       const data = await previousJobService.create(params.employeeId, body);
       return { data };
     },
@@ -35,12 +37,9 @@ export const previousJobRoutes = new Elysia({
   )
   .put(
     "/:id",
-    async ({ params, body }) => {
-      const data = await previousJobService.update(
-        params.employeeId,
-        params.id,
-        body,
-      );
+    async ({ params, body, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
+      const data = await previousJobService.update(params.employeeId, params.id, body);
       return { data };
     },
     {
@@ -51,11 +50,9 @@ export const previousJobRoutes = new Elysia({
   )
   .delete(
     "/:id",
-    async ({ params }) => {
-      const data = await previousJobService.remove(
-        params.employeeId,
-        params.id,
-      );
+    async ({ params, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
+      const data = await previousJobService.remove(params.employeeId, params.id);
       return { data };
     },
     { auth: true, params: employeeIdParamSchema.and(idParamSchema) },

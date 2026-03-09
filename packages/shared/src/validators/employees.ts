@@ -20,6 +20,24 @@ import {
   type WorkStatusCode,
 } from "../constants/enums";
 
+const normalizeOptionalTextInput = (value: unknown) => {
+  if (typeof value !== "string") return value;
+
+  const trimmedValue = value.trim();
+  return trimmedValue.length > 0 ? trimmedValue : undefined;
+};
+
+const requiredText = (message: string) =>
+  z.preprocess(
+    (value) => (typeof value === "string" ? value.trim() : value),
+    z.string({ error: message }).min(1, message),
+  );
+
+const optionalText = () => z.preprocess(normalizeOptionalTextInput, z.string().optional());
+
+const optionalField = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess(normalizeOptionalTextInput, schema.optional());
+
 const genderSchema = z.enum(GENDER_CODES as [GenderCode, ...GenderCode[]]);
 const workStatusSchema = z.enum(WORK_STATUS_CODES as [WorkStatusCode, ...WorkStatusCode[]]);
 const contractStatusSchema = z.enum(
@@ -43,36 +61,29 @@ const partyOrgTypeSchema = z.enum(
 );
 
 export const createEmployeeSchema = z.object({
-  staffCode: z
-    .string({ error: "Mã cán bộ phải là chuỗi" })
-    .min(1, "Mã cán bộ không được để trống")
-    .nullish(),
-  fullName: z.string({ error: "Họ tên không được để trống" }).min(1, "Họ tên không được để trống"),
-  dob: z.string({ error: "Ngày sinh không được để trống" }).min(1, "Ngày sinh không được để trống"),
+  staffCode: requiredText("Mã cán bộ không được để trống"),
+  fullName: requiredText("Họ tên không được để trống"),
+  dob: requiredText("Ngày sinh không được để trống"),
   gender: genderSchema,
-  nationalId: z
-    .string({ error: "Số CCCD/CMND không được để trống" })
-    .min(1, "Số CCCD/CMND không được để trống"),
-  hometown: z.string().nullish(),
-  address: z.string({ error: "Địa chỉ không được để trống" }).min(1, "Địa chỉ không được để trống"),
-  taxCode: z.string().nullish(),
-  socialInsuranceNo: z.string().nullish(),
-  healthInsuranceNo: z.string().nullish(),
-  email: z.string({ error: "Email không được để trống" }).min(1, "Email không được để trống"),
-  phone: z
-    .string({ error: "Số điện thoại không được để trống" })
-    .min(1, "Số điện thoại không được để trống"),
+  nationalId: requiredText("Số CCCD/CMND không được để trống"),
+  hometown: optionalText(),
+  address: requiredText("Địa chỉ không được để trống"),
+  taxCode: optionalText(),
+  socialInsuranceNo: optionalText(),
+  healthInsuranceNo: optionalText(),
+  email: requiredText("Email không được để trống"),
+  phone: requiredText("Số điện thoại không được để trống"),
   isForeigner: z.boolean({ error: "Giá trị quốc tịch không hợp lệ" }).default(false),
-  educationLevel: educationLevelSchema.nullish(),
-  trainingLevel: trainingLevelSchema.nullish(),
-  academicTitle: academicTitleSchema.nullish(),
-  academicRank: academicRankSchema.nullish(),
+  educationLevel: optionalField(educationLevelSchema),
+  trainingLevel: optionalField(trainingLevelSchema),
+  academicTitle: optionalField(academicTitleSchema),
+  academicRank: optionalField(academicRankSchema),
   workStatus: workStatusSchema,
   contractStatus: contractStatusSchema,
-  currentOrgUnitId: z.uuid().nullish(),
-  currentPositionTitle: z.string().nullish(),
-  salaryGradeStepId: z.uuid().nullish(),
-  portraitFileId: z.uuid().nullish(),
+  currentOrgUnitId: optionalField(z.uuid()),
+  currentPositionTitle: optionalText(),
+  salaryGradeStepId: optionalField(z.uuid()),
+  portraitFileId: optionalField(z.uuid()),
 });
 
 export type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;

@@ -2,7 +2,16 @@ import { api } from "@/api/client";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { cn } from "@/lib/utils";
-import { type CreateEmployeeInput, WorkStatus } from "@hrms/shared";
+import {
+  AcademicRank,
+  AcademicTitle,
+  ContractStatus,
+  type CreateEmployeeInput,
+  EducationLevel,
+  Gender,
+  TrainingLevel,
+  WorkStatus,
+} from "@hrms/shared";
 import { Link, Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import * as React from "react";
 
@@ -36,6 +45,11 @@ interface EmployeeDetailData {
   salaryGradeStepId?: string | null;
   portraitFileId?: string | null;
 }
+
+const isEnumValue = <T extends Record<string, unknown>>(
+  enumRecord: T,
+  value: string | null | undefined,
+): value is keyof T => value != null && value in enumRecord;
 
 interface EmployeeDetailPayload {
   employee: EmployeeDetailData;
@@ -85,11 +99,11 @@ const tabs = [
     to: "/employees/$employeeId/bank-accounts",
   },
   {
-    key: "work-history",
+    key: "previous-jobs",
     label: "Quá trình công tác",
-    to: "/employees/$employeeId/work-history",
+    to: "/employees/$employeeId/previous-jobs",
   },
-  { key: "party", label: "Đảng/Đoàn", to: "/employees/$employeeId/party" },
+  { key: "party-memberships", label: "Đảng/Đoàn", to: "/employees/$employeeId/party-memberships" },
   {
     key: "allowances",
     label: "Phụ cấp",
@@ -100,8 +114,8 @@ const tabs = [
 function getTabFromPath(pathname: string) {
   if (pathname.includes("/family")) return "family";
   if (pathname.includes("/bank-accounts")) return "bank-accounts";
-  if (pathname.includes("/work-history")) return "work-history";
-  if (pathname.includes("/party")) return "party";
+  if (pathname.includes("/previous-jobs")) return "previous-jobs";
+  if (pathname.includes("/party-memberships")) return "party-memberships";
   if (pathname.includes("/allowances")) return "allowances";
   return "personal";
 }

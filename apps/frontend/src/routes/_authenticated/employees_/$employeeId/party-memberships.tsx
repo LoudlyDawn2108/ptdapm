@@ -11,7 +11,7 @@ import {
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 
-export const Route = createFileRoute("/_authenticated/employees_/$employeeId/party")({
+export const Route = createFileRoute("/_authenticated/employees_/$employeeId/party-memberships")({
   component: EmployeePartyTab,
 });
 

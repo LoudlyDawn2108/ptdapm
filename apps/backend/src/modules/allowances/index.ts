@@ -7,6 +7,7 @@ import {
 } from "@hrms/shared";
 import { Elysia } from "elysia";
 import { authPlugin } from "../../common/plugins/auth";
+import { requireRole } from "../../common/utils/role-guard";
 import * as allowanceService from "./allowance.service";
 
 export const allowanceRoutes = new Elysia({
@@ -27,7 +28,8 @@ export const allowanceRoutes = new Elysia({
   )
   .post(
     "/",
-    async ({ params, body }) => {
+    async ({ params, body, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
       const data = await allowanceService.create(params.employeeId, body);
       return { data };
     },
@@ -35,7 +37,8 @@ export const allowanceRoutes = new Elysia({
   )
   .put(
     "/:id",
-    async ({ params, body }) => {
+    async ({ params, body, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
       const { employeeId, id } = params;
       const data = await allowanceService.update(id, body);
       return { data };
@@ -48,7 +51,8 @@ export const allowanceRoutes = new Elysia({
   )
   .delete(
     "/:id",
-    async ({ params }) => {
+    async ({ params, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
       const { employeeId, id } = params;
       const data = await allowanceService.remove(id);
       return { data };

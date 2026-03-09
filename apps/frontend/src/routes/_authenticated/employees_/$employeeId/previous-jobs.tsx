@@ -7,7 +7,7 @@ import type { CreateEmployeePreviousJobInput, UpdateEmployeePreviousJobInput } f
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 
-export const Route = createFileRoute("/_authenticated/employees_/$employeeId/work-history")({
+export const Route = createFileRoute("/_authenticated/employees_/$employeeId/previous-jobs")({
   component: EmployeeWorkHistoryTab,
 });
 

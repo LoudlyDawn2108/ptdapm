@@ -24,8 +24,22 @@ import {
 import * as React from "react";
 import { useForm } from "react-hook-form";
 
+const normalizeOptionalValue = (value?: string | null) => {
+  if (typeof value !== "string") return undefined;
+
+  const trimmedValue = value.trim();
+  return trimmedValue.length > 0 ? trimmedValue : undefined;
+};
+
+const normalizeRequiredValue = (value?: string | null) => {
+  if (typeof value !== "string") return "";
+  return value.trim();
+};
+
 export interface EmployeeFormProps {
-  defaultValues?: Partial<CreateEmployeeInput>;
+  defaultValues?: {
+    [K in keyof CreateEmployeeInput]?: CreateEmployeeInput[K] | null;
+  };
   onSubmit: (values: CreateEmployeeInput) => void;
   onCancel?: () => void;
   loading?: boolean;
@@ -42,6 +56,9 @@ const academicTitleOptions = enumToSortedList(AcademicTitle);
 const academicRankOptions = enumToSortedList(AcademicRank);
 
 const formId = "employee-form";
+const defaultGender = GENDER_CODES[0]!;
+const defaultWorkStatus = WORK_STATUS_CODES[0]!;
+const defaultContractStatus = CONTRACT_STATUS_CODES[0]!;
 
 export function EmployeeForm({
   defaultValues,
@@ -51,40 +68,50 @@ export function EmployeeForm({
   className,
   submitLabel,
 }: EmployeeFormProps) {
+  const normalizedDefaultValues = React.useMemo<CreateEmployeeInput>(
+    () => ({
+      staffCode: normalizeRequiredValue(defaultValues?.staffCode),
+      fullName: normalizeRequiredValue(defaultValues?.fullName),
+      dob: normalizeRequiredValue(defaultValues?.dob),
+      gender: defaultValues?.gender ?? defaultGender,
+      nationalId: normalizeRequiredValue(defaultValues?.nationalId),
+      hometown: normalizeOptionalValue(defaultValues?.hometown),
+      address: normalizeRequiredValue(defaultValues?.address),
+      taxCode: normalizeOptionalValue(defaultValues?.taxCode),
+      socialInsuranceNo: normalizeOptionalValue(defaultValues?.socialInsuranceNo),
+      healthInsuranceNo: normalizeOptionalValue(defaultValues?.healthInsuranceNo),
+      email: normalizeRequiredValue(defaultValues?.email),
+      phone: normalizeRequiredValue(defaultValues?.phone),
+      isForeigner: defaultValues?.isForeigner ?? false,
+      educationLevel: defaultValues?.educationLevel ?? undefined,
+      trainingLevel: defaultValues?.trainingLevel ?? undefined,
+      academicTitle: defaultValues?.academicTitle ?? undefined,
+      academicRank: defaultValues?.academicRank ?? undefined,
+      workStatus: defaultValues?.workStatus ?? defaultWorkStatus,
+      contractStatus: defaultValues?.contractStatus ?? defaultContractStatus,
+      currentOrgUnitId: normalizeOptionalValue(defaultValues?.currentOrgUnitId),
+      currentPositionTitle: normalizeOptionalValue(defaultValues?.currentPositionTitle),
+    }),
+    [defaultValues],
+  );
+
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<CreateEmployeeInput>({
     resolver: zodResolver(createEmployeeSchema),
-    defaultValues: {
-      staffCode: "",
-      fullName: "",
-      dob: "",
-      gender: GENDER_CODES[0],
-      nationalId: "",
-      hometown: "",
-      address: "",
-      taxCode: "",
-      socialInsuranceNo: "",
-      healthInsuranceNo: "",
-      email: "",
-      phone: "",
-      isForeigner: false,
-      educationLevel: EDUCATION_LEVEL_CODES[0],
-      trainingLevel: TRAINING_LEVEL_CODES[0],
-      academicTitle: ACADEMIC_TITLE_CODES[0],
-      academicRank: ACADEMIC_RANK_CODES[0],
-      workStatus: WORK_STATUS_CODES[0],
-      contractStatus: CONTRACT_STATUS_CODES[0],
-      currentOrgUnitId: "",
-      currentPositionTitle: "",
-      ...defaultValues,
-    },
+    mode: "onTouched",
+    defaultValues: normalizedDefaultValues,
   });
 
   return (
-    <form id={formId} onSubmit={handleSubmit(onSubmit)} className={cn("space-y-6", className)}>
+    <form
+      id={formId}
+      onSubmit={handleSubmit(onSubmit)}
+      noValidate
+      className={cn("space-y-6", className)}
+    >
       <div className="grid gap-6 md:grid-cols-2">
         <FormField label="Mã cán bộ" required error={errors.staffCode?.message}>
           <input

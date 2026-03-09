@@ -7,6 +7,7 @@ import {
 } from "@hrms/shared";
 import { Elysia } from "elysia";
 import { authPlugin } from "../../common/plugins/auth";
+import { requireRole } from "../../common/utils/role-guard";
 import * as familyMemberService from "./family-member.service";
 
 export const familyMemberRoutes = new Elysia({
@@ -27,7 +28,8 @@ export const familyMemberRoutes = new Elysia({
   )
   .post(
     "/",
-    async ({ params, body }) => {
+    async ({ params, body, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
       const data = await familyMemberService.create(params.employeeId, body);
       return { data };
     },
@@ -35,7 +37,8 @@ export const familyMemberRoutes = new Elysia({
   )
   .put(
     "/:id",
-    async ({ params, body }) => {
+    async ({ params, body, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
       const data = await familyMemberService.update(params.employeeId, params.id, body);
       return { data };
     },
@@ -47,7 +50,8 @@ export const familyMemberRoutes = new Elysia({
   )
   .delete(
     "/:id",
-    async ({ params }) => {
+    async ({ params, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
       const data = await familyMemberService.remove(params.employeeId, params.id);
       return { data };
     },
