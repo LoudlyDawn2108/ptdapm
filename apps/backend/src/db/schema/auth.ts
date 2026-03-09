@@ -85,8 +85,23 @@ export const authUsersRelations = relations(authUsers, ({ one, many }) => ({
     references: [authRoles.id],
   }),
   sessions: many(session),
+  accounts: many(account),
   employee: one(employees, {
     fields: [authUsers.employeeId],
     references: [employees.id],
+  }),
+}));
+
+export const sessionRelations = relations(session, ({ one }) => ({
+  user: one(authUsers, {
+    fields: [session.userId],
+    references: [authUsers.id],
+  }),
+}));
+
+export const accountRelations = relations(account, ({ one }) => ({
+  user: one(authUsers, {
+    fields: [account.userId],
+    references: [authUsers.id],
   }),
 }));
