@@ -1,4 +1,3 @@
-import { idParamSchema } from "@hrms/shared";
 import { Elysia } from "elysia";
 import { z } from "zod";
 import { authPlugin } from "../../common/plugins/auth";
