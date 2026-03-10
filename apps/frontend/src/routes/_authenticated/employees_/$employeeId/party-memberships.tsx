@@ -41,24 +41,16 @@ type PartyMembershipMutationResponse = {
 
 type PartyMembershipsApi = {
   get: (args: {
-    params: { employeeId: string };
     query: { page: number; pageSize: number };
   }) => Promise<PartyMembershipListResponse>;
-  post: (args: {
-    params: { employeeId: string };
-    body: CreateEmployeePartyMembershipInput;
-  }) => Promise<PartyMembershipMutationResponse>;
-  put: (args: {
-    params: { employeeId: string; id: string };
-    body: UpdateEmployeePartyMembershipInput;
-  }) => Promise<PartyMembershipMutationResponse>;
-  delete: (args: { params: { employeeId: string; id: string } }) => Promise<unknown>;
-};
+  post: (body: CreateEmployeePartyMembershipInput) => Promise<PartyMembershipMutationResponse>;
+} & ((params: { id: string }) => {
+  put: (body: UpdateEmployeePartyMembershipInput) => Promise<PartyMembershipMutationResponse>;
+  delete: () => Promise<unknown>;
+});
 
-type EmployeesApi = {
-  $employeeId: {
-    "party-memberships": PartyMembershipsApi;
-  };
+type EmployeesApi = (params: { employeeId: string }) => {
+  "party-memberships": PartyMembershipsApi;
 };
 
 const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
@@ -90,8 +82,7 @@ function EmployeePartyTab() {
   const loadItems = React.useCallback(
     async (isActive?: () => boolean) => {
       setLoading(true);
-      const response = await employeesApi.$employeeId["party-memberships"].get({
-        params: { employeeId },
+      const response = await employeesApi({ employeeId })["party-memberships"].get({
         query: queryParams,
       });
       if (isActive && !isActive()) return;
@@ -177,15 +168,9 @@ function EmployeePartyTab() {
   const handleSubmit = async (values: CreateEmployeePartyMembershipInput) => {
     setFormLoading(true);
     if (editingItem) {
-      await employeesApi.$employeeId["party-memberships"].put({
-        params: { employeeId, id: editingItem.id },
-        body: values,
-      });
+      await employeesApi({ employeeId })["party-memberships"]({ id: editingItem.id }).put(values);
     } else {
-      await employeesApi.$employeeId["party-memberships"].post({
-        params: { employeeId },
-        body: values,
-      });
+      await employeesApi({ employeeId })["party-memberships"].post(values);
     }
     setFormLoading(false);
     setFormOpen(false);
@@ -196,9 +181,7 @@ function EmployeePartyTab() {
   const handleDelete = async () => {
     if (!deletingItem) return;
     setDeleteLoading(true);
-    await employeesApi.$employeeId["party-memberships"].delete({
-      params: { employeeId, id: deletingItem.id },
-    });
+    await employeesApi({ employeeId })["party-memberships"]({ id: deletingItem.id }).delete();
     setDeleteLoading(false);
     setConfirmOpen(false);
     setDeletingItem(null);

@@ -44,24 +44,16 @@ type FamilyMemberMutationResponse = {
 
 type FamilyMembersApi = {
   get: (args: {
-    params: { employeeId: string };
     query: { page: number; pageSize: number };
   }) => Promise<FamilyMemberListResponse>;
-  post: (args: {
-    params: { employeeId: string };
-    body: CreateEmployeeFamilyMemberInput;
-  }) => Promise<FamilyMemberMutationResponse>;
-  put: (args: {
-    params: { employeeId: string; id: string };
-    body: UpdateEmployeeFamilyMemberInput;
-  }) => Promise<FamilyMemberMutationResponse>;
-  delete: (args: { params: { employeeId: string; id: string } }) => Promise<unknown>;
-};
+  post: (body: CreateEmployeeFamilyMemberInput) => Promise<FamilyMemberMutationResponse>;
+} & ((params: { id: string }) => {
+  put: (body: UpdateEmployeeFamilyMemberInput) => Promise<FamilyMemberMutationResponse>;
+  delete: () => Promise<unknown>;
+});
 
-type EmployeesApi = {
-  $employeeId: {
-    "family-members": FamilyMembersApi;
-  };
+type EmployeesApi = (params: { employeeId: string }) => {
+  "family-members": FamilyMembersApi;
 };
 
 const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
@@ -100,8 +92,7 @@ function EmployeeFamilyTab() {
   const loadItems = React.useCallback(
     async (isActive?: () => boolean) => {
       setLoading(true);
-      const response = await employeesApi.$employeeId["family-members"].get({
-        params: { employeeId },
+      const response = await employeesApi({ employeeId })["family-members"].get({
         query: queryParams,
       });
       if (isActive && !isActive()) return;
@@ -197,15 +188,9 @@ function EmployeeFamilyTab() {
   const handleSubmit = async (values: CreateEmployeeFamilyMemberInput) => {
     setFormLoading(true);
     if (editingItem) {
-      await employeesApi.$employeeId["family-members"].put({
-        params: { employeeId, id: editingItem.id },
-        body: values,
-      });
+      await employeesApi({ employeeId })["family-members"]({ id: editingItem.id }).put(values);
     } else {
-      await employeesApi.$employeeId["family-members"].post({
-        params: { employeeId },
-        body: values,
-      });
+      await employeesApi({ employeeId })["family-members"].post(values);
     }
     setFormLoading(false);
     setFormOpen(false);
@@ -216,9 +201,7 @@ function EmployeeFamilyTab() {
   const handleDelete = async () => {
     if (!deletingItem) return;
     setDeleteLoading(true);
-    await employeesApi.$employeeId["family-members"].delete({
-      params: { employeeId, id: deletingItem.id },
-    });
+    await employeesApi({ employeeId })["family-members"]({ id: deletingItem.id }).delete();
     setDeleteLoading(false);
     setConfirmOpen(false);
     setDeletingItem(null);

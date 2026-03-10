@@ -38,24 +38,16 @@ type WorkHistoryMutationResponse = {
 
 type PreviousJobsApi = {
   get: (args: {
-    params: { employeeId: string };
     query: { page: number; pageSize: number };
   }) => Promise<WorkHistoryListResponse>;
-  post: (args: {
-    params: { employeeId: string };
-    body: CreateEmployeePreviousJobInput;
-  }) => Promise<WorkHistoryMutationResponse>;
-  put: (args: {
-    params: { employeeId: string; id: string };
-    body: UpdateEmployeePreviousJobInput;
-  }) => Promise<WorkHistoryMutationResponse>;
-  delete: (args: { params: { employeeId: string; id: string } }) => Promise<unknown>;
-};
+  post: (body: CreateEmployeePreviousJobInput) => Promise<WorkHistoryMutationResponse>;
+} & ((params: { id: string }) => {
+  put: (body: UpdateEmployeePreviousJobInput) => Promise<WorkHistoryMutationResponse>;
+  delete: () => Promise<unknown>;
+});
 
-type EmployeesApi = {
-  $employeeId: {
-    "previous-jobs": PreviousJobsApi;
-  };
+type EmployeesApi = (params: { employeeId: string }) => {
+  "previous-jobs": PreviousJobsApi;
 };
 
 const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
@@ -82,8 +74,7 @@ function EmployeeWorkHistoryTab() {
   const loadItems = React.useCallback(
     async (isActive?: () => boolean) => {
       setLoading(true);
-      const response = await employeesApi.$employeeId["previous-jobs"].get({
-        params: { employeeId },
+      const response = await employeesApi({ employeeId })["previous-jobs"].get({
         query: queryParams,
       });
       if (isActive && !isActive()) return;
@@ -174,15 +165,9 @@ function EmployeeWorkHistoryTab() {
   const handleSubmit = async (values: CreateEmployeePreviousJobInput) => {
     setFormLoading(true);
     if (editingItem) {
-      await employeesApi.$employeeId["previous-jobs"].put({
-        params: { employeeId, id: editingItem.id },
-        body: values,
-      });
+      await employeesApi({ employeeId })["previous-jobs"]({ id: editingItem.id }).put(values);
     } else {
-      await employeesApi.$employeeId["previous-jobs"].post({
-        params: { employeeId },
-        body: values,
-      });
+      await employeesApi({ employeeId })["previous-jobs"].post(values);
     }
     setFormLoading(false);
     setFormOpen(false);
@@ -193,9 +178,7 @@ function EmployeeWorkHistoryTab() {
   const handleDelete = async () => {
     if (!deletingItem) return;
     setDeleteLoading(true);
-    await employeesApi.$employeeId["previous-jobs"].delete({
-      params: { employeeId, id: deletingItem.id },
-    });
+    await employeesApi({ employeeId })["previous-jobs"]({ id: deletingItem.id }).delete();
     setDeleteLoading(false);
     setConfirmOpen(false);
     setDeletingItem(null);

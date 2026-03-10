@@ -37,24 +37,16 @@ type AllowanceMutationResponse = {
 
 type AllowancesApi = {
   get: (args: {
-    params: { employeeId: string };
     query: { page: number; pageSize: number };
   }) => Promise<AllowanceListResponse>;
-  post: (args: {
-    params: { employeeId: string };
-    body: CreateEmployeeAllowanceInput;
-  }) => Promise<AllowanceMutationResponse>;
-  put: (args: {
-    params: { employeeId: string; id: string };
-    body: UpdateEmployeeAllowanceInput;
-  }) => Promise<AllowanceMutationResponse>;
-  delete: (args: { params: { employeeId: string; id: string } }) => Promise<unknown>;
-};
+  post: (body: CreateEmployeeAllowanceInput) => Promise<AllowanceMutationResponse>;
+} & ((params: { id: string }) => {
+  put: (body: UpdateEmployeeAllowanceInput) => Promise<AllowanceMutationResponse>;
+  delete: () => Promise<unknown>;
+});
 
-type EmployeesApi = {
-  $employeeId: {
-    allowances: AllowancesApi;
-  };
+type EmployeesApi = (params: { employeeId: string }) => {
+  allowances: AllowancesApi;
 };
 
 const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
@@ -87,8 +79,7 @@ function EmployeeAllowancesTab() {
   const loadItems = React.useCallback(
     async (isActive?: () => boolean) => {
       setLoading(true);
-      const response = await employeesApi.$employeeId.allowances.get({
-        params: { employeeId },
+      const response = await employeesApi({ employeeId }).allowances.get({
         query: queryParams,
       });
       if (isActive && !isActive()) return;
@@ -174,15 +165,9 @@ function EmployeeAllowancesTab() {
   const handleSubmit = async (values: CreateEmployeeAllowanceInput) => {
     setFormLoading(true);
     if (editingItem) {
-      await employeesApi.$employeeId.allowances.put({
-        params: { employeeId, id: editingItem.id },
-        body: values,
-      });
+      await employeesApi({ employeeId }).allowances({ id: editingItem.id }).put(values);
     } else {
-      await employeesApi.$employeeId.allowances.post({
-        params: { employeeId },
-        body: values,
-      });
+      await employeesApi({ employeeId }).allowances.post(values);
     }
     setFormLoading(false);
     setFormOpen(false);
@@ -193,9 +178,7 @@ function EmployeeAllowancesTab() {
   const handleDelete = async () => {
     if (!deletingItem) return;
     setDeleteLoading(true);
-    await employeesApi.$employeeId.allowances.delete({
-      params: { employeeId, id: deletingItem.id },
-    });
+    await employeesApi({ employeeId }).allowances({ id: deletingItem.id }).delete();
     setDeleteLoading(false);
     setConfirmOpen(false);
     setDeletingItem(null);

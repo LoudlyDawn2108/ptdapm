@@ -127,7 +127,7 @@ export type UpdateEmployeeInput = z.infer<typeof updateEmployeeSchema>;
 export const createEmployeeFamilyMemberSchema = z.object({
   relation: familyRelationSchema,
   fullName: z.string({ error: "Họ tên không được để trống" }).min(1, "Họ tên không được để trống"),
-  dob: z.string().nullish(),
+  dob: optionalText(),
   phone: z.string().nullish(),
   note: z.string().nullish(),
   isDependent: z.boolean({ error: "Giá trị người phụ thuộc không hợp lệ" }).default(false),
@@ -161,8 +161,8 @@ export const createEmployeePreviousJobSchema = z.object({
   workplace: z
     .string({ error: "Nơi làm việc không được để trống" })
     .min(1, "Nơi làm việc không được để trống"),
-  startedOn: z.string().nullish(),
-  endedOn: z.string().nullish(),
+  startedOn: optionalText(),
+  endedOn: optionalText(),
   note: z.string().nullish(),
 });
 
@@ -174,7 +174,7 @@ export type UpdateEmployeePreviousJobInput = z.infer<typeof updateEmployeePrevio
 
 export const createEmployeePartyMembershipSchema = z.object({
   organizationType: partyOrgTypeSchema,
-  joinedOn: z.string().nullish(),
+  joinedOn: optionalText(),
   details: z.string().nullish(),
 });
 

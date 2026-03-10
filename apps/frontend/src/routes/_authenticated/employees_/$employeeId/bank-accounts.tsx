@@ -37,24 +37,16 @@ type BankAccountMutationResponse = {
 
 type BankAccountsApi = {
   get: (args: {
-    params: { employeeId: string };
     query: { page: number; pageSize: number };
   }) => Promise<BankAccountListResponse>;
-  post: (args: {
-    params: { employeeId: string };
-    body: CreateEmployeeBankAccountInput;
-  }) => Promise<BankAccountMutationResponse>;
-  put: (args: {
-    params: { employeeId: string; id: string };
-    body: UpdateEmployeeBankAccountInput;
-  }) => Promise<BankAccountMutationResponse>;
-  delete: (args: { params: { employeeId: string; id: string } }) => Promise<unknown>;
-};
+  post: (body: CreateEmployeeBankAccountInput) => Promise<BankAccountMutationResponse>;
+} & ((params: { id: string }) => {
+  put: (body: UpdateEmployeeBankAccountInput) => Promise<BankAccountMutationResponse>;
+  delete: () => Promise<unknown>;
+});
 
-type EmployeesApi = {
-  $employeeId: {
-    "bank-accounts": BankAccountsApi;
-  };
+type EmployeesApi = (params: { employeeId: string }) => {
+  "bank-accounts": BankAccountsApi;
 };
 
 const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
@@ -85,8 +77,7 @@ function EmployeeBankAccountsTab() {
   const loadItems = React.useCallback(
     async (checkActive?: () => boolean) => {
       setLoading(true);
-      const response = await employeesApi.$employeeId["bank-accounts"].get({
-        params: { employeeId },
+      const response = await employeesApi({ employeeId })["bank-accounts"].get({
         query: queryParams,
       });
       if (checkActive && !checkActive()) return;
@@ -172,15 +163,9 @@ function EmployeeBankAccountsTab() {
   const handleSubmit = async (values: CreateEmployeeBankAccountInput) => {
     setFormLoading(true);
     if (editingItem) {
-      await employeesApi.$employeeId["bank-accounts"].put({
-        params: { employeeId, id: editingItem.id },
-        body: values,
-      });
+      await employeesApi({ employeeId })["bank-accounts"]({ id: editingItem.id }).put(values);
     } else {
-      await employeesApi.$employeeId["bank-accounts"].post({
-        params: { employeeId },
-        body: values,
-      });
+      await employeesApi({ employeeId })["bank-accounts"].post(values);
     }
     setFormLoading(false);
     setFormOpen(false);
@@ -191,9 +176,7 @@ function EmployeeBankAccountsTab() {
   const handleDelete = async () => {
     if (!deletingItem) return;
     setDeleteLoading(true);
-    await employeesApi.$employeeId["bank-accounts"].delete({
-      params: { employeeId, id: deletingItem.id },
-    });
+    await employeesApi({ employeeId })["bank-accounts"]({ id: deletingItem.id }).delete();
     setDeleteLoading(false);
     setConfirmOpen(false);
     setDeletingItem(null);
