@@ -1,7 +1,7 @@
 import { api } from "@/api/client";
-import { EmployeeForm } from "@/components/employees/EmployeeForm";
+import { EmployeeForm, type ServerFieldErrors } from "@/components/employees/EmployeeForm";
 import { PageHeader } from "@/components/ui/PageHeader";
-import type { CreateEmployeeInput } from "@hrms/shared";
+import type { CreateEmployeeInput, ErrorResponse } from "@hrms/shared";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 
@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_authenticated/employees/new")({
 
 type EmployeeCreateResponse = {
   data: { data?: { id: string } } | null;
-  error: unknown;
+  error: { status: number; value: ErrorResponse } | null;
 };
 
 type EmployeesApi = {
@@ -20,18 +20,50 @@ type EmployeesApi = {
 
 const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
 
+const CONFLICT_FIELD_MAP: Record<string, keyof CreateEmployeeInput> = {
+  CCCD: "nationalId",
+  Email: "email",
+  "Mã cán bộ": "staffCode",
+};
+
+function parseConflictToFieldErrors(message: string): ServerFieldErrors {
+  for (const [keyword, field] of Object.entries(CONFLICT_FIELD_MAP)) {
+    if (message.includes(keyword)) {
+      return { [field]: message };
+    }
+  }
+  return { root: message } as unknown as ServerFieldErrors;
+}
+
+function parseErrorResponse(
+  error: { status: number; value: ErrorResponse } | null,
+): ServerFieldErrors | undefined {
+  if (!error) return undefined;
+
+  const body = error.value;
+  if (body?.type === "field" && body.fields) {
+    return body.fields as ServerFieldErrors;
+  }
+  if (error.status === 409 && body?.type === "toast" && body.error) {
+    return parseConflictToFieldErrors(body.error);
+  }
+  return undefined;
+}
+
 function EmployeeCreatePage() {
   const navigate = useNavigate();
   const [loading, setLoading] = React.useState(false);
 
-  const handleSubmit = async (values: CreateEmployeeInput) => {
+  const handleSubmit = async (values: CreateEmployeeInput): Promise<ServerFieldErrors | void> => {
     setLoading(true);
     try {
       const response = await employeesApi.post(values);
       const employeeId = response.data?.data?.id;
       if (employeeId) {
         navigate({ to: "/employees/$employeeId", params: { employeeId } });
+        return;
       }
+      return parseErrorResponse(response.error);
     } finally {
       setLoading(false);
     }

@@ -37,11 +37,15 @@ const normalizeRequiredValue = (value?: string | null) => {
   return value.trim();
 };
 
+/** Field-level errors returned from the server (field name → message). */
+export type ServerFieldErrors = Partial<Record<keyof CreateEmployeeInput, string>>;
+
 export interface EmployeeFormProps {
   defaultValues?: {
     [K in keyof CreateEmployeeInput]?: CreateEmployeeInput[K] | null;
   };
-  onSubmit: (values: CreateEmployeeInput) => void;
+  /** Return field errors from the server to display inline on the form. */
+  onSubmit: (values: CreateEmployeeInput) => void | Promise<ServerFieldErrors | void>;
   onCancel?: () => void;
   loading?: boolean;
   className?: string;
@@ -101,6 +105,7 @@ export function EmployeeForm({
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<CreateEmployeeFormInput, unknown, CreateEmployeeInput>({
     resolver: zodResolver(createEmployeeSchema),
@@ -108,10 +113,24 @@ export function EmployeeForm({
     defaultValues: normalizedDefaultValues,
   });
 
+  const wrappedSubmit = React.useCallback(
+    async (values: CreateEmployeeInput) => {
+      const fieldErrors = await onSubmit(values);
+      if (fieldErrors) {
+        for (const [field, message] of Object.entries(fieldErrors)) {
+          if (message) {
+            setError(field as keyof CreateEmployeeInput, { message });
+          }
+        }
+      }
+    },
+    [onSubmit, setError],
+  );
+
   return (
     <form
       id={formId}
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(wrappedSubmit)}
       noValidate
       className={cn("space-y-6", className)}
     >
@@ -120,7 +139,12 @@ export function EmployeeForm({
           <input
             className="h-11 rounded-xl border border-border bg-background px-4 text-sm"
             placeholder="Nhập mã cán bộ"
-            {...register("staffCode")}
+            {...register("staffCode", {
+              validate: (val) => {
+                if (typeof val !== "string") return "Mã cán bộ không được để trống";
+                return val.trim().length > 0 || "Mã cán bộ không được để trống";
+              },
+            })}
           />
         </FormField>
         <FormField label="Họ và tên" required error={errors.fullName?.message}>

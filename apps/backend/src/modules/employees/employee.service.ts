@@ -1,6 +1,6 @@
 import type { CreateEmployeeInput, UpdateEmployeeInput } from "@hrms/shared";
 import { type SQL, and, eq, ilike, ne, or } from "drizzle-orm";
-import { ConflictError, FieldValidationError, NotFoundError } from "../../common/utils/errors";
+import { FieldValidationError, NotFoundError } from "../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
 import { db } from "../../db";
 import type { NewEmployee } from "../../db/schema";
@@ -140,15 +140,15 @@ export async function create(data: CreateEmployeeInput): Promise<Employee> {
   }
 
   if (await hasConflict(eq(employees.nationalId, nationalId))) {
-    throw new ConflictError("Số CCCD/CMND đã tồn tại");
+    throw new FieldValidationError({ nationalId: "Số CCCD/CMND đã tồn tại" });
   }
 
   if (await hasConflict(eq(employees.email, email))) {
-    throw new ConflictError("Email đã tồn tại");
+    throw new FieldValidationError({ email: "Email đã tồn tại" });
   }
 
   if (staffCode && (await hasConflict(eq(employees.staffCode, staffCode)))) {
-    throw new ConflictError("Mã cán bộ đã tồn tại");
+    throw new FieldValidationError({ staffCode: "Mã cán bộ đã tồn tại" });
   }
 
   const { staffCode: _staffCode, ...rest } = data;
@@ -179,21 +179,21 @@ export async function update(id: string, data: UpdateEmployeeInput): Promise<Emp
   if (nationalId) {
     const condition = and(eq(employees.nationalId, nationalId), ne(employees.id, id));
     if (condition && (await hasConflict(condition))) {
-      throw new ConflictError("Số CCCD/CMND đã tồn tại");
+      throw new FieldValidationError({ nationalId: "Số CCCD/CMND đã tồn tại" });
     }
   }
 
   if (email) {
     const condition = and(eq(employees.email, email), ne(employees.id, id));
     if (condition && (await hasConflict(condition))) {
-      throw new ConflictError("Email đã tồn tại");
+      throw new FieldValidationError({ email: "Email đã tồn tại" });
     }
   }
 
   if (staffCode) {
     const condition = and(eq(employees.staffCode, staffCode), ne(employees.id, id));
     if (condition && (await hasConflict(condition))) {
-      throw new ConflictError("Mã cán bộ đã tồn tại");
+      throw new FieldValidationError({ staffCode: "Mã cán bộ đã tồn tại" });
     }
   }
 
