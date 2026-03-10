@@ -3,6 +3,7 @@ import { FormField } from "@/components/ui/FormField";
 import { Modal } from "@/components/ui/Modal";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  type CreateEmployeeFamilyMemberFormInput,
   type CreateEmployeeFamilyMemberInput,
   FamilyRelation,
   createEmployeeFamilyMemberSchema,
@@ -33,7 +34,7 @@ export function FamilyMemberForm({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<CreateEmployeeFamilyMemberInput>({
+  } = useForm<CreateEmployeeFamilyMemberFormInput, unknown, CreateEmployeeFamilyMemberInput>({
     resolver: zodResolver(createEmployeeFamilyMemberSchema),
     defaultValues: {
       relation: relationOptions[0]?.code,

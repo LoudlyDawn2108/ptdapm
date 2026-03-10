@@ -9,6 +9,7 @@ import {
   AcademicTitle,
   CONTRACT_STATUS_CODES,
   ContractStatus,
+  type CreateEmployeeFormInput,
   type CreateEmployeeInput,
   EDUCATION_LEVEL_CODES,
   EducationLevel,
@@ -68,7 +69,7 @@ export function EmployeeForm({
   className,
   submitLabel,
 }: EmployeeFormProps) {
-  const normalizedDefaultValues = React.useMemo<CreateEmployeeInput>(
+  const normalizedDefaultValues = React.useMemo<CreateEmployeeFormInput>(
     () => ({
       staffCode: normalizeRequiredValue(defaultValues?.staffCode),
       fullName: normalizeRequiredValue(defaultValues?.fullName),
@@ -91,6 +92,8 @@ export function EmployeeForm({
       contractStatus: defaultValues?.contractStatus ?? defaultContractStatus,
       currentOrgUnitId: normalizeOptionalValue(defaultValues?.currentOrgUnitId),
       currentPositionTitle: normalizeOptionalValue(defaultValues?.currentPositionTitle),
+      salaryGradeStepId: normalizeOptionalValue(defaultValues?.salaryGradeStepId),
+      portraitFileId: normalizeOptionalValue(defaultValues?.portraitFileId),
     }),
     [defaultValues],
   );
@@ -99,7 +102,7 @@ export function EmployeeForm({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<CreateEmployeeInput>({
+  } = useForm<CreateEmployeeFormInput, unknown, CreateEmployeeInput>({
     resolver: zodResolver(createEmployeeSchema),
     mode: "onTouched",
     defaultValues: normalizedDefaultValues,

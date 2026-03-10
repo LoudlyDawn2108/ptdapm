@@ -3,6 +3,7 @@ import { type SQL, and, eq, ilike, ne, or } from "drizzle-orm";
 import { ConflictError, FieldValidationError, NotFoundError } from "../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
 import { db } from "../../db";
+import type { NewEmployee } from "../../db/schema";
 import {
   type Employee,
   employeeAllowances,
@@ -16,6 +17,12 @@ import {
 function normalizeOptional(value?: string | null): string | undefined {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
+}
+
+function undefinedToNull<T extends Record<string, unknown>>(data: T) {
+  return Object.fromEntries(
+    Object.entries(data).map(([k, v]) => [k, v === undefined ? null : v]),
+  ) as { [K in keyof T]: undefined extends T[K] ? Exclude<T[K], undefined> | null : T[K] };
 }
 
 async function hasConflict(condition: SQL): Promise<boolean> {
@@ -144,10 +151,10 @@ export async function create(data: CreateEmployeeInput): Promise<Employee> {
     throw new ConflictError("Mã cán bộ đã tồn tại");
   }
 
-  const payload = {
+  const payload = undefinedToNull({
     ...data,
-    staffCode: staffCode ?? undefined,
-  };
+    staffCode: staffCode ?? null,
+  }) as NewEmployee;
 
   const [created] = await db.insert(employees).values(payload).returning();
   if (!created) throw new Error("Insert failed");
@@ -186,11 +193,11 @@ export async function update(id: string, data: UpdateEmployeeInput): Promise<Emp
     }
   }
 
-  const payload = {
+  const payload = undefinedToNull({
     ...data,
-    staffCode: staffCode ?? undefined,
+    staffCode: staffCode ?? null,
     updatedAt: new Date(),
-  };
+  }) as Partial<NewEmployee>;
 
   const [updated] = await db.update(employees).set(payload).where(eq(employees.id, id)).returning();
 

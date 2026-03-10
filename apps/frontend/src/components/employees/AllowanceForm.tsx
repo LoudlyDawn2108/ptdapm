@@ -2,7 +2,11 @@ import { FormActions } from "@/components/ui/FormActions";
 import { FormField } from "@/components/ui/FormField";
 import { Modal } from "@/components/ui/Modal";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { type CreateEmployeeAllowanceInput, createEmployeeAllowanceSchema } from "@hrms/shared";
+import {
+  type CreateEmployeeAllowanceFormInput,
+  type CreateEmployeeAllowanceInput,
+  createEmployeeAllowanceSchema,
+} from "@hrms/shared";
 import * as React from "react";
 import { useForm } from "react-hook-form";
 
@@ -27,7 +31,7 @@ export function AllowanceForm({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<CreateEmployeeAllowanceInput>({
+  } = useForm<CreateEmployeeAllowanceFormInput, unknown, CreateEmployeeAllowanceInput>({
     resolver: zodResolver(createEmployeeAllowanceSchema),
     defaultValues: {
       allowanceTypeId: "",

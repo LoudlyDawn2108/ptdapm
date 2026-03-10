@@ -2,7 +2,11 @@ import { FormActions } from "@/components/ui/FormActions";
 import { FormField } from "@/components/ui/FormField";
 import { Modal } from "@/components/ui/Modal";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { type CreateEmployeeBankAccountInput, createEmployeeBankAccountSchema } from "@hrms/shared";
+import {
+  type CreateEmployeeBankAccountFormInput,
+  type CreateEmployeeBankAccountInput,
+  createEmployeeBankAccountSchema,
+} from "@hrms/shared";
 import * as React from "react";
 import { useForm } from "react-hook-form";
 
@@ -27,7 +31,7 @@ export function BankAccountForm({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<CreateEmployeeBankAccountInput>({
+  } = useForm<CreateEmployeeBankAccountFormInput, unknown, CreateEmployeeBankAccountInput>({
     resolver: zodResolver(createEmployeeBankAccountSchema),
     defaultValues: {
       bankName: "",

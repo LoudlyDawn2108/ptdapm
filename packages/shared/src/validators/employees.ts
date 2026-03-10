@@ -61,68 +61,61 @@ const partyOrgTypeSchema = z.enum(
 );
 
 export const createEmployeeSchema = z.object({
-  staffCode: z
-    .string()
-    .transform((val) => (val === "" ? undefined : val))
-    .pipe(
-      z.string({ error: "Mã cán bộ không được để trống" }).min(1, "Mã cán bộ không được để trống"),
-    )
-    .nullish(),
-  fullName: z.string({ error: "Họ tên không được để trống" }).min(1, "Họ tên không được để trống"),
-  dob: z.string({ error: "Ngày sinh không được để trống" }).min(1, "Ngày sinh không được để trống"),
+  staffCode: optionalText(),
+  fullName: requiredText("Họ tên không được để trống"),
+  dob: requiredText("Ngày sinh không được để trống"),
   gender: z
     .string()
-    .transform((val) => (val === "" ? undefined : val))
-    .pipe(genderSchema)
-    .nullish(),
-  nationalId: z
-    .string({ error: "Số CCCD/CMND không được để trống" })
-    .min(1, "Số CCCD/CMND không được để trống"),
-  hometown: z.string().nullish(),
-  address: z.string({ error: "Địa chỉ không được để trống" }).min(1, "Địa chỉ không được để trống"),
-  taxCode: z.string().nullish(),
-  socialInsuranceNo: z.string().nullish(),
-  healthInsuranceNo: z.string().nullish(),
-  email: z.string({ error: "Email không được để trống" }).min(1, "Email không được để trống"),
-  phone: z
-    .string({ error: "Số điện thoại không được để trống" })
-    .min(1, "Số điện thoại không được để trống"),
+    .nullish()
+    .transform((val) => (val == null || val === "" ? undefined : val))
+    .pipe(genderSchema.optional()),
+  nationalId: requiredText("Số CCCD/CMND không được để trống"),
+  hometown: optionalText(),
+  address: requiredText("Địa chỉ không được để trống"),
+  taxCode: optionalText(),
+  socialInsuranceNo: optionalText(),
+  healthInsuranceNo: optionalText(),
+  email: requiredText("Email không được để trống"),
+  phone: requiredText("Số điện thoại không được để trống"),
   isForeigner: z.boolean({ error: "Giá trị quốc tịch không hợp lệ" }).default(false),
   educationLevel: z
     .string()
-    .transform((val) => (val === "" ? undefined : val))
-    .pipe(educationLevelSchema)
-    .nullish(),
+    .nullish()
+    .transform((val) => (val == null || val === "" ? undefined : val))
+    .pipe(educationLevelSchema.optional()),
   trainingLevel: z
     .string()
-    .transform((val) => (val === "" ? undefined : val))
-    .pipe(trainingLevelSchema)
-    .nullish(),
+    .nullish()
+    .transform((val) => (val == null || val === "" ? undefined : val))
+    .pipe(trainingLevelSchema.optional()),
   academicTitle: z
     .string()
-    .transform((val) => (val === "" ? undefined : val))
-    .pipe(academicTitleSchema)
-    .nullish(),
+    .nullish()
+    .transform((val) => (val == null || val === "" ? undefined : val))
+    .pipe(academicTitleSchema.optional()),
   academicRank: z
     .string()
-    .transform((val) => (val === "" ? undefined : val))
-    .pipe(academicRankSchema)
-    .nullish(),
+    .nullish()
+    .transform((val) => (val == null || val === "" ? undefined : val))
+    .pipe(academicRankSchema.optional()),
   workStatus: z
     .string()
-    .transform((val) => (val === "" ? undefined : val))
-    .pipe(workStatusSchema),
+    .nullish()
+    .transform((val) => (val == null || val === "" ? undefined : val))
+    .pipe(workStatusSchema.optional()),
   contractStatus: z
     .string()
-    .transform((val) => (val === "" ? undefined : val))
-    .pipe(contractStatusSchema),
-  currentOrgUnitId: z.string().nullish(),
-  currentPositionTitle: z.string().nullish(),
-  salaryGradeStepId: z.string().nullish(),
-  portraitFileId: z.string().nullish(),
+    .nullish()
+    .transform((val) => (val == null || val === "" ? undefined : val))
+    .pipe(contractStatusSchema.optional()),
+  currentOrgUnitId: optionalText(),
+  currentPositionTitle: optionalText(),
+  salaryGradeStepId: optionalText(),
+  portraitFileId: optionalText(),
 });
 
 export type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;
+export type CreateEmployeeFormInput = z.input<typeof createEmployeeSchema>;
 
 export const updateEmployeeSchema = createEmployeeSchema.partial();
 
@@ -138,6 +131,7 @@ export const createEmployeeFamilyMemberSchema = z.object({
 });
 
 export type CreateEmployeeFamilyMemberInput = z.infer<typeof createEmployeeFamilyMemberSchema>;
+export type CreateEmployeeFamilyMemberFormInput = z.input<typeof createEmployeeFamilyMemberSchema>;
 
 export const updateEmployeeFamilyMemberSchema = createEmployeeFamilyMemberSchema.partial();
 
@@ -154,6 +148,7 @@ export const createEmployeeBankAccountSchema = z.object({
 });
 
 export type CreateEmployeeBankAccountInput = z.infer<typeof createEmployeeBankAccountSchema>;
+export type CreateEmployeeBankAccountFormInput = z.input<typeof createEmployeeBankAccountSchema>;
 
 export const updateEmployeeBankAccountSchema = createEmployeeBankAccountSchema.partial();
 
@@ -197,6 +192,7 @@ export const createEmployeeAllowanceSchema = z.object({
 });
 
 export type CreateEmployeeAllowanceInput = z.infer<typeof createEmployeeAllowanceSchema>;
+export type CreateEmployeeAllowanceFormInput = z.input<typeof createEmployeeAllowanceSchema>;
 
 export const updateEmployeeAllowanceSchema = createEmployeeAllowanceSchema.partial();
 
