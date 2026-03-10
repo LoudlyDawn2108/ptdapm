@@ -10,15 +10,12 @@ export const Route = createFileRoute("/_authenticated/employees/new")({
 });
 
 type EmployeeCreateResponse = {
-  data?: {
-    data?: {
-      id: string;
-    };
-  };
+  data: { data?: { id: string } } | null;
+  error: unknown;
 };
 
 type EmployeesApi = {
-  post: (args: { body: CreateEmployeeInput }) => Promise<EmployeeCreateResponse>;
+  post: (body: CreateEmployeeInput) => Promise<EmployeeCreateResponse>;
 };
 
 const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
@@ -29,12 +26,14 @@ function EmployeeCreatePage() {
 
   const handleSubmit = async (values: CreateEmployeeInput) => {
     setLoading(true);
-    const response = await employeesApi.post({ body: values });
-    setLoading(false);
-
-    const employeeId = response.data?.data?.id;
-    if (employeeId) {
-      navigate({ to: "/employees/$id", params: { id: employeeId } });
+    try {
+      const response = await employeesApi.post(values);
+      const employeeId = response.data?.data?.id;
+      if (employeeId) {
+        navigate({ to: "/employees/$employeeId", params: { employeeId } });
+      }
+    } finally {
+      setLoading(false);
     }
   };
 

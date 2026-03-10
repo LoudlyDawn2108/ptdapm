@@ -28,13 +28,10 @@ type EmployeeUpdateResponse = {
   };
 };
 
-type EmployeesApi = {
-  $employeeId: {
-    put: (args: {
-      params: { employeeId: string };
-      body: CreateEmployeeInput;
-    }) => Promise<EmployeeUpdateResponse>;
-  };
+type EmployeesApi = (params: {
+  employeeId: string;
+}) => {
+  put: (body: CreateEmployeeInput) => Promise<EmployeeUpdateResponse>;
 };
 
 const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
@@ -97,7 +94,7 @@ function EmployeePersonalInfoTab() {
 
   const handleSubmit = async (values: CreateEmployeeInput) => {
     setLoading(true);
-    await employeesApi.$employeeId.put({ params: { employeeId }, body: values });
+    await employeesApi({ employeeId }).put(values);
     setLoading(false);
     setOpen(false);
     await reload();

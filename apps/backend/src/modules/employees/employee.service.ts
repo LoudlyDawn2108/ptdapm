@@ -151,12 +151,16 @@ export async function create(data: CreateEmployeeInput): Promise<Employee> {
     throw new ConflictError("Mã cán bộ đã tồn tại");
   }
 
-  const payload = undefinedToNull({
-    ...data,
-    staffCode: staffCode ?? null,
-  }) as NewEmployee;
+  const { staffCode: _staffCode, ...rest } = data;
 
-  const [created] = await db.insert(employees).values(payload).returning();
+  const payload = undefinedToNull(rest) as Omit<NewEmployee, "staffCode">;
+
+  const insertValues = staffCode ? { ...payload, staffCode } : payload;
+
+  const [created] = await db
+    .insert(employees)
+    .values(insertValues as NewEmployee)
+    .returning();
   if (!created) throw new Error("Insert failed");
   return created;
 }
@@ -193,13 +197,20 @@ export async function update(id: string, data: UpdateEmployeeInput): Promise<Emp
     }
   }
 
-  const payload = undefinedToNull({
-    ...data,
-    staffCode: staffCode ?? null,
-    updatedAt: new Date(),
-  }) as Partial<NewEmployee>;
+  const { staffCode: _staffCode, ...rest } = data;
 
-  const [updated] = await db.update(employees).set(payload).where(eq(employees.id, id)).returning();
+  const payload = undefinedToNull({
+    ...rest,
+    updatedAt: new Date(),
+  }) as Partial<Omit<NewEmployee, "staffCode">>;
+
+  const setValues = staffCode ? { ...payload, staffCode } : payload;
+
+  const [updated] = await db
+    .update(employees)
+    .set(setValues as Partial<NewEmployee>)
+    .where(eq(employees.id, id))
+    .returning();
 
   if (!updated) throw new Error("Update failed");
   return updated;

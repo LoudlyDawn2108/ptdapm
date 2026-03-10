@@ -65,10 +65,11 @@ export const createEmployeeSchema = z.object({
   fullName: requiredText("Họ tên không được để trống"),
   dob: requiredText("Ngày sinh không được để trống"),
   gender: z
-    .string()
-    .nullish()
-    .transform((val) => (val == null || val === "" ? undefined : val))
-    .pipe(genderSchema.optional()),
+    .string({ error: "Giới tính không được để trống" })
+    .refine((val) => val !== "" && val != null, {
+      message: "Giới tính không được để trống",
+    })
+    .pipe(genderSchema),
   nationalId: requiredText("Số CCCD/CMND không được để trống"),
   hometown: optionalText(),
   address: requiredText("Địa chỉ không được để trống"),
@@ -100,14 +101,16 @@ export const createEmployeeSchema = z.object({
     .pipe(academicRankSchema.optional()),
   workStatus: z
     .string()
-    .nullish()
-    .transform((val) => (val == null || val === "" ? undefined : val))
-    .pipe(workStatusSchema.optional()),
+    .refine((val) => val !== "" && val != null, {
+      message: "Trạng thái làm việc không được để trống",
+    })
+    .pipe(workStatusSchema),
   contractStatus: z
     .string()
-    .nullish()
-    .transform((val) => (val == null || val === "" ? undefined : val))
-    .pipe(contractStatusSchema.optional()),
+    .refine((val) => val !== "" && val != null, {
+      message: "Trạng thái hợp đồng không được để trống",
+    })
+    .pipe(contractStatusSchema),
   currentOrgUnitId: optionalText(),
   currentPositionTitle: optionalText(),
   salaryGradeStepId: optionalText(),

@@ -47,18 +47,17 @@ type EmployeeDetailResponse = {
   };
 };
 
-type EmployeeDetailApi = {
-  $employeeId: {
-    get: (args: { params: { employeeId: string } }) => Promise<EmployeeDetailResponse>;
-    delete: (args: { params: { employeeId: string } }) => Promise<EmployeeDetailResponse>;
-    put: (args: {
-      params: { employeeId: string };
-      body: CreateEmployeeInput;
-    }) => Promise<EmployeeDetailResponse>;
-  };
+type EmployeeDetailEndpoints = {
+  get: () => Promise<EmployeeDetailResponse>;
+  delete: () => Promise<EmployeeDetailResponse>;
+  put: (body: CreateEmployeeInput) => Promise<EmployeeDetailResponse>;
 };
 
-const employeesApi = (api.api as unknown as { employees: EmployeeDetailApi }).employees;
+type EmployeesApi = (params: {
+  employeeId: string;
+}) => EmployeeDetailEndpoints;
+
+const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
 
 export interface EmployeeDetailContextValue {
   employee: EmployeeDetailData | null;
@@ -124,7 +123,7 @@ function EmployeeDetailLayout() {
   const loadEmployee = React.useCallback(
     async (isActive?: () => boolean) => {
       setIsLoading(true);
-      const response = await employeesApi["$employeeId"].get({ params: { employeeId } });
+      const response = await employeesApi({ employeeId }).get();
       if (isActive && !isActive()) return;
       const payload = response.data?.data?.employee;
 
@@ -172,7 +171,7 @@ function EmployeeDetailLayout() {
 
   const handleDelete = async () => {
     setDeleteLoading(true);
-    const response = await employeesApi["$employeeId"].delete({ params: { employeeId } });
+    const response = await employeesApi({ employeeId }).delete();
     setDeleteLoading(false);
     setConfirmOpen(false);
     if (response.data?.data) {
