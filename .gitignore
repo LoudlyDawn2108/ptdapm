@@ -31,3 +31,6 @@ Thumbs.db
 
 # Drizzle
 drizzle/
+.sisyphus/
+nul
+cookies*.txt
