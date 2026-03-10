@@ -61,29 +61,65 @@ const partyOrgTypeSchema = z.enum(
 );
 
 export const createEmployeeSchema = z.object({
-  staffCode: requiredText("Mã cán bộ không được để trống"),
-  fullName: requiredText("Họ tên không được để trống"),
-  dob: requiredText("Ngày sinh không được để trống"),
-  gender: genderSchema,
-  nationalId: requiredText("Số CCCD/CMND không được để trống"),
-  hometown: optionalText(),
-  address: requiredText("Địa chỉ không được để trống"),
-  taxCode: optionalText(),
-  socialInsuranceNo: optionalText(),
-  healthInsuranceNo: optionalText(),
-  email: requiredText("Email không được để trống"),
-  phone: requiredText("Số điện thoại không được để trống"),
+  staffCode: z
+    .string()
+    .transform((val) => (val === "" ? undefined : val))
+    .pipe(
+      z.string({ error: "Mã cán bộ không được để trống" }).min(1, "Mã cán bộ không được để trống"),
+    )
+    .nullish(),
+  fullName: z.string({ error: "Họ tên không được để trống" }).min(1, "Họ tên không được để trống"),
+  dob: z.string({ error: "Ngày sinh không được để trống" }).min(1, "Ngày sinh không được để trống"),
+  gender: z
+    .string()
+    .transform((val) => (val === "" ? undefined : val))
+    .pipe(genderSchema)
+    .nullish(),
+  nationalId: z
+    .string({ error: "Số CCCD/CMND không được để trống" })
+    .min(1, "Số CCCD/CMND không được để trống"),
+  hometown: z.string().nullish(),
+  address: z.string({ error: "Địa chỉ không được để trống" }).min(1, "Địa chỉ không được để trống"),
+  taxCode: z.string().nullish(),
+  socialInsuranceNo: z.string().nullish(),
+  healthInsuranceNo: z.string().nullish(),
+  email: z.string({ error: "Email không được để trống" }).min(1, "Email không được để trống"),
+  phone: z
+    .string({ error: "Số điện thoại không được để trống" })
+    .min(1, "Số điện thoại không được để trống"),
   isForeigner: z.boolean({ error: "Giá trị quốc tịch không hợp lệ" }).default(false),
-  educationLevel: optionalField(educationLevelSchema),
-  trainingLevel: optionalField(trainingLevelSchema),
-  academicTitle: optionalField(academicTitleSchema),
-  academicRank: optionalField(academicRankSchema),
-  workStatus: workStatusSchema,
-  contractStatus: contractStatusSchema,
-  currentOrgUnitId: optionalField(z.uuid()),
-  currentPositionTitle: optionalText(),
-  salaryGradeStepId: optionalField(z.uuid()),
-  portraitFileId: optionalField(z.uuid()),
+  educationLevel: z
+    .string()
+    .transform((val) => (val === "" ? undefined : val))
+    .pipe(educationLevelSchema)
+    .nullish(),
+  trainingLevel: z
+    .string()
+    .transform((val) => (val === "" ? undefined : val))
+    .pipe(trainingLevelSchema)
+    .nullish(),
+  academicTitle: z
+    .string()
+    .transform((val) => (val === "" ? undefined : val))
+    .pipe(academicTitleSchema)
+    .nullish(),
+  academicRank: z
+    .string()
+    .transform((val) => (val === "" ? undefined : val))
+    .pipe(academicRankSchema)
+    .nullish(),
+  workStatus: z
+    .string()
+    .transform((val) => (val === "" ? undefined : val))
+    .pipe(workStatusSchema),
+  contractStatus: z
+    .string()
+    .transform((val) => (val === "" ? undefined : val))
+    .pipe(contractStatusSchema),
+  currentOrgUnitId: z.string().nullish(),
+  currentPositionTitle: z.string().nullish(),
+  salaryGradeStepId: z.string().nullish(),
+  portraitFileId: z.string().nullish(),
 });
 
 export type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;
