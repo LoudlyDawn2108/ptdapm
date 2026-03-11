@@ -1,4 +1,11 @@
 import { Elysia } from "elysia";
+import {
+  ACADEMIC_RANK_CODES,
+  ACADEMIC_TITLE_CODES,
+  CONTRACT_STATUS_CODES,
+  GENDER_CODES,
+  WORK_STATUS_CODES,
+} from "@hrms/shared";
 import { z } from "zod";
 import { authPlugin } from "../../common/plugins/auth";
 import { BadRequestError } from "../../common/utils/errors";
@@ -9,8 +16,12 @@ const exportListQuerySchema = z.object({
   format: z.string().optional(),
   search: z.string().optional(),
   orgUnitId: z.string().optional(),
-  workStatus: z.string().optional(),
-  contractStatus: z.string().optional(),
+  workStatus: z.enum(WORK_STATUS_CODES as [string, ...string[]]).optional(),
+  contractStatus: z.enum(CONTRACT_STATUS_CODES as [string, ...string[]]).optional(),
+  gender: z.enum(GENDER_CODES as [string, ...string[]]).optional(),
+  academicRank: z.enum(ACADEMIC_RANK_CODES as [string, ...string[]]).optional(),
+  academicTitle: z.enum(ACADEMIC_TITLE_CODES as [string, ...string[]]).optional(),
+  positionTitle: z.string().optional(),
 });
 
 const exportDetailQuerySchema = z.object({
@@ -48,6 +59,10 @@ async function listAllEmployees(params: {
   orgUnitId?: string;
   workStatus?: string;
   contractStatus?: string;
+  gender?: string;
+  academicRank?: string;
+  academicTitle?: string;
+  positionTitle?: string;
 }): Promise<Employee[]> {
   const pageSize = 500;
   let page = 1;
@@ -62,6 +77,10 @@ async function listAllEmployees(params: {
       params.orgUnitId,
       params.workStatus as Parameters<typeof employeeService.list>[4],
       params.contractStatus as Parameters<typeof employeeService.list>[5],
+      params.gender as Parameters<typeof employeeService.list>[6],
+      params.academicRank as Parameters<typeof employeeService.list>[7],
+      params.academicTitle as Parameters<typeof employeeService.list>[8],
+      params.positionTitle,
     );
     items.push(...response.items);
     total = response.total;
@@ -87,6 +106,10 @@ export const employeeExportRoutes = new Elysia({ prefix: "/api/employees" })
         orgUnitId: query.orgUnitId,
         workStatus: query.workStatus,
         contractStatus: query.contractStatus,
+        gender: query.gender,
+        academicRank: query.academicRank,
+        academicTitle: query.academicTitle,
+        positionTitle: query.positionTitle,
       });
 
       const headers = [

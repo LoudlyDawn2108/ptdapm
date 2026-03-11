@@ -78,6 +78,7 @@ function EmployeeCreatePage() {
           loading={loading}
           onSubmit={handleSubmit}
           onCancel={() => navigate({ to: "/employees" })}
+          mode="create"
         />
       </div>
     </div>

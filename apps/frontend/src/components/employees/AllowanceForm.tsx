@@ -61,7 +61,7 @@ export function AllowanceForm({
             type="number"
             className="h-11 rounded-xl border border-border bg-background px-4 text-sm"
             placeholder="Nhập số tiền"
-            {...register("amount", { valueAsNumber: true })}
+            {...register("amount", { setValueAs: (value) => (value === "" || value === null ? undefined : Number(value)) })}
           />
         </FormField>
         <FormField label="Ghi chú" error={errors.note?.message}>

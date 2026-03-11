@@ -9,9 +9,10 @@ export const Route = createFileRoute("/_authenticated/my/profile")({
 });
 
 function MyProfilePage() {
-  const [employee, setEmployee] = React.useState<
-    Awaited<ReturnType<typeof api.employees.me.get>>["data"] | null
-  >(null);
+  type EmployeePayload = Awaited<ReturnType<typeof api.employees.me.get>>["data"];
+  type EmployeeData = EmployeePayload extends { data: infer T } ? T : null;
+
+  const [employee, setEmployee] = React.useState<EmployeeData>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [hasEmployee, setHasEmployee] = React.useState<boolean | null>(null);
 
@@ -23,8 +24,8 @@ function MyProfilePage() {
 
       if (!isMounted) return;
 
-      if (data) {
-        setEmployee(data);
+      if (data?.data) {
+        setEmployee(data.data);
         setHasEmployee(true);
       } else if (error) {
         setHasEmployee(false);

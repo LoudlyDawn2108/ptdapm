@@ -54,14 +54,14 @@ export function PreviousJobForm({
           />
         </FormField>
         <div className="grid gap-4 sm:grid-cols-2">
-          <FormField label="Bắt đầu" error={errors.startedOn?.message}>
+          <FormField label="Bắt đầu" required error={errors.startedOn?.message}>
             <input
               type="date"
               className="h-11 rounded-xl border border-border bg-background px-4 text-sm"
               {...register("startedOn")}
             />
           </FormField>
-          <FormField label="Kết thúc" error={errors.endedOn?.message}>
+          <FormField label="Kết thúc" required error={errors.endedOn?.message}>
             <input
               type="date"
               className="h-11 rounded-xl border border-border bg-background px-4 text-sm"

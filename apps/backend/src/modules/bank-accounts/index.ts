@@ -39,7 +39,7 @@ export const bankAccountRoutes = new Elysia({
     "/:id",
     async ({ params, body, user }) => {
       requireRole(user.role, "ADMIN", "TCCB");
-      const data = await bankAccountService.update(params.id, body);
+      const data = await bankAccountService.update(params.employeeId, params.id, body);
       return { data };
     },
     {
@@ -52,7 +52,7 @@ export const bankAccountRoutes = new Elysia({
     "/:id",
     async ({ params, user }) => {
       requireRole(user.role, "ADMIN", "TCCB");
-      const data = await bankAccountService.remove(params.id);
+      const data = await bankAccountService.remove(params.employeeId, params.id);
       return { data };
     },
     { auth: true, params: employeeIdParamSchema.merge(idParamSchema) },

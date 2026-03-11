@@ -1,6 +1,6 @@
 import type { CreateEmployeeInput, UpdateEmployeeInput } from "@hrms/shared";
 import { type SQL, and, eq, ilike, ne, or } from "drizzle-orm";
-import { FieldValidationError, NotFoundError } from "../../common/utils/errors";
+import { BadRequestError, FieldValidationError, NotFoundError } from "../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
 import { db } from "../../db";
 import type { NewEmployee } from "../../db/schema";
@@ -37,6 +37,10 @@ export async function list(
   orgUnitId?: string,
   workStatus?: Employee["workStatus"],
   contractStatus?: Employee["contractStatus"],
+  gender?: Employee["gender"],
+  academicRank?: Employee["academicRank"],
+  academicTitle?: Employee["academicTitle"],
+  positionTitle?: string,
 ) {
   const normalizedSearch = normalizeOptional(search);
   const normalizedOrgUnitId = normalizeOptional(orgUnitId);
@@ -44,6 +48,14 @@ export async function list(
   const normalizedContractStatus = normalizeOptional(contractStatus) as
     | Employee["contractStatus"]
     | undefined;
+  const normalizedGender = normalizeOptional(gender) as Employee["gender"] | undefined;
+  const normalizedAcademicRank = normalizeOptional(academicRank) as
+    | Employee["academicRank"]
+    | undefined;
+  const normalizedAcademicTitle = normalizeOptional(academicTitle) as
+    | Employee["academicTitle"]
+    | undefined;
+  const normalizedPositionTitle = normalizeOptional(positionTitle);
 
   const conditions: SQL[] = [];
 
@@ -71,6 +83,22 @@ export async function list(
 
   if (normalizedContractStatus) {
     conditions.push(eq(employees.contractStatus, normalizedContractStatus));
+  }
+
+  if (normalizedGender) {
+    conditions.push(eq(employees.gender, normalizedGender));
+  }
+
+  if (normalizedAcademicRank) {
+    conditions.push(eq(employees.academicRank, normalizedAcademicRank));
+  }
+
+  if (normalizedAcademicTitle) {
+    conditions.push(eq(employees.academicTitle, normalizedAcademicTitle));
+  }
+
+  if (normalizedPositionTitle) {
+    conditions.push(ilike(employees.currentPositionTitle, `%${normalizedPositionTitle}%`));
   }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
@@ -127,9 +155,10 @@ export async function getByEmail(email: string): Promise<Employee | null> {
 }
 
 export async function create(data: CreateEmployeeInput): Promise<Employee> {
-  const staffCode = normalizeOptional(data.staffCode ?? undefined);
   const nationalId = normalizeOptional(data.nationalId);
   const email = normalizeOptional(data.email);
+  const { staffCode, ...rest } = data;
+  const normalizedStaffCode = normalizeOptional(staffCode);
 
   if (!nationalId) {
     throw new FieldValidationError({ nationalId: "Số CCCD/CMND không hợp lệ" });
@@ -147,15 +176,20 @@ export async function create(data: CreateEmployeeInput): Promise<Employee> {
     throw new FieldValidationError({ email: "Email đã tồn tại" });
   }
 
-  if (staffCode && (await hasConflict(eq(employees.staffCode, staffCode)))) {
+  if (normalizedStaffCode && (await hasConflict(eq(employees.staffCode, normalizedStaffCode)))) {
     throw new FieldValidationError({ staffCode: "Mã cán bộ đã tồn tại" });
   }
 
-  const { staffCode: _staffCode, ...rest } = data;
 
-  const payload = undefinedToNull(rest) as Omit<NewEmployee, "staffCode">;
+  const payload = undefinedToNull({
+    ...rest,
+    workStatus: rest.workStatus ?? "pending",
+    contractStatus: rest.contractStatus ?? "none",
+  }) as Omit<NewEmployee, "staffCode">;
 
-  const insertValues = staffCode ? { ...payload, staffCode } : payload;
+  const insertValues = normalizedStaffCode
+    ? { ...payload, staffCode: normalizedStaffCode }
+    : payload;
 
   const [created] = await db
     .insert(employees)
@@ -166,13 +200,16 @@ export async function create(data: CreateEmployeeInput): Promise<Employee> {
 }
 
 export async function update(id: string, data: UpdateEmployeeInput): Promise<Employee> {
-  await getById(id);
+  const existing = await getById(id);
+
+  if (!["pending", "working"].includes(existing.workStatus)) {
+    throw new BadRequestError("Không thể chỉnh sửa hồ sơ ở trạng thái hiện tại");
+  }
 
   if (Object.keys(data).length === 0) {
     throw new FieldValidationError({}, "Không có dữ liệu cập nhật");
   }
 
-  const staffCode = normalizeOptional(data.staffCode ?? undefined);
   const nationalId = normalizeOptional(data.nationalId ?? undefined);
   const email = normalizeOptional(data.email ?? undefined);
 
@@ -190,25 +227,15 @@ export async function update(id: string, data: UpdateEmployeeInput): Promise<Emp
     }
   }
 
-  if (staffCode) {
-    const condition = and(eq(employees.staffCode, staffCode), ne(employees.id, id));
-    if (condition && (await hasConflict(condition))) {
-      throw new FieldValidationError({ staffCode: "Mã cán bộ đã tồn tại" });
-    }
-  }
-
-  const { staffCode: _staffCode, ...rest } = data;
 
   const payload = undefinedToNull({
-    ...rest,
+    ...data,
     updatedAt: new Date(),
   }) as Partial<Omit<NewEmployee, "staffCode">>;
 
-  const setValues = staffCode ? { ...payload, staffCode } : payload;
-
   const [updated] = await db
     .update(employees)
-    .set(setValues as Partial<NewEmployee>)
+    .set(payload as Partial<NewEmployee>)
     .where(eq(employees.id, id))
     .returning();
 

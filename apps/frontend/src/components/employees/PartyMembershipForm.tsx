@@ -63,14 +63,14 @@ export function PartyMembershipForm({
             ))}
           </select>
         </FormField>
-        <FormField label="Ngày gia nhập" error={errors.joinedOn?.message}>
+        <FormField label="Ngày gia nhập" required error={errors.joinedOn?.message}>
           <input
             type="date"
             className="h-11 rounded-xl border border-border bg-background px-4 text-sm"
             {...register("joinedOn")}
           />
         </FormField>
-        <FormField label="Ghi chú" error={errors.details?.message}>
+        <FormField label="Ghi chú" required error={errors.details?.message}>
           <textarea
             className="min-h-[100px] rounded-xl border border-border bg-background px-4 py-3 text-sm"
             placeholder="Thông tin chi tiết"

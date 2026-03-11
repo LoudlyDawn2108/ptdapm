@@ -50,6 +50,7 @@ export interface EmployeeFormProps {
   loading?: boolean;
   className?: string;
   submitLabel?: string;
+  mode?: "create" | "edit";
 }
 
 const genderOptions = enumToSortedList(Gender);
@@ -72,15 +73,16 @@ export function EmployeeForm({
   loading,
   className,
   submitLabel,
+  mode = "create",
 }: EmployeeFormProps) {
   const normalizedDefaultValues = React.useMemo<CreateEmployeeFormInput>(
     () => ({
-      staffCode: normalizeRequiredValue(defaultValues?.staffCode),
+      staffCode: normalizeOptionalValue(defaultValues?.staffCode),
       fullName: normalizeRequiredValue(defaultValues?.fullName),
       dob: normalizeRequiredValue(defaultValues?.dob),
       gender: defaultValues?.gender ?? defaultGender,
       nationalId: normalizeRequiredValue(defaultValues?.nationalId),
-      hometown: normalizeOptionalValue(defaultValues?.hometown),
+      hometown: normalizeRequiredValue(defaultValues?.hometown),
       address: normalizeRequiredValue(defaultValues?.address),
       taxCode: normalizeOptionalValue(defaultValues?.taxCode),
       socialInsuranceNo: normalizeOptionalValue(defaultValues?.socialInsuranceNo),
@@ -88,19 +90,21 @@ export function EmployeeForm({
       email: normalizeRequiredValue(defaultValues?.email),
       phone: normalizeRequiredValue(defaultValues?.phone),
       isForeigner: defaultValues?.isForeigner ?? false,
-      educationLevel: defaultValues?.educationLevel ?? undefined,
-      trainingLevel: defaultValues?.trainingLevel ?? undefined,
-      academicTitle: defaultValues?.academicTitle ?? undefined,
-      academicRank: defaultValues?.academicRank ?? undefined,
+      educationLevel: defaultValues?.educationLevel ?? "",
+      trainingLevel: defaultValues?.trainingLevel ?? "",
+      academicTitle: defaultValues?.academicTitle ?? "",
+      academicRank: defaultValues?.academicRank ?? "",
       workStatus: defaultValues?.workStatus ?? defaultWorkStatus,
       contractStatus: defaultValues?.contractStatus ?? defaultContractStatus,
       currentOrgUnitId: normalizeOptionalValue(defaultValues?.currentOrgUnitId),
       currentPositionTitle: normalizeOptionalValue(defaultValues?.currentPositionTitle),
-      salaryGradeStepId: normalizeOptionalValue(defaultValues?.salaryGradeStepId),
-      portraitFileId: normalizeOptionalValue(defaultValues?.portraitFileId),
+      salaryGradeStepId: normalizeRequiredValue(defaultValues?.salaryGradeStepId),
+      portraitFileId: normalizeRequiredValue(defaultValues?.portraitFileId),
     }),
     [defaultValues],
   );
+
+  const isEdit = mode === "edit";
 
   const {
     register,
@@ -135,16 +139,12 @@ export function EmployeeForm({
       className={cn("space-y-6", className)}
     >
       <div className="grid gap-6 md:grid-cols-2">
-        <FormField label="Mã cán bộ" required error={errors.staffCode?.message}>
+        <FormField label="Mã cán bộ" error={errors.staffCode?.message}>
           <input
             className="h-11 rounded-xl border border-border bg-background px-4 text-sm"
-            placeholder="Nhập mã cán bộ"
-            {...register("staffCode", {
-              validate: (val) => {
-                if (typeof val !== "string") return "Mã cán bộ không được để trống";
-                return val.trim().length > 0 || "Mã cán bộ không được để trống";
-              },
-            })}
+            placeholder={isEdit ? "Mã cán bộ" : "Tự động sinh"}
+            disabled
+            {...register("staffCode")}
           />
         </FormField>
         <FormField label="Họ và tên" required error={errors.fullName?.message}>
@@ -180,7 +180,7 @@ export function EmployeeForm({
             {...register("nationalId")}
           />
         </FormField>
-        <FormField label="Quê quán" error={errors.hometown?.message}>
+        <FormField label="Quê quán" required error={errors.hometown?.message}>
           <input
             className="h-11 rounded-xl border border-border bg-background px-4 text-sm"
             placeholder="Nhập quê quán"
@@ -236,7 +236,7 @@ export function EmployeeForm({
       <div className="rounded-2xl border border-border bg-muted/20 p-5">
         <h3 className="mb-4 text-sm font-semibold text-foreground">Thông tin học vấn</h3>
         <div className="grid gap-6 md:grid-cols-2">
-          <FormField label="Trình độ văn hóa" error={errors.educationLevel?.message}>
+          <FormField label="Trình độ văn hóa" required error={errors.educationLevel?.message}>
             <select
               className="h-11 rounded-xl border border-border bg-background px-4 text-sm"
               {...register("educationLevel")}
@@ -249,7 +249,7 @@ export function EmployeeForm({
               ))}
             </select>
           </FormField>
-          <FormField label="Trình độ đào tạo" error={errors.trainingLevel?.message}>
+          <FormField label="Trình độ đào tạo" required error={errors.trainingLevel?.message}>
             <select
               className="h-11 rounded-xl border border-border bg-background px-4 text-sm"
               {...register("trainingLevel")}
@@ -262,7 +262,7 @@ export function EmployeeForm({
               ))}
             </select>
           </FormField>
-          <FormField label="Chức danh nghề nghiệp" error={errors.academicTitle?.message}>
+          <FormField label="Chức danh nghề nghiệp" required error={errors.academicTitle?.message}>
             <select
               className="h-11 rounded-xl border border-border bg-background px-4 text-sm"
               {...register("academicTitle")}
@@ -275,7 +275,7 @@ export function EmployeeForm({
               ))}
             </select>
           </FormField>
-          <FormField label="Học hàm" error={errors.academicRank?.message}>
+          <FormField label="Học hàm" required error={errors.academicRank?.message}>
             <select
               className="h-11 rounded-xl border border-border bg-background px-4 text-sm"
               {...register("academicRank")}
@@ -287,6 +287,26 @@ export function EmployeeForm({
                 </option>
               ))}
             </select>
+          </FormField>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-muted/20 p-5">
+        <h3 className="mb-4 text-sm font-semibold text-foreground">Lương & hồ sơ</h3>
+        <div className="grid gap-6 md:grid-cols-2">
+          <FormField label="Bậc lương" required error={errors.salaryGradeStepId?.message}>
+            <input
+              className="h-11 rounded-xl border border-border bg-background px-4 text-sm"
+              placeholder="Nhập mã bậc lương"
+              {...register("salaryGradeStepId")}
+            />
+          </FormField>
+          <FormField label="Ảnh chân dung" required error={errors.portraitFileId?.message}>
+            <input
+              className="h-11 rounded-xl border border-border bg-background px-4 text-sm"
+              placeholder="Nhập mã file ảnh"
+              {...register("portraitFileId")}
+            />
           </FormField>
         </div>
       </div>

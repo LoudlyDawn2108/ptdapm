@@ -149,6 +149,7 @@ function EmployeePersonalInfoTab() {
           onSubmit={handleSubmit}
           onCancel={() => setOpen(false)}
           className="mt-4"
+          mode="edit"
         />
       </Modal>
     </div>

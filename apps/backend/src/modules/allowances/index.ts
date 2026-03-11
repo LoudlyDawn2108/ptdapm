@@ -40,7 +40,7 @@ export const allowanceRoutes = new Elysia({
     async ({ params, body, user }) => {
       requireRole(user.role, "ADMIN", "TCCB");
       const { employeeId, id } = params;
-      const data = await allowanceService.update(id, body);
+      const data = await allowanceService.update(employeeId, id, body);
       return { data };
     },
     {
@@ -54,7 +54,7 @@ export const allowanceRoutes = new Elysia({
     async ({ params, user }) => {
       requireRole(user.role, "ADMIN", "TCCB");
       const { employeeId, id } = params;
-      const data = await allowanceService.remove(id);
+      const data = await allowanceService.remove(employeeId, id);
       return { data };
     },
     {

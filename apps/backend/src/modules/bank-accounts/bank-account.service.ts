@@ -38,6 +38,16 @@ export async function getById(id: string): Promise<EmployeeBankAccount> {
   return item;
 }
 
+async function getByIdForEmployee(employeeId: string, id: string): Promise<EmployeeBankAccount> {
+  const [item] = await db
+    .select()
+    .from(employeeBankAccounts)
+    .where(and(eq(employeeBankAccounts.id, id), eq(employeeBankAccounts.employeeId, employeeId)));
+
+  if (!item) throw new NotFoundError("Không tìm thấy tài khoản ngân hàng");
+  return item;
+}
+
 async function clearOtherPrimary(employeeId: string, excludeId?: string) {
   const condition = excludeId
     ? and(eq(employeeBankAccounts.employeeId, employeeId), ne(employeeBankAccounts.id, excludeId))
@@ -64,10 +74,11 @@ export async function create(
 }
 
 export async function update(
+  employeeId: string,
   id: string,
   data: UpdateEmployeeBankAccountInput,
 ): Promise<EmployeeBankAccount> {
-  const existing = await getById(id);
+  const existing = await getByIdForEmployee(employeeId, id);
 
   if (data.isPrimary) {
     await clearOtherPrimary(existing.employeeId, id);
@@ -76,16 +87,18 @@ export async function update(
   const [updated] = await db
     .update(employeeBankAccounts)
     .set({ ...data, updatedAt: new Date() })
-    .where(eq(employeeBankAccounts.id, id))
+    .where(and(eq(employeeBankAccounts.id, id), eq(employeeBankAccounts.employeeId, employeeId)))
     .returning();
 
   if (!updated) throw new Error("Update failed");
   return updated;
 }
 
-export async function remove(id: string): Promise<{ id: string }> {
-  await getById(id);
+export async function remove(employeeId: string, id: string): Promise<{ id: string }> {
+  await getByIdForEmployee(employeeId, id);
 
-  await db.delete(employeeBankAccounts).where(eq(employeeBankAccounts.id, id));
+  await db
+    .delete(employeeBankAccounts)
+    .where(and(eq(employeeBankAccounts.id, id), eq(employeeBankAccounts.employeeId, employeeId)));
   return { id };
 }

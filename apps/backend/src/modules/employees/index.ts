@@ -1,4 +1,9 @@
 import {
+  ACADEMIC_RANK_CODES,
+  ACADEMIC_TITLE_CODES,
+  CONTRACT_STATUS_CODES,
+  GENDER_CODES,
+  WORK_STATUS_CODES,
   createEmployeeSchema,
   paginationSchema,
   updateEmployeeSchema,
@@ -12,8 +17,12 @@ import * as employeeService from "./employee.service";
 const listQuerySchema = paginationSchema.extend({
   search: z.string().optional(),
   orgUnitId: z.string().optional(),
-  workStatus: z.string().optional(),
-  contractStatus: z.string().optional(),
+  workStatus: z.enum(WORK_STATUS_CODES as [string, ...string[]]).optional(),
+  contractStatus: z.enum(CONTRACT_STATUS_CODES as [string, ...string[]]).optional(),
+  gender: z.enum(GENDER_CODES as [string, ...string[]]).optional(),
+  academicRank: z.enum(ACADEMIC_RANK_CODES as [string, ...string[]]).optional(),
+  academicTitle: z.enum(ACADEMIC_TITLE_CODES as [string, ...string[]]).optional(),
+  positionTitle: z.string().optional(),
 });
 
 export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
@@ -36,6 +45,10 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
         query.orgUnitId,
         query.workStatus as Parameters<typeof employeeService.list>[4],
         query.contractStatus as Parameters<typeof employeeService.list>[5],
+        query.gender as Parameters<typeof employeeService.list>[6],
+        query.academicRank as Parameters<typeof employeeService.list>[7],
+        query.academicTitle as Parameters<typeof employeeService.list>[8],
+        query.positionTitle,
       );
       return { data };
     },

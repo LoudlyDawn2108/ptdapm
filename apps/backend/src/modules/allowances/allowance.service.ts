@@ -3,7 +3,7 @@ import type {
   PaginatedResponse,
   UpdateEmployeeAllowanceInput,
 } from "@hrms/shared";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { NotFoundError } from "../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
 import { db } from "../../db";
@@ -52,6 +52,16 @@ export async function getById(id: string): Promise<EmployeeAllowance> {
   return item;
 }
 
+async function getByIdForEmployee(employeeId: string, id: string): Promise<EmployeeAllowance> {
+  const [item] = await db
+    .select()
+    .from(employeeAllowances)
+    .where(and(eq(employeeAllowances.id, id), eq(employeeAllowances.employeeId, employeeId)));
+
+  if (!item) throw new NotFoundError("Không tìm thấy phụ cấp");
+  return item;
+}
+
 export async function create(
   employeeId: string,
   data: CreateEmployeeAllowanceInput,
@@ -71,10 +81,11 @@ export async function create(
 }
 
 export async function update(
+  employeeId: string,
   id: string,
   data: UpdateEmployeeAllowanceInput,
 ): Promise<EmployeeAllowance> {
-  await getById(id);
+  await getByIdForEmployee(employeeId, id);
 
   if (data.allowanceTypeId) {
     await ensureAllowanceTypeExists(data.allowanceTypeId);
@@ -90,15 +101,17 @@ export async function update(
   const [updated] = await db
     .update(employeeAllowances)
     .set(payload)
-    .where(eq(employeeAllowances.id, id))
+    .where(and(eq(employeeAllowances.id, id), eq(employeeAllowances.employeeId, employeeId)))
     .returning();
 
   if (!updated) throw new Error("Update failed");
   return updated;
 }
 
-export async function remove(id: string): Promise<{ id: string }> {
-  await getById(id);
-  await db.delete(employeeAllowances).where(eq(employeeAllowances.id, id));
+export async function remove(employeeId: string, id: string): Promise<{ id: string }> {
+  await getByIdForEmployee(employeeId, id);
+  await db
+    .delete(employeeAllowances)
+    .where(and(eq(employeeAllowances.id, id), eq(employeeAllowances.employeeId, employeeId)));
   return { id };
 }
