@@ -61,3 +61,13 @@ export {
   listTrainingCoursesQuerySchema,
   type ListTrainingCoursesQuery,
 } from "./training-courses";
+export {
+  createTrainingResultSchema,
+  type CreateTrainingResultInput,
+  createBatchTrainingResultSchema,
+  type CreateBatchTrainingResultInput,
+  updateTrainingResultSchema,
+  type UpdateTrainingResultInput,
+  listTrainingResultsQuerySchema,
+  type ListTrainingResultsQuery,
+} from "./training-results";
