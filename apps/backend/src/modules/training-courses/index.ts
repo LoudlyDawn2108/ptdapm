@@ -1,13 +1,17 @@
 import {
   createTrainingCourseSchema,
-  idParamSchema,
   listTrainingCoursesQuerySchema,
   updateTrainingCourseSchema,
 } from "@hrms/shared";
 import { Elysia } from "elysia";
+import { z } from "zod";
 import { authPlugin } from "../../common/plugins/auth";
 import { requireRole } from "../../common/utils/role-guard";
 import * as trainingCoursesService from "./training-courses.service";
+
+const courseIdParamSchema = z.object({
+  courseId: z.string().uuid(),
+});
 
 export const trainingCourseRoutes = new Elysia({
   prefix: "/api/training-courses",
@@ -28,13 +32,13 @@ export const trainingCourseRoutes = new Elysia({
     { auth: true, query: listTrainingCoursesQuerySchema },
   )
   .get(
-    "/:id",
+    "/:courseId",
     async ({ params, user }) => {
       requireRole(user.role, "ADMIN", "TCCB");
-      const data = await trainingCoursesService.getById(params.id);
+      const data = await trainingCoursesService.getById(params.courseId);
       return { data };
     },
-    { auth: true, params: idParamSchema },
+    { auth: true, params: courseIdParamSchema },
   )
   .post(
     "/",
@@ -46,15 +50,19 @@ export const trainingCourseRoutes = new Elysia({
     { auth: true, body: createTrainingCourseSchema },
   )
   .put(
-    "/:id",
+    "/:courseId",
     async ({ params, body, user }) => {
       requireRole(user.role, "ADMIN", "TCCB");
       const data = await trainingCoursesService.update(
-        params.id,
+        params.courseId,
         body,
         user.id,
       );
       return { data };
     },
-    { auth: true, params: idParamSchema, body: updateTrainingCourseSchema },
+    {
+      auth: true,
+      params: courseIdParamSchema,
+      body: updateTrainingCourseSchema,
+    },
   );
