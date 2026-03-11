@@ -10,6 +10,7 @@ import { globalRateLimit, loginRateLimit } from "./common/plugins/rate-limit";
 import { accountRoutes } from "./modules/accounts";
 import { authRoutes } from "./modules/auth";
 import { contractTypeRoutes } from "./modules/config/contract-types";
+import { terminationRoutes } from "./modules/terminations";
 
 const app = new Elysia()
   .use(cors({ origin: env.FRONTEND_URL, credentials: true }))
@@ -34,6 +35,7 @@ const app = new Elysia()
   .use(authRoutes)
   .use(contractTypeRoutes)
   .use(accountRoutes)
+  .use(terminationRoutes)
   .listen(env.PORT);
 
 console.log(`🦊 Server running at http://localhost:${app.server?.port}`);

@@ -41,3 +41,7 @@ export {
   listAccountsQuerySchema,
   type ListAccountsQuery,
 } from "./accounts";
+export {
+  createTerminationSchema,
+  type CreateTerminationInput,
+} from "./terminations";
