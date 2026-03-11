@@ -34,3 +34,5 @@ drizzle/
 .sisyphus/
 nul
 cookies*.txt
+
+*.tsbuildinfo
