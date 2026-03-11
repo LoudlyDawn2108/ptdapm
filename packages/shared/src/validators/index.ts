@@ -77,3 +77,7 @@ export {
   listTrainingRegistrationsQuerySchema,
   type ListTrainingRegistrationsQuery,
 } from "./training-registrations";
+export {
+  listMyTrainingQuerySchema,
+  type ListMyTrainingQuery,
+} from "./my-training";
