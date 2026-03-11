@@ -4,18 +4,6 @@ import {
   getSessionFromHeaders,
   isUserLocked,
 } from "../../modules/auth/auth.service";
-import { auth } from "../auth";
-
-// --- Better-auth catch-all handler — register ONCE at app level (src/index.ts)
-export const betterAuthHandler = new Elysia({ name: "better-auth-handler" }).all(
-  "/api/auth/*",
-  (ctx) => {
-    if (["POST", "GET"].includes(ctx.request.method)) {
-      return auth.handler(ctx.request);
-    }
-    return new Response("Method Not Allowed", { status: 405 });
-  },
-);
 
 // --- Auth macro — safe to .use() in every module (no routes, only macro)
 export const authPlugin = new Elysia({ name: "auth-macro" }).macro({
