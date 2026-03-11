@@ -13,6 +13,7 @@ import { contractTypeRoutes } from "./modules/config/contract-types";
 import { evaluationRoutes } from "./modules/evaluations";
 import { terminationRoutes } from "./modules/terminations";
 import { trainingCourseRoutes } from "./modules/training-courses";
+import { trainingRegistrationRoutes } from "./modules/training-registrations";
 import { trainingResultRoutes } from "./modules/training-results";
 
 const app = new Elysia()
@@ -41,6 +42,7 @@ const app = new Elysia()
   .use(terminationRoutes)
   .use(evaluationRoutes)
   .use(trainingCourseRoutes)
+  .use(trainingRegistrationRoutes)
   .use(trainingResultRoutes)
   .listen(env.PORT);
 

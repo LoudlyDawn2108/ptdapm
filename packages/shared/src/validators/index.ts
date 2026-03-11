@@ -71,3 +71,9 @@ export {
   listTrainingResultsQuerySchema,
   type ListTrainingResultsQuery,
 } from "./training-results";
+export {
+  createTrainingRegistrationSchema,
+  type CreateTrainingRegistrationInput,
+  listTrainingRegistrationsQuerySchema,
+  type ListTrainingRegistrationsQuery,
+} from "./training-registrations";
