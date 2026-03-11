@@ -12,6 +12,7 @@ import { authRoutes } from "./modules/auth";
 import { contractTypeRoutes } from "./modules/config/contract-types";
 import { evaluationRoutes } from "./modules/evaluations";
 import { terminationRoutes } from "./modules/terminations";
+import { trainingCourseRoutes } from "./modules/training-courses";
 
 const app = new Elysia()
   .use(cors({ origin: env.FRONTEND_URL, credentials: true }))
@@ -38,6 +39,7 @@ const app = new Elysia()
   .use(accountRoutes)
   .use(terminationRoutes)
   .use(evaluationRoutes)
+  .use(trainingCourseRoutes)
   .listen(env.PORT);
 
 console.log(`🦊 Server running at http://localhost:${app.server?.port}`);

@@ -53,3 +53,11 @@ export {
   listEvaluationsQuerySchema,
   type ListEvaluationsQuery,
 } from "./evaluations";
+export {
+  createTrainingCourseSchema,
+  type CreateTrainingCourseInput,
+  updateTrainingCourseSchema,
+  type UpdateTrainingCourseInput,
+  listTrainingCoursesQuerySchema,
+  type ListTrainingCoursesQuery,
+} from "./training-courses";
