@@ -92,24 +92,31 @@ function EmployeeFamilyTab() {
   const loadItems = React.useCallback(
     async (isActive?: () => boolean) => {
       setLoading(true);
-      const response = await employeesApi({ employeeId })["family-members"].get({
-        query: queryParams,
-      });
-      if (isActive && !isActive()) return;
-      const payload = response.data?.data;
-      if (payload) {
-        setItems(payload.items ?? []);
-        setPagination((prev) => ({
-          ...prev,
-          page: payload.page ?? prev.page,
-          pageSize: payload.pageSize ?? prev.pageSize,
-          total: payload.total ?? 0,
-        }));
-      } else {
-        setItems([]);
-        setPagination((prev) => ({ ...prev, total: 0 }));
+      try {
+        const response = await employeesApi({ employeeId })["family-members"].get({
+          query: queryParams,
+        });
+        if (isActive && !isActive()) return;
+        const payload = response.data?.data;
+        if (payload) {
+          setItems(payload.items ?? []);
+          setPagination((prev) => ({
+            ...prev,
+            page: payload.page ?? prev.page,
+            pageSize: payload.pageSize ?? prev.pageSize,
+            total: payload.total ?? 0,
+          }));
+        } else {
+          setItems([]);
+          setPagination((prev) => ({ ...prev, total: 0 }));
+        }
+      } catch {
+        if (isActive && !isActive()) return;
+      } finally {
+        if (!isActive || isActive()) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
     },
     [employeeId, queryParams],
   );
@@ -187,25 +194,33 @@ function EmployeeFamilyTab() {
 
   const handleSubmit = async (values: CreateEmployeeFamilyMemberInput) => {
     setFormLoading(true);
-    if (editingItem) {
-      await employeesApi({ employeeId })["family-members"]({ id: editingItem.id }).put(values);
-    } else {
-      await employeesApi({ employeeId })["family-members"].post(values);
+    try {
+      if (editingItem) {
+        await employeesApi({ employeeId })["family-members"]({ id: editingItem.id }).put(values);
+      } else {
+        await employeesApi({ employeeId })["family-members"].post(values);
+      }
+      setFormOpen(false);
+      setEditingItem(null);
+      await loadItems();
+    } catch {
+    } finally {
+      setFormLoading(false);
     }
-    setFormLoading(false);
-    setFormOpen(false);
-    setEditingItem(null);
-    await loadItems();
   };
 
   const handleDelete = async () => {
     if (!deletingItem) return;
     setDeleteLoading(true);
-    await employeesApi({ employeeId })["family-members"]({ id: deletingItem.id }).delete();
-    setDeleteLoading(false);
-    setConfirmOpen(false);
-    setDeletingItem(null);
-    await loadItems();
+    try {
+      await employeesApi({ employeeId })["family-members"]({ id: deletingItem.id }).delete();
+      setConfirmOpen(false);
+      setDeletingItem(null);
+      await loadItems();
+    } catch {
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   return (
@@ -244,6 +259,7 @@ function EmployeeFamilyTab() {
       />
 
       <FamilyMemberForm
+        key={editingItem?.id ?? "create-family-member"}
         open={formOpen}
         onClose={() => {
           setFormOpen(false);

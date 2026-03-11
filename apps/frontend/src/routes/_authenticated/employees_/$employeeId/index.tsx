@@ -94,10 +94,14 @@ function EmployeePersonalInfoTab() {
 
   const handleSubmit = async (values: CreateEmployeeInput) => {
     setLoading(true);
-    await employeesApi({ employeeId }).put(values);
-    setLoading(false);
-    setOpen(false);
-    await reload();
+    try {
+      await employeesApi({ employeeId }).put(values);
+      setOpen(false);
+      await reload();
+    } catch {
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -143,6 +147,7 @@ function EmployeePersonalInfoTab() {
 
       <Modal open={open} onClose={() => setOpen(false)} title="Cập nhật thông tin cá nhân">
         <EmployeeForm
+          key={`${employeeId}-${employee?.id ?? "empty"}-${open ? "open" : "closed"}`}
           defaultValues={formDefaultValues}
           loading={loading}
           submitLabel="Lưu thay đổi"

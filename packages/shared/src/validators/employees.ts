@@ -38,6 +38,15 @@ const optionalText = () => z.preprocess(normalizeOptionalTextInput, z.string().o
 const optionalField = <T extends z.ZodTypeAny>(schema: T) =>
   z.preprocess(normalizeOptionalTextInput, schema.optional());
 
+const isValidDateInput = (value: string) => {
+  const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+  if (!datePattern.test(value)) return false;
+
+  const parsedDate = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(parsedDate.getTime())) return false;
+  return (parsedDate.toISOString().split("T")[0] ?? "") === value;
+};
+
 const requiredUuid = (message: string) =>
   z.preprocess(
     (value) => (typeof value === "string" ? value.trim() : value),
@@ -54,6 +63,24 @@ const requiredEnum = <T extends Readonly<Record<string, string>>>(
   z.preprocess(
     (value) => (typeof value === "string" ? value.trim() : value),
     z.custom<T[keyof T]>((value) => schema.safeParse(value).success, { message }),
+  );
+
+const requiredDate = (message: string) =>
+  z.preprocess(
+    (value) => (typeof value === "string" ? value.trim() : value),
+    z
+      .string({ error: message })
+      .min(1, message)
+      .refine((value) => isValidDateInput(value), { message: "Ngày không hợp lệ" }),
+  );
+
+const optionalDate = (message = "Ngày không hợp lệ") =>
+  optionalField(z.string().refine((value) => isValidDateInput(value), { message }));
+
+const requiredEmail = (requiredMessage: string, invalidMessage: string) =>
+  z.preprocess(
+    (value) => (typeof value === "string" ? value.trim() : value),
+    z.string({ error: requiredMessage }).min(1, requiredMessage).email(invalidMessage),
   );
 
 
@@ -82,7 +109,7 @@ const partyOrgTypeSchema = z.enum(
 export const createEmployeeSchema = z.object({
   staffCode: optionalText(),
   fullName: requiredText("Họ tên không được để trống"),
-  dob: requiredText("Ngày sinh không được để trống"),
+  dob: requiredDate("Ngày sinh không được để trống"),
   gender: z
     .string({ error: "Giới tính không được để trống" })
     .refine((val) => val !== "" && val != null, {
@@ -95,7 +122,7 @@ export const createEmployeeSchema = z.object({
   taxCode: optionalText(),
   socialInsuranceNo: optionalText(),
   healthInsuranceNo: optionalText(),
-  email: requiredText("Email không được để trống"),
+  email: requiredEmail("Email không được để trống", "Email không hợp lệ"),
   phone: requiredText("Số điện thoại không được để trống"),
   isForeigner: z.boolean({ error: "Giá trị quốc tịch không hợp lệ" }).default(false),
   educationLevel: requiredEnum(educationLevelSchema, "Trình độ văn hóa không được để trống"),
@@ -120,7 +147,7 @@ export type UpdateEmployeeInput = z.infer<typeof updateEmployeeSchema>;
 export const createEmployeeFamilyMemberSchema = z.object({
   relation: familyRelationSchema,
   fullName: z.string({ error: "Họ tên không được để trống" }).min(1, "Họ tên không được để trống"),
-  dob: optionalText(),
+  dob: optionalDate(),
   phone: z.string().nullish(),
   note: z.string().nullish(),
   isDependent: z.boolean({ error: "Giá trị người phụ thuộc không hợp lệ" }).default(false),
@@ -154,8 +181,8 @@ const employeePreviousJobFieldsSchema = z.object({
   workplace: z
     .string({ error: "Nơi làm việc không được để trống" })
     .min(1, "Nơi làm việc không được để trống"),
-  startedOn: requiredText("Ngày bắt đầu không được để trống"),
-  endedOn: requiredText("Ngày kết thúc không được để trống"),
+  startedOn: requiredDate("Ngày bắt đầu không được để trống"),
+  endedOn: requiredDate("Ngày kết thúc không được để trống"),
   note: z.string().nullish(),
 });
 
@@ -194,7 +221,7 @@ export type UpdateEmployeePreviousJobInput = z.infer<typeof updateEmployeePrevio
 
 export const createEmployeePartyMembershipSchema = z.object({
   organizationType: partyOrgTypeSchema,
-  joinedOn: requiredText("Ngày gia nhập không được để trống"),
+  joinedOn: requiredDate("Ngày gia nhập không được để trống"),
   details: requiredText("Thông tin chi tiết không được để trống"),
 });
 

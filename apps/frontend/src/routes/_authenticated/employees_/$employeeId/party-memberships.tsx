@@ -82,24 +82,31 @@ function EmployeePartyTab() {
   const loadItems = React.useCallback(
     async (isActive?: () => boolean) => {
       setLoading(true);
-      const response = await employeesApi({ employeeId })["party-memberships"].get({
-        query: queryParams,
-      });
-      if (isActive && !isActive()) return;
-      const payload = response.data?.data;
-      if (payload) {
-        setItems(payload.items ?? []);
-        setPagination((prev) => ({
-          ...prev,
-          page: payload.page ?? prev.page,
-          pageSize: payload.pageSize ?? prev.pageSize,
-          total: payload.total ?? 0,
-        }));
-      } else {
-        setItems([]);
-        setPagination((prev) => ({ ...prev, total: 0 }));
+      try {
+        const response = await employeesApi({ employeeId })["party-memberships"].get({
+          query: queryParams,
+        });
+        if (isActive && !isActive()) return;
+        const payload = response.data?.data;
+        if (payload) {
+          setItems(payload.items ?? []);
+          setPagination((prev) => ({
+            ...prev,
+            page: payload.page ?? prev.page,
+            pageSize: payload.pageSize ?? prev.pageSize,
+            total: payload.total ?? 0,
+          }));
+        } else {
+          setItems([]);
+          setPagination((prev) => ({ ...prev, total: 0 }));
+        }
+      } catch {
+        if (isActive && !isActive()) return;
+      } finally {
+        if (!isActive || isActive()) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
     },
     [employeeId, queryParams],
   );
@@ -167,25 +174,33 @@ function EmployeePartyTab() {
 
   const handleSubmit = async (values: CreateEmployeePartyMembershipInput) => {
     setFormLoading(true);
-    if (editingItem) {
-      await employeesApi({ employeeId })["party-memberships"]({ id: editingItem.id }).put(values);
-    } else {
-      await employeesApi({ employeeId })["party-memberships"].post(values);
+    try {
+      if (editingItem) {
+        await employeesApi({ employeeId })["party-memberships"]({ id: editingItem.id }).put(values);
+      } else {
+        await employeesApi({ employeeId })["party-memberships"].post(values);
+      }
+      setFormOpen(false);
+      setEditingItem(null);
+      await loadItems();
+    } catch {
+    } finally {
+      setFormLoading(false);
     }
-    setFormLoading(false);
-    setFormOpen(false);
-    setEditingItem(null);
-    await loadItems();
   };
 
   const handleDelete = async () => {
     if (!deletingItem) return;
     setDeleteLoading(true);
-    await employeesApi({ employeeId })["party-memberships"]({ id: deletingItem.id }).delete();
-    setDeleteLoading(false);
-    setConfirmOpen(false);
-    setDeletingItem(null);
-    await loadItems();
+    try {
+      await employeesApi({ employeeId })["party-memberships"]({ id: deletingItem.id }).delete();
+      setConfirmOpen(false);
+      setDeletingItem(null);
+      await loadItems();
+    } catch {
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   return (
@@ -222,6 +237,7 @@ function EmployeePartyTab() {
       />
 
       <PartyMembershipForm
+        key={editingItem?.id ?? "create-party-membership"}
         open={formOpen}
         onClose={() => {
           setFormOpen(false);

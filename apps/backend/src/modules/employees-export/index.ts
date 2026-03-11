@@ -9,6 +9,7 @@ import {
 import { z } from "zod";
 import { authPlugin } from "../../common/plugins/auth";
 import { BadRequestError } from "../../common/utils/errors";
+import { requireRole } from "../../common/utils/role-guard";
 import type { Employee } from "../../db/schema";
 import * as employeeService from "../employees/employee.service";
 
@@ -98,7 +99,8 @@ export const employeeExportRoutes = new Elysia({ prefix: "/api/employees" })
   .use(authPlugin)
   .get(
     "/export",
-    async ({ query }) => {
+    async ({ query, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
       ensureCsvFormat(query.format);
 
       const employees = await listAllEmployees({
@@ -149,7 +151,8 @@ export const employeeExportRoutes = new Elysia({ prefix: "/api/employees" })
   )
   .get(
     "/:employeeId/export",
-    async ({ params, query }) => {
+    async ({ params, query, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
       ensureCsvFormat(query.format);
 
       const aggregate = await employeeService.getAggregateById(params.employeeId);

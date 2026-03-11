@@ -71,7 +71,7 @@ export async function update(
 
   const [updated] = await db
     .update(employeePreviousJobs)
-    .set({ ...data })
+    .set({ ...data, updatedAt: new Date() })
     .where(eq(employeePreviousJobs.id, id))
     .returning();
 

@@ -48,29 +48,34 @@ async function getByIdForEmployee(employeeId: string, id: string): Promise<Emplo
   return item;
 }
 
-async function clearOtherPrimary(employeeId: string, excludeId?: string) {
-  const condition = excludeId
-    ? and(eq(employeeBankAccounts.employeeId, employeeId), ne(employeeBankAccounts.id, excludeId))
-    : eq(employeeBankAccounts.employeeId, employeeId);
-
-  await db.update(employeeBankAccounts).set({ isPrimary: false }).where(condition);
-}
-
 export async function create(
   employeeId: string,
   data: CreateEmployeeBankAccountInput,
 ): Promise<EmployeeBankAccount> {
-  if (data.isPrimary) {
-    await clearOtherPrimary(employeeId);
+  if (!data.isPrimary) {
+    const [created] = await db
+      .insert(employeeBankAccounts)
+      .values({ ...data, employeeId })
+      .returning();
+
+    if (!created) throw new Error("Insert failed");
+    return created;
   }
 
-  const [created] = await db
-    .insert(employeeBankAccounts)
-    .values({ ...data, employeeId })
-    .returning();
+  return db.transaction(async (tx) => {
+    await tx
+      .update(employeeBankAccounts)
+      .set({ isPrimary: false })
+      .where(eq(employeeBankAccounts.employeeId, employeeId));
 
-  if (!created) throw new Error("Insert failed");
-  return created;
+    const [created] = await tx
+      .insert(employeeBankAccounts)
+      .values({ ...data, employeeId })
+      .returning();
+
+    if (!created) throw new Error("Insert failed");
+    return created;
+  });
 }
 
 export async function update(
@@ -78,20 +83,34 @@ export async function update(
   id: string,
   data: UpdateEmployeeBankAccountInput,
 ): Promise<EmployeeBankAccount> {
-  const existing = await getByIdForEmployee(employeeId, id);
+  await getByIdForEmployee(employeeId, id);
 
-  if (data.isPrimary) {
-    await clearOtherPrimary(existing.employeeId, id);
+  if (!data.isPrimary) {
+    const [updated] = await db
+      .update(employeeBankAccounts)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(employeeBankAccounts.id, id), eq(employeeBankAccounts.employeeId, employeeId)))
+      .returning();
+
+    if (!updated) throw new Error("Update failed");
+    return updated;
   }
 
-  const [updated] = await db
-    .update(employeeBankAccounts)
-    .set({ ...data, updatedAt: new Date() })
-    .where(and(eq(employeeBankAccounts.id, id), eq(employeeBankAccounts.employeeId, employeeId)))
-    .returning();
+  return db.transaction(async (tx) => {
+    await tx
+      .update(employeeBankAccounts)
+      .set({ isPrimary: false })
+      .where(and(eq(employeeBankAccounts.employeeId, employeeId), ne(employeeBankAccounts.id, id)));
 
-  if (!updated) throw new Error("Update failed");
-  return updated;
+    const [updated] = await tx
+      .update(employeeBankAccounts)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(employeeBankAccounts.id, id), eq(employeeBankAccounts.employeeId, employeeId)))
+      .returning();
+
+    if (!updated) throw new Error("Update failed");
+    return updated;
+  });
 }
 
 export async function remove(employeeId: string, id: string): Promise<{ id: string }> {

@@ -123,19 +123,27 @@ function EmployeeDetailLayout() {
   const loadEmployee = React.useCallback(
     async (isActive?: () => boolean) => {
       setIsLoading(true);
-      const response = await employeesApi({ employeeId }).get();
-      if (isActive && !isActive()) return;
-      const payload = response.data?.data?.employee;
+      try {
+        const response = await employeesApi({ employeeId }).get();
+        if (isActive && !isActive()) return;
+        const payload = response.data?.data?.employee;
 
-      if (payload) {
-        setEmployee(payload ?? null);
-        setHasEmployee(true);
-      } else {
+        if (payload) {
+          setEmployee(payload ?? null);
+          setHasEmployee(true);
+        } else {
+          setEmployee(null);
+          setHasEmployee(false);
+        }
+      } catch {
+        if (isActive && !isActive()) return;
         setEmployee(null);
         setHasEmployee(false);
+      } finally {
+        if (!isActive || isActive()) {
+          setIsLoading(false);
+        }
       }
-
-      setIsLoading(false);
     },
     [employeeId],
   );
@@ -171,11 +179,15 @@ function EmployeeDetailLayout() {
 
   const handleDelete = async () => {
     setDeleteLoading(true);
-    const response = await employeesApi({ employeeId }).delete();
-    setDeleteLoading(false);
-    setConfirmOpen(false);
-    if (response.data?.data) {
-      navigate({ to: "/employees" });
+    try {
+      const response = await employeesApi({ employeeId }).delete();
+      if (response.data?.data) {
+        setConfirmOpen(false);
+        navigate({ to: "/employees" });
+      }
+    } catch {
+    } finally {
+      setDeleteLoading(false);
     }
   };
 

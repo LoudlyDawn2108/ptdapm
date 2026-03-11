@@ -79,24 +79,31 @@ function EmployeeAllowancesTab() {
   const loadItems = React.useCallback(
     async (isActive?: () => boolean) => {
       setLoading(true);
-      const response = await employeesApi({ employeeId }).allowances.get({
-        query: queryParams,
-      });
-      if (isActive && !isActive()) return;
-      const payload = response.data?.data;
-      if (payload) {
-        setItems(payload.items ?? []);
-        setPagination((prev) => ({
-          ...prev,
-          page: payload.page ?? prev.page,
-          pageSize: payload.pageSize ?? prev.pageSize,
-          total: payload.total ?? 0,
-        }));
-      } else {
-        setItems([]);
-        setPagination((prev) => ({ ...prev, total: 0 }));
+      try {
+        const response = await employeesApi({ employeeId }).allowances.get({
+          query: queryParams,
+        });
+        if (isActive && !isActive()) return;
+        const payload = response.data?.data;
+        if (payload) {
+          setItems(payload.items ?? []);
+          setPagination((prev) => ({
+            ...prev,
+            page: payload.page ?? prev.page,
+            pageSize: payload.pageSize ?? prev.pageSize,
+            total: payload.total ?? 0,
+          }));
+        } else {
+          setItems([]);
+          setPagination((prev) => ({ ...prev, total: 0 }));
+        }
+      } catch {
+        if (isActive && !isActive()) return;
+      } finally {
+        if (!isActive || isActive()) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
     },
     [employeeId, queryParams],
   );
@@ -164,25 +171,33 @@ function EmployeeAllowancesTab() {
 
   const handleSubmit = async (values: CreateEmployeeAllowanceInput) => {
     setFormLoading(true);
-    if (editingItem) {
-      await employeesApi({ employeeId }).allowances({ id: editingItem.id }).put(values);
-    } else {
-      await employeesApi({ employeeId }).allowances.post(values);
+    try {
+      if (editingItem) {
+        await employeesApi({ employeeId }).allowances({ id: editingItem.id }).put(values);
+      } else {
+        await employeesApi({ employeeId }).allowances.post(values);
+      }
+      setFormOpen(false);
+      setEditingItem(null);
+      await loadItems();
+    } catch {
+    } finally {
+      setFormLoading(false);
     }
-    setFormLoading(false);
-    setFormOpen(false);
-    setEditingItem(null);
-    await loadItems();
   };
 
   const handleDelete = async () => {
     if (!deletingItem) return;
     setDeleteLoading(true);
-    await employeesApi({ employeeId }).allowances({ id: deletingItem.id }).delete();
-    setDeleteLoading(false);
-    setConfirmOpen(false);
-    setDeletingItem(null);
-    await loadItems();
+    try {
+      await employeesApi({ employeeId }).allowances({ id: deletingItem.id }).delete();
+      setConfirmOpen(false);
+      setDeletingItem(null);
+      await loadItems();
+    } catch {
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   return (
@@ -219,6 +234,7 @@ function EmployeeAllowancesTab() {
       />
 
       <AllowanceForm
+        key={editingItem?.id ?? "create-allowance"}
         open={formOpen}
         onClose={() => {
           setFormOpen(false);

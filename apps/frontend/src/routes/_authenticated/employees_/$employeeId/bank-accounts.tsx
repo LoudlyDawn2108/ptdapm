@@ -77,24 +77,31 @@ function EmployeeBankAccountsTab() {
   const loadItems = React.useCallback(
     async (checkActive?: () => boolean) => {
       setLoading(true);
-      const response = await employeesApi({ employeeId })["bank-accounts"].get({
-        query: queryParams,
-      });
-      if (checkActive && !checkActive()) return;
-      const payload = response.data?.data;
-      if (payload) {
-        setItems(payload.items ?? []);
-        setPagination((prev) => ({
-          ...prev,
-          page: payload.page ?? prev.page,
-          pageSize: payload.pageSize ?? prev.pageSize,
-          total: payload.total ?? 0,
-        }));
-      } else {
-        setItems([]);
-        setPagination((prev) => ({ ...prev, total: 0 }));
+      try {
+        const response = await employeesApi({ employeeId })["bank-accounts"].get({
+          query: queryParams,
+        });
+        if (checkActive && !checkActive()) return;
+        const payload = response.data?.data;
+        if (payload) {
+          setItems(payload.items ?? []);
+          setPagination((prev) => ({
+            ...prev,
+            page: payload.page ?? prev.page,
+            pageSize: payload.pageSize ?? prev.pageSize,
+            total: payload.total ?? 0,
+          }));
+        } else {
+          setItems([]);
+          setPagination((prev) => ({ ...prev, total: 0 }));
+        }
+      } catch {
+        if (checkActive && !checkActive()) return;
+      } finally {
+        if (!checkActive || checkActive()) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
     },
     [employeeId, queryParams],
   );
@@ -162,25 +169,33 @@ function EmployeeBankAccountsTab() {
 
   const handleSubmit = async (values: CreateEmployeeBankAccountInput) => {
     setFormLoading(true);
-    if (editingItem) {
-      await employeesApi({ employeeId })["bank-accounts"]({ id: editingItem.id }).put(values);
-    } else {
-      await employeesApi({ employeeId })["bank-accounts"].post(values);
+    try {
+      if (editingItem) {
+        await employeesApi({ employeeId })["bank-accounts"]({ id: editingItem.id }).put(values);
+      } else {
+        await employeesApi({ employeeId })["bank-accounts"].post(values);
+      }
+      setFormOpen(false);
+      setEditingItem(null);
+      await loadItems();
+    } catch {
+    } finally {
+      setFormLoading(false);
     }
-    setFormLoading(false);
-    setFormOpen(false);
-    setEditingItem(null);
-    await loadItems();
   };
 
   const handleDelete = async () => {
     if (!deletingItem) return;
     setDeleteLoading(true);
-    await employeesApi({ employeeId })["bank-accounts"]({ id: deletingItem.id }).delete();
-    setDeleteLoading(false);
-    setConfirmOpen(false);
-    setDeletingItem(null);
-    await loadItems();
+    try {
+      await employeesApi({ employeeId })["bank-accounts"]({ id: deletingItem.id }).delete();
+      setConfirmOpen(false);
+      setDeletingItem(null);
+      await loadItems();
+    } catch {
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   return (
@@ -217,6 +232,7 @@ function EmployeeBankAccountsTab() {
       />
 
       <BankAccountForm
+        key={editingItem?.id ?? "create-bank-account"}
         open={formOpen}
         onClose={() => {
           setFormOpen(false);
