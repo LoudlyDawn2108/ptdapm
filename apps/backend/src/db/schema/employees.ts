@@ -139,6 +139,7 @@ export const employeePreviousJobs = pgTable("employee_previous_jobs", {
   endedOn: date("ended_on"),
   note: text("note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 export type EmployeePreviousJob = typeof employeePreviousJobs.$inferSelect;
 export type NewEmployeePreviousJob = typeof employeePreviousJobs.$inferInsert;
@@ -235,5 +236,115 @@ export const employeesRelations = relations(employees, ({ one, many }) => ({
     fields: [employees.currentOrgUnitId],
     references: [orgUnits.id],
   }),
+  salaryGradeStep: one(salaryGradeSteps, {
+    fields: [employees.salaryGradeStepId],
+    references: [salaryGradeSteps.id],
+  }),
+  portraitFile: one(files, {
+    fields: [employees.portraitFileId],
+    references: [files.id],
+  }),
   terminations: many(employeeTerminations),
+  assignments: many(employeeAssignments),
+  familyMembers: many(employeeFamilyMembers),
+  bankAccounts: many(employeeBankAccounts),
+  previousJobs: many(employeePreviousJobs),
+  partyMemberships: many(employeePartyMemberships),
+  degrees: many(employeeDegrees),
+  certifications: many(employeeCertifications),
+  foreignWorkPermits: many(employeeForeignWorkPermits),
+  allowances: many(employeeAllowances),
+}));
+
+export const employeeTerminationsRelations = relations(employeeTerminations, ({ one }) => ({
+  employee: one(employees, {
+    fields: [employeeTerminations.employeeId],
+    references: [employees.id],
+  }),
+}));
+
+export const employeeAssignmentsRelations = relations(employeeAssignments, ({ one }) => ({
+  employee: one(employees, {
+    fields: [employeeAssignments.employeeId],
+    references: [employees.id],
+  }),
+  orgUnit: one(orgUnits, {
+    fields: [employeeAssignments.orgUnitId],
+    references: [orgUnits.id],
+  }),
+}));
+
+export const employeeFamilyMembersRelations = relations(employeeFamilyMembers, ({ one }) => ({
+  employee: one(employees, {
+    fields: [employeeFamilyMembers.employeeId],
+    references: [employees.id],
+  }),
+}));
+
+export const employeeBankAccountsRelations = relations(employeeBankAccounts, ({ one }) => ({
+  employee: one(employees, {
+    fields: [employeeBankAccounts.employeeId],
+    references: [employees.id],
+  }),
+}));
+
+export const employeePreviousJobsRelations = relations(employeePreviousJobs, ({ one }) => ({
+  employee: one(employees, {
+    fields: [employeePreviousJobs.employeeId],
+    references: [employees.id],
+  }),
+}));
+
+export const employeePartyMembershipsRelations = relations(employeePartyMemberships, ({ one }) => ({
+  employee: one(employees, {
+    fields: [employeePartyMemberships.employeeId],
+    references: [employees.id],
+  }),
+}));
+
+export const employeeDegreesRelations = relations(employeeDegrees, ({ one }) => ({
+  employee: one(employees, {
+    fields: [employeeDegrees.employeeId],
+    references: [employees.id],
+  }),
+  degreeFile: one(files, {
+    fields: [employeeDegrees.degreeFileId],
+    references: [files.id],
+  }),
+}));
+
+export const employeeCertificationsRelations = relations(employeeCertifications, ({ one }) => ({
+  employee: one(employees, {
+    fields: [employeeCertifications.employeeId],
+    references: [employees.id],
+  }),
+  certFile: one(files, {
+    fields: [employeeCertifications.certFileId],
+    references: [files.id],
+  }),
+}));
+
+export const employeeForeignWorkPermitsRelations = relations(
+  employeeForeignWorkPermits,
+  ({ one }) => ({
+    employee: one(employees, {
+      fields: [employeeForeignWorkPermits.employeeId],
+      references: [employees.id],
+    }),
+    workPermitFile: one(files, {
+      fields: [employeeForeignWorkPermits.workPermitFileId],
+      references: [files.id],
+    }),
+  }),
+);
+
+export const employeeAllowancesRelations = relations(employeeAllowances, ({ one }) => ({
+  employee: one(employees, {
+    fields: [employeeAllowances.employeeId],
+    references: [employees.id],
+  }),
+  allowanceType: one(allowanceTypes, {
+    fields: [employeeAllowances.allowanceTypeId],
+    references: [allowanceTypes.id],
+  }),
 }));

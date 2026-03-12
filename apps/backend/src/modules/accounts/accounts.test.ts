@@ -2,25 +2,26 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { cors } from "@elysiajs/cors";
 import { eq } from "drizzle-orm";
 import { Elysia } from "elysia";
-import { authPlugin, betterAuthHandler } from "../../common/plugins/auth";
+import { authPlugin } from "../../common/plugins/auth";
 import { dbPlugin } from "../../common/plugins/db";
 import { errorPlugin } from "../../common/plugins/error-handler";
 import { db } from "../../db";
 import { account, authUsers, session } from "../../db/schema/auth";
 import { employees } from "../../db/schema/employees";
+import { authRoutes } from "../auth";
 import { accountRoutes } from "./index";
 
 const app = new Elysia()
   .use(cors({ origin: "http://localhost:5173", credentials: true }))
   .use(errorPlugin)
   .use(dbPlugin)
-  .use(betterAuthHandler)
   .use(authPlugin)
+  .use(authRoutes)
   .use(accountRoutes);
 
 async function signIn(username: string, password: string) {
   return app.handle(
-    new Request("http://localhost/api/auth/sign-in/username", {
+    new Request("http://localhost/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),

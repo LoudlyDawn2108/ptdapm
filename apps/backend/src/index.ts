@@ -3,13 +3,20 @@ import { openapi } from "@elysiajs/openapi";
 import { env } from "@hrms/env";
 import { Elysia } from "elysia";
 import z from "zod";
-import { authPlugin, betterAuthHandler } from "./common/plugins/auth";
+import { authPlugin } from "./common/plugins/auth";
 import { dbPlugin } from "./common/plugins/db";
 import { errorPlugin } from "./common/plugins/error-handler";
 import { globalRateLimit, loginRateLimit } from "./common/plugins/rate-limit";
 import { accountRoutes } from "./modules/accounts";
+import { allowanceRoutes } from "./modules/allowances";
 import { authRoutes } from "./modules/auth";
+import { bankAccountRoutes } from "./modules/bank-accounts";
 import { contractTypeRoutes } from "./modules/config/contract-types";
+import { employeeRoutes } from "./modules/employees";
+import { employeeExportRoutes } from "./modules/employees-export";
+import { familyMemberRoutes } from "./modules/family-members";
+import { partyMembershipRoutes } from "./modules/party-memberships";
+import { previousJobRoutes } from "./modules/previous-jobs";
 import { evaluationRoutes } from "./modules/evaluations";
 import { terminationRoutes } from "./modules/terminations";
 import { trainingCourseRoutes } from "./modules/training-courses";
@@ -24,21 +31,26 @@ const app = new Elysia()
       mapJsonSchema: {
         zod: z.toJSONSchema,
       },
-      exclude: { paths: ["/api/auth/*"] }, // Better-auth handles its own docs
     }),
   )
   .use(errorPlugin)
   .use(globalRateLimit)
   .use(loginRateLimit)
   .use(dbPlugin)
-  .use(betterAuthHandler)
   .use(authPlugin)
   .get("/", () => ({
     status: "ok",
     timestamp: new Date().toISOString(),
   }))
   .use(authRoutes)
+  .use(allowanceRoutes)
+  .use(employeeExportRoutes)
+  .use(employeeRoutes)
+  .use(familyMemberRoutes)
+  .use(bankAccountRoutes)
   .use(contractTypeRoutes)
+  .use(previousJobRoutes)
+  .use(partyMembershipRoutes)
   .use(accountRoutes)
   .use(terminationRoutes)
   .use(evaluationRoutes)
