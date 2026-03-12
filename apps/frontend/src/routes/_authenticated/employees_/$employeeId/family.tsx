@@ -1,7 +1,8 @@
-import { api } from "@/api/client";
+import { employeesApi } from "@/api/client";
 import { FamilyMemberForm } from "@/components/employees/FamilyMemberForm";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { type Column, DataTable } from "@/components/ui/DataTable";
+import { displayValue, toLabel } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import {
   type CreateEmployeeFamilyMemberInput,
@@ -52,26 +53,6 @@ type FamilyMembersApi = {
   delete: () => Promise<unknown>;
 });
 
-type EmployeesApi = (params: { employeeId: string }) => {
-  "family-members": FamilyMembersApi;
-};
-
-const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
-
-const toLabel = <T extends { label: string }>(record: Record<string, T>, value?: string | null) => {
-  if (!value) return "—";
-  return record[value]?.label ?? value;
-};
-
-const displayValue = (value?: string | null) => {
-  return value && value.length > 0 ? value : "—";
-};
-
-const displayBoolean = (value?: boolean | null) => {
-  if (value === null || value === undefined) return "—";
-  return value ? "Có" : "Không";
-};
-
 function EmployeeFamilyTab() {
   const { employeeId } = Route.useParams();
   const [items, setItems] = React.useState<FamilyMemberItem[]>([]);
@@ -110,7 +91,8 @@ function EmployeeFamilyTab() {
           setItems([]);
           setPagination((prev) => ({ ...prev, total: 0 }));
         }
-      } catch {
+      } catch (error) {
+        console.error(error);
         if (isActive && !isActive()) return;
       } finally {
         if (!isActive || isActive()) {
@@ -154,7 +136,7 @@ function EmployeeFamilyTab() {
       {
         key: "isDependent",
         header: "Phụ thuộc",
-        render: (item) => displayBoolean(item.isDependent),
+        render: (item) => displayValue(item.isDependent),
       },
       {
         key: "actions",
@@ -203,7 +185,8 @@ function EmployeeFamilyTab() {
       setFormOpen(false);
       setEditingItem(null);
       await loadItems();
-    } catch {
+    } catch (error) {
+      console.error(error);
     } finally {
       setFormLoading(false);
     }
@@ -217,7 +200,8 @@ function EmployeeFamilyTab() {
       setConfirmOpen(false);
       setDeletingItem(null);
       await loadItems();
-    } catch {
+    } catch (error) {
+      console.error(error);
     } finally {
       setDeleteLoading(false);
     }

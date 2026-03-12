@@ -1,7 +1,8 @@
-import { api } from "@/api/client";
+import { employeesApi } from "@/api/client";
 import { AllowanceForm } from "@/components/employees/AllowanceForm";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { type Column, DataTable } from "@/components/ui/DataTable";
+import { displayValue } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import type { CreateEmployeeAllowanceInput, UpdateEmployeeAllowanceInput } from "@hrms/shared";
 import { createFileRoute } from "@tanstack/react-router";
@@ -45,13 +46,6 @@ type AllowancesApi = {
   delete: () => Promise<unknown>;
 });
 
-type EmployeesApi = (params: { employeeId: string }) => {
-  allowances: AllowancesApi;
-};
-
-const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
-
-const displayValue = (value?: string | null) => (value && value.length > 0 ? value : "—");
 const displayAmount = (value?: string | number | null) => {
   if (value === null || value === undefined || value === "") return "—";
   if (typeof value === "number") return value.toLocaleString("vi-VN");
@@ -97,7 +91,8 @@ function EmployeeAllowancesTab() {
           setItems([]);
           setPagination((prev) => ({ ...prev, total: 0 }));
         }
-      } catch {
+      } catch (error) {
+        console.error(error);
         if (isActive && !isActive()) return;
       } finally {
         if (!isActive || isActive()) {
@@ -180,7 +175,8 @@ function EmployeeAllowancesTab() {
       setFormOpen(false);
       setEditingItem(null);
       await loadItems();
-    } catch {
+    } catch (error) {
+      console.error(error);
     } finally {
       setFormLoading(false);
     }
@@ -194,7 +190,8 @@ function EmployeeAllowancesTab() {
       setConfirmOpen(false);
       setDeletingItem(null);
       await loadItems();
-    } catch {
+    } catch (error) {
+      console.error(error);
     } finally {
       setDeleteLoading(false);
     }

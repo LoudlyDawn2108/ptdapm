@@ -1,3 +1,4 @@
+import { displayValue, toLabel } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import {
   AcademicRank,
@@ -38,16 +39,6 @@ interface EmployeeDisplayProps {
   data: EmployeeDisplayData;
   className?: string;
 }
-
-const toLabel = <T extends { label: string }>(record: Record<string, T>, value?: string | null) => {
-  if (!value) return "—";
-  return record[value]?.label ?? value;
-};
-
-const displayValue = (value?: string | null | boolean) => {
-  if (typeof value === "boolean") return value ? "Có" : "Không";
-  return value && value.length > 0 ? value : "—";
-};
 
 export function EmployeeDisplay({ data, className }: EmployeeDisplayProps) {
   const infoGroups = [

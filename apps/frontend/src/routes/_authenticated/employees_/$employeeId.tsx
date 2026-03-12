@@ -1,6 +1,7 @@
-import { api } from "@/api/client";
+import { employeesApi } from "@/api/client";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { toLabel } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { type CreateEmployeeInput, WorkStatus } from "@hrms/shared";
 import { Link, Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
@@ -53,12 +54,6 @@ type EmployeeDetailEndpoints = {
   put: (body: CreateEmployeeInput) => Promise<EmployeeDetailResponse>;
 };
 
-type EmployeesApi = (params: {
-  employeeId: string;
-}) => EmployeeDetailEndpoints;
-
-const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
-
 export interface EmployeeDetailContextValue {
   employee: EmployeeDetailData | null;
   isLoading: boolean;
@@ -106,12 +101,8 @@ function getTabFromPath(pathname: string) {
 }
 
 function EmployeeDetailLayout() {
-  const routeApi = Route as unknown as {
-    useParams: () => { employeeId: string };
-    useSearch?: () => { tab?: string; mode?: string };
-  };
-  const { employeeId } = routeApi.useParams();
-  const search = (routeApi.useSearch?.() ?? {}) as { tab?: string; mode?: string };
+  const { employeeId } = Route.useParams();
+  const search = (Route.useSearch?.() ?? {}) as { tab?: string; mode?: string };
   const navigate = useNavigate();
   const location = useRouterState({ select: (state) => state.location });
   const [employee, setEmployee] = React.useState<EmployeeDetailData | null>(null);
@@ -135,7 +126,8 @@ function EmployeeDetailLayout() {
           setEmployee(null);
           setHasEmployee(false);
         }
-      } catch {
+      } catch (error) {
+        console.error(error);
         if (isActive && !isActive()) return;
         setEmployee(null);
         setHasEmployee(false);
@@ -161,14 +153,6 @@ function EmployeeDetailLayout() {
     return search.tab ?? derived;
   }, [location.pathname, search.tab]);
 
-  const toLabel = <T extends { label: string }>(
-    record: Record<string, T>,
-    value?: string | null,
-  ) => {
-    if (!value) return "—";
-    return record[value]?.label ?? value;
-  };
-
   const workStatusLabel = toLabel(WorkStatus, employee?.workStatus ?? undefined);
 
   const handleExport = () => {
@@ -185,7 +169,8 @@ function EmployeeDetailLayout() {
         setConfirmOpen(false);
         navigate({ to: "/employees" });
       }
-    } catch {
+    } catch (error) {
+      console.error(error);
     } finally {
       setDeleteLoading(false);
     }
@@ -203,13 +188,7 @@ function EmployeeDetailLayout() {
             <button
               type="button"
               className="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-muted"
-              onClick={() =>
-                (
-                  navigate as unknown as (opts: {
-                    search: Record<string, string | undefined>;
-                  }) => void
-                )({ search: { ...search, mode: "edit", tab: activeTab } })
-              }
+              onClick={() => navigate({ search: { ...search, mode: "edit", tab: activeTab } })}
             >
               Chỉnh sửa
             </button>

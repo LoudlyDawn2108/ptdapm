@@ -1,7 +1,8 @@
-import { api } from "@/api/client";
+import { employeesApi } from "@/api/client";
 import { EmployeeDisplay } from "@/components/employees/EmployeeDisplay";
 import { EmployeeForm } from "@/components/employees/EmployeeForm";
 import { Modal } from "@/components/ui/Modal";
+import { isEnumValue } from "@/lib/formatters";
 import {
   AcademicRank,
   AcademicTitle,
@@ -27,19 +28,6 @@ type EmployeeUpdateResponse = {
     };
   };
 };
-
-type EmployeesApi = (params: {
-  employeeId: string;
-}) => {
-  put: (body: CreateEmployeeInput) => Promise<EmployeeUpdateResponse>;
-};
-
-const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
-
-const isEnumValue = <T extends Record<string, unknown>>(
-  enumRecord: T,
-  value: string | null | undefined,
-): value is Extract<keyof T, string> => value != null && value in enumRecord;
 
 function EmployeePersonalInfoTab() {
   const { employeeId } = Route.useParams();
@@ -98,7 +86,8 @@ function EmployeePersonalInfoTab() {
       await employeesApi({ employeeId }).put(values);
       setOpen(false);
       await reload();
-    } catch {
+    } catch (error) {
+      console.error(error);
     } finally {
       setLoading(false);
     }

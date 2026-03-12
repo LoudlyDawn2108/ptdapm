@@ -50,8 +50,10 @@ function MyProfilePage() {
           hasEmployee ? (
             <button
               type="button"
-              className="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+              disabled
+              className="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-background px-4 text-sm font-medium text-muted-foreground opacity-50 transition"
             >
+              {/* TODO: implement edit profile navigation */}
               Chỉnh sửa
             </button>
           ) : null

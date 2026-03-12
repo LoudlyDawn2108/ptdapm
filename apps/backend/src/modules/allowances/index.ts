@@ -45,7 +45,7 @@ export const allowanceRoutes = new Elysia({
     },
     {
       auth: true,
-      params: employeeIdParamSchema.and(idParamSchema),
+      params: employeeIdParamSchema.merge(idParamSchema),
       body: updateEmployeeAllowanceSchema,
     },
   )
@@ -59,6 +59,6 @@ export const allowanceRoutes = new Elysia({
     },
     {
       auth: true,
-      params: employeeIdParamSchema.and(idParamSchema),
+      params: employeeIdParamSchema.merge(idParamSchema),
     },
   );

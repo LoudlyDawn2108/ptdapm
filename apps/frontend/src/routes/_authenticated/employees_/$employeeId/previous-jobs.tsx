@@ -1,7 +1,8 @@
-import { api } from "@/api/client";
+import { employeesApi } from "@/api/client";
 import { PreviousJobForm } from "@/components/employees/PreviousJobForm";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { type Column, DataTable } from "@/components/ui/DataTable";
+import { displayValue } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import type { CreateEmployeePreviousJobInput, UpdateEmployeePreviousJobInput } from "@hrms/shared";
 import { createFileRoute } from "@tanstack/react-router";
@@ -46,14 +47,6 @@ type PreviousJobsApi = {
   delete: () => Promise<unknown>;
 });
 
-type EmployeesApi = (params: { employeeId: string }) => {
-  "previous-jobs": PreviousJobsApi;
-};
-
-const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
-
-const displayValue = (value?: string | null) => (value && value.length > 0 ? value : "—");
-
 function EmployeeWorkHistoryTab() {
   const { employeeId } = Route.useParams();
   const [items, setItems] = React.useState<WorkHistoryItem[]>([]);
@@ -92,7 +85,8 @@ function EmployeeWorkHistoryTab() {
           setItems([]);
           setPagination((prev) => ({ ...prev, total: 0 }));
         }
-      } catch {
+      } catch (error) {
+        console.error(error);
         if (isActive && !isActive()) return;
       } finally {
         if (!isActive || isActive()) {
@@ -180,7 +174,8 @@ function EmployeeWorkHistoryTab() {
       setFormOpen(false);
       setEditingItem(null);
       await loadItems();
-    } catch {
+    } catch (error) {
+      console.error(error);
     } finally {
       setFormLoading(false);
     }
@@ -194,7 +189,8 @@ function EmployeeWorkHistoryTab() {
       setConfirmOpen(false);
       setDeletingItem(null);
       await loadItems();
-    } catch {
+    } catch (error) {
+      console.error(error);
     } finally {
       setDeleteLoading(false);
     }

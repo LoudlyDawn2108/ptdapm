@@ -1,7 +1,8 @@
-import { api } from "@/api/client";
+import { employeesApi } from "@/api/client";
 import { BankAccountForm } from "@/components/employees/BankAccountForm";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { type Column, DataTable } from "@/components/ui/DataTable";
+import { displayValue } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import type { CreateEmployeeBankAccountInput, UpdateEmployeeBankAccountInput } from "@hrms/shared";
 import { createFileRoute } from "@tanstack/react-router";
@@ -45,13 +46,6 @@ type BankAccountsApi = {
   delete: () => Promise<unknown>;
 });
 
-type EmployeesApi = (params: { employeeId: string }) => {
-  "bank-accounts": BankAccountsApi;
-};
-
-const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
-
-const displayValue = (value?: string | null) => (value && value.length > 0 ? value : "—");
 const displayBoolean = (value?: boolean | null) => {
   if (value === null || value === undefined) return "—";
   return value ? "Có" : "Không";
@@ -95,7 +89,8 @@ function EmployeeBankAccountsTab() {
           setItems([]);
           setPagination((prev) => ({ ...prev, total: 0 }));
         }
-      } catch {
+      } catch (error) {
+        console.error(error);
         if (checkActive && !checkActive()) return;
       } finally {
         if (!checkActive || checkActive()) {
@@ -178,7 +173,8 @@ function EmployeeBankAccountsTab() {
       setFormOpen(false);
       setEditingItem(null);
       await loadItems();
-    } catch {
+    } catch (error) {
+      console.error(error);
     } finally {
       setFormLoading(false);
     }
@@ -192,7 +188,8 @@ function EmployeeBankAccountsTab() {
       setConfirmOpen(false);
       setDeletingItem(null);
       await loadItems();
-    } catch {
+    } catch (error) {
+      console.error(error);
     } finally {
       setDeleteLoading(false);
     }

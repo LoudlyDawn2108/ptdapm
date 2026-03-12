@@ -11,6 +11,7 @@ import {
 import { Elysia } from "elysia";
 import { z } from "zod";
 import { authPlugin } from "../../common/plugins/auth";
+import { NotFoundError } from "../../common/utils/errors";
 import { requireRole } from "../../common/utils/role-guard";
 import * as employeeService from "./employee.service";
 
@@ -31,13 +32,15 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
     "/me",
     async ({ user }) => {
       const data = await employeeService.getByEmail(user.email ?? "");
+      if (!data) throw new NotFoundError("Không tìm thấy hồ sơ nhân viên");
       return { data };
     },
     { auth: true },
   )
   .get(
     "/",
-    async ({ query }) => {
+    async ({ query, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
       const data = await employeeService.list(
         query.page,
         query.pageSize,
@@ -56,7 +59,8 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
   )
   .get(
     "/:employeeId",
-    async ({ params }) => {
+    async ({ params, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
       const data = await employeeService.getAggregateById(params.employeeId);
       return { data };
     },

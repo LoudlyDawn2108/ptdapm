@@ -13,22 +13,31 @@ function AuthenticatedLayout() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const checkAuth = async () => {
       try {
         const { data, error } = await api.auth.session.get();
+        if (!isMounted) return;
         if (error || !data) {
           navigate({ to: "/login" });
           return;
         }
         setUser(data.user);
-      } catch {
+      } catch (error) {
+        console.error(error);
+        if (!isMounted) return;
         navigate({ to: "/login" });
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     checkAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, [navigate, setUser]);
 
   const handleLogout = async () => {

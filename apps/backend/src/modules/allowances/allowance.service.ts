@@ -9,8 +9,7 @@ import { buildPaginatedResponse, countRows } from "../../common/utils/pagination
 import { db } from "../../db";
 import { type EmployeeAllowance, allowanceTypes, employeeAllowances } from "../../db/schema";
 
-function normalizeAmount(amount?: number | null): string | null | undefined {
-  if (amount === null) return null;
+function normalizeAmount(amount?: number): string | undefined {
   if (typeof amount === "number") return amount.toString();
   return undefined;
 }
@@ -43,13 +42,6 @@ export async function listByEmployee(
   ]);
 
   return buildPaginatedResponse(items, total, page, pageSize);
-}
-
-export async function getById(id: string): Promise<EmployeeAllowance> {
-  const [item] = await db.select().from(employeeAllowances).where(eq(employeeAllowances.id, id));
-
-  if (!item) throw new NotFoundError("Không tìm thấy phụ cấp");
-  return item;
 }
 
 async function getByIdForEmployee(employeeId: string, id: string): Promise<EmployeeAllowance> {

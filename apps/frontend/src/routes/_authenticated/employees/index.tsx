@@ -1,6 +1,7 @@
-import { api } from "@/api/client";
+import { employeesApi } from "@/api/client";
 import { type Column, DataTable } from "@/components/ui/DataTable";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { displayValue, toLabel } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { AcademicRank, ContractStatus, Gender, WorkStatus, enumToSortedList } from "@hrms/shared";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -29,27 +30,10 @@ type EmployeeListResponse = {
   };
 };
 
-type EmployeesApi = {
-  get: (args: {
-    query: Record<string, string | number | undefined>;
-  }) => Promise<EmployeeListResponse>;
-};
-
-const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
-
 const genderOptions = enumToSortedList(Gender);
 const academicRankOptions = enumToSortedList(AcademicRank);
 const workStatusOptions = enumToSortedList(WorkStatus);
 const contractStatusOptions = enumToSortedList(ContractStatus);
-
-const toLabel = <T extends { label: string }>(record: Record<string, T>, value?: string | null) => {
-  if (!value) return "—";
-  return record[value]?.label ?? value;
-};
-
-const displayValue = (value?: string | null) => {
-  return value && value.length > 0 ? value : "—";
-};
 
 function EmployeeListPage() {
   const navigate = useNavigate();
@@ -177,8 +161,16 @@ function EmployeeListPage() {
     if (filters.contractStatus) params.set("contractStatus", filters.contractStatus);
 
     const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
-    window.location.href = `${baseUrl}/api/employees/export?${params.toString()}`;
-  }, [filters.academicRank, filters.contractStatus, filters.gender, filters.orgUnitId, filters.positionTitle, filters.workStatus, search]);
+    window.open(`${baseUrl}/api/employees/export?${params.toString()}`, "_blank");
+  }, [
+    filters.academicRank,
+    filters.contractStatus,
+    filters.gender,
+    filters.orgUnitId,
+    filters.positionTitle,
+    filters.workStatus,
+    search,
+  ]);
 
   return (
     <div className="space-y-6">
@@ -285,7 +277,6 @@ function EmployeeListPage() {
             </select>
           </label>
 
-
           <label className="space-y-2 text-sm text-muted-foreground">
             Trạng thái làm việc
             <select
@@ -333,7 +324,9 @@ function EmployeeListPage() {
         data={employees}
         loading={loading}
         emptyText={emptyText}
-        onRowClick={(item) => navigate({ to: "/employees/$employeeId", params: { employeeId: item.id } })}
+        onRowClick={(item) =>
+          navigate({ to: "/employees/$employeeId", params: { employeeId: item.id } })
+        }
         pagination={{
           page: pagination.page,
           pageSize: pagination.pageSize,

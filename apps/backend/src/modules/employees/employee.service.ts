@@ -6,6 +6,7 @@ import { db } from "../../db";
 import type { NewEmployee } from "../../db/schema";
 import {
   type Employee,
+  allowanceTypes,
   employeeAllowances,
   employeeBankAccounts,
   employeeFamilyMembers,
@@ -28,6 +29,29 @@ function undefinedToNull<T extends Record<string, unknown>>(data: T) {
 async function hasConflict(condition: SQL): Promise<boolean> {
   const existing = await db.select({ id: employees.id }).from(employees).where(condition).limit(1);
   return existing.length > 0;
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    error !== null &&
+    typeof error === "object" &&
+    "code" in error &&
+    (error as { code: string }).code === "23505"
+  );
+}
+
+function mapUniqueViolation(error: unknown): FieldValidationError {
+  const detail = (error as { detail?: string }).detail ?? "";
+  if (detail.includes("national_id")) {
+    return new FieldValidationError({ nationalId: "Số CCCD/CMND đã tồn tại" });
+  }
+  if (detail.includes("email")) {
+    return new FieldValidationError({ email: "Email đã tồn tại" });
+  }
+  if (detail.includes("staff_code")) {
+    return new FieldValidationError({ staffCode: "Mã cán bộ đã tồn tại" });
+  }
+  return new FieldValidationError({}, "Dữ liệu đã tồn tại");
 }
 
 export async function list(
@@ -115,7 +139,7 @@ export async function list(
   return buildPaginatedResponse(items, total, page, pageSize);
 }
 
-export async function getById(id: string): Promise<Employee> {
+async function getById(id: string): Promise<Employee> {
   const [employee] = await db.select().from(employees).where(eq(employees.id, id));
   if (!employee) throw new NotFoundError("Không tìm thấy nhân viên");
   return employee;
@@ -124,14 +148,29 @@ export async function getById(id: string): Promise<Employee> {
 export async function getAggregateById(id: string) {
   const employee = await getById(id);
 
-  const [familyMembers, bankAccounts, previousJobs, partyMemberships, allowances] =
+  const [familyMembers, bankAccounts, previousJobs, partyMemberships, allowancesRaw] =
     await Promise.all([
       db.select().from(employeeFamilyMembers).where(eq(employeeFamilyMembers.employeeId, id)),
       db.select().from(employeeBankAccounts).where(eq(employeeBankAccounts.employeeId, id)),
       db.select().from(employeePreviousJobs).where(eq(employeePreviousJobs.employeeId, id)),
       db.select().from(employeePartyMemberships).where(eq(employeePartyMemberships.employeeId, id)),
-      db.select().from(employeeAllowances).where(eq(employeeAllowances.employeeId, id)),
+      db
+        .select({
+          id: employeeAllowances.id,
+          employeeId: employeeAllowances.employeeId,
+          allowanceTypeId: employeeAllowances.allowanceTypeId,
+          amount: employeeAllowances.amount,
+          note: employeeAllowances.note,
+          createdAt: employeeAllowances.createdAt,
+          updatedAt: employeeAllowances.updatedAt,
+          allowanceName: allowanceTypes.allowanceName,
+        })
+        .from(employeeAllowances)
+        .innerJoin(allowanceTypes, eq(employeeAllowances.allowanceTypeId, allowanceTypes.id))
+        .where(eq(employeeAllowances.employeeId, id)),
     ]);
+
+  const allowances = allowancesRaw;
 
   return {
     employee,
@@ -168,19 +207,6 @@ export async function create(data: CreateEmployeeInput): Promise<Employee> {
     throw new FieldValidationError({ email: "Email không hợp lệ" });
   }
 
-  if (await hasConflict(eq(employees.nationalId, nationalId))) {
-    throw new FieldValidationError({ nationalId: "Số CCCD/CMND đã tồn tại" });
-  }
-
-  if (await hasConflict(eq(employees.email, email))) {
-    throw new FieldValidationError({ email: "Email đã tồn tại" });
-  }
-
-  if (normalizedStaffCode && (await hasConflict(eq(employees.staffCode, normalizedStaffCode)))) {
-    throw new FieldValidationError({ staffCode: "Mã cán bộ đã tồn tại" });
-  }
-
-
   const payload = undefinedToNull({
     ...rest,
     workStatus: rest.workStatus ?? "pending",
@@ -191,12 +217,47 @@ export async function create(data: CreateEmployeeInput): Promise<Employee> {
     ? { ...payload, staffCode: normalizedStaffCode }
     : payload;
 
-  const [created] = await db
-    .insert(employees)
-    .values(insertValues as NewEmployee)
-    .returning();
-  if (!created) throw new Error("Insert failed");
-  return created;
+  try {
+    const [created] = await db.transaction(async (tx) => {
+      const txHasConflict = async (condition: SQL): Promise<boolean> => {
+        const existing = await tx
+          .select({ id: employees.id })
+          .from(employees)
+          .where(condition)
+          .limit(1);
+        return existing.length > 0;
+      };
+
+      if (await txHasConflict(eq(employees.nationalId, nationalId))) {
+        throw new FieldValidationError({ nationalId: "Số CCCD/CMND đã tồn tại" });
+      }
+
+      if (await txHasConflict(eq(employees.email, email))) {
+        throw new FieldValidationError({ email: "Email đã tồn tại" });
+      }
+
+      if (
+        normalizedStaffCode &&
+        (await txHasConflict(eq(employees.staffCode, normalizedStaffCode)))
+      ) {
+        throw new FieldValidationError({ staffCode: "Mã cán bộ đã tồn tại" });
+      }
+
+      return tx
+        .insert(employees)
+        .values(insertValues as NewEmployee)
+        .returning();
+    });
+
+    if (!created) throw new Error("Insert failed");
+    return created;
+  } catch (error) {
+    if (error instanceof FieldValidationError) throw error;
+    if (isUniqueViolation(error)) {
+      throw mapUniqueViolation(error);
+    }
+    throw error;
+  }
 }
 
 export async function update(id: string, data: UpdateEmployeeInput): Promise<Employee> {
@@ -213,34 +274,52 @@ export async function update(id: string, data: UpdateEmployeeInput): Promise<Emp
   const nationalId = normalizeOptional(data.nationalId ?? undefined);
   const email = normalizeOptional(data.email ?? undefined);
 
-  if (nationalId) {
-    const condition = and(eq(employees.nationalId, nationalId), ne(employees.id, id));
-    if (condition && (await hasConflict(condition))) {
-      throw new FieldValidationError({ nationalId: "Số CCCD/CMND đã tồn tại" });
-    }
-  }
-
-  if (email) {
-    const condition = and(eq(employees.email, email), ne(employees.id, id));
-    if (condition && (await hasConflict(condition))) {
-      throw new FieldValidationError({ email: "Email đã tồn tại" });
-    }
-  }
-
-
   const payload = undefinedToNull({
     ...data,
     updatedAt: new Date(),
   }) as Partial<Omit<NewEmployee, "staffCode">>;
 
-  const [updated] = await db
-    .update(employees)
-    .set(payload as Partial<NewEmployee>)
-    .where(eq(employees.id, id))
-    .returning();
+  try {
+    const [updated] = await db.transaction(async (tx) => {
+      const txHasConflict = async (condition: SQL): Promise<boolean> => {
+        const found = await tx
+          .select({ id: employees.id })
+          .from(employees)
+          .where(condition)
+          .limit(1);
+        return found.length > 0;
+      };
 
-  if (!updated) throw new Error("Update failed");
-  return updated;
+      if (nationalId) {
+        const condition = and(eq(employees.nationalId, nationalId), ne(employees.id, id));
+        if (condition && (await txHasConflict(condition))) {
+          throw new FieldValidationError({ nationalId: "Số CCCD/CMND đã tồn tại" });
+        }
+      }
+
+      if (email) {
+        const condition = and(eq(employees.email, email), ne(employees.id, id));
+        if (condition && (await txHasConflict(condition))) {
+          throw new FieldValidationError({ email: "Email đã tồn tại" });
+        }
+      }
+
+      return tx
+        .update(employees)
+        .set(payload as Partial<NewEmployee>)
+        .where(eq(employees.id, id))
+        .returning();
+    });
+
+    if (!updated) throw new Error("Update failed");
+    return updated;
+  } catch (error) {
+    if (error instanceof FieldValidationError) throw error;
+    if (isUniqueViolation(error)) {
+      throw mapUniqueViolation(error);
+    }
+    throw error;
+  }
 }
 
 export async function remove(id: string): Promise<{ id: string }> {

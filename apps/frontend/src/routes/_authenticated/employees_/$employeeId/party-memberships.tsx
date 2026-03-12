@@ -1,7 +1,8 @@
-import { api } from "@/api/client";
+import { employeesApi } from "@/api/client";
 import { PartyMembershipForm } from "@/components/employees/PartyMembershipForm";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { type Column, DataTable } from "@/components/ui/DataTable";
+import { displayValue, toLabel } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import {
   type CreateEmployeePartyMembershipInput,
@@ -49,19 +50,6 @@ type PartyMembershipsApi = {
   delete: () => Promise<unknown>;
 });
 
-type EmployeesApi = (params: { employeeId: string }) => {
-  "party-memberships": PartyMembershipsApi;
-};
-
-const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
-
-const toLabel = <T extends { label: string }>(record: Record<string, T>, value?: string | null) => {
-  if (!value) return "—";
-  return record[value]?.label ?? value;
-};
-
-const displayValue = (value?: string | null) => (value && value.length > 0 ? value : "—");
-
 function EmployeePartyTab() {
   const { employeeId } = Route.useParams();
   const [items, setItems] = React.useState<PartyMembershipItem[]>([]);
@@ -100,7 +88,8 @@ function EmployeePartyTab() {
           setItems([]);
           setPagination((prev) => ({ ...prev, total: 0 }));
         }
-      } catch {
+      } catch (error) {
+        console.error(error);
         if (isActive && !isActive()) return;
       } finally {
         if (!isActive || isActive()) {
@@ -183,7 +172,8 @@ function EmployeePartyTab() {
       setFormOpen(false);
       setEditingItem(null);
       await loadItems();
-    } catch {
+    } catch (error) {
+      console.error(error);
     } finally {
       setFormLoading(false);
     }
@@ -197,7 +187,8 @@ function EmployeePartyTab() {
       setConfirmOpen(false);
       setDeletingItem(null);
       await loadItems();
-    } catch {
+    } catch (error) {
+      console.error(error);
     } finally {
       setDeleteLoading(false);
     }

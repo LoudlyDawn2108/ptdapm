@@ -1,4 +1,3 @@
-import { Elysia } from "elysia";
 import {
   ACADEMIC_RANK_CODES,
   ACADEMIC_TITLE_CODES,
@@ -6,6 +5,7 @@ import {
   GENDER_CODES,
   WORK_STATUS_CODES,
 } from "@hrms/shared";
+import { Elysia } from "elysia";
 import { z } from "zod";
 import { authPlugin } from "../../common/plugins/auth";
 import { BadRequestError } from "../../common/utils/errors";
@@ -40,7 +40,7 @@ function escapeCSV(value: string | null | undefined): string {
 function toCSV(headers: string[], rows: string[][]): string {
   const headerRow = headers.map(escapeCSV).join(",");
   const dataRows = rows.map((row) => row.map(escapeCSV).join(","));
-  return [headerRow, ...dataRows].join("\n");
+  return [headerRow, ...dataRows].join("\r\n");
 }
 
 function formatValue(value: unknown): string {
@@ -66,6 +66,7 @@ async function listAllEmployees(params: {
   positionTitle?: string;
 }): Promise<Employee[]> {
   const pageSize = 500;
+  const MAX_PAGES = 100;
   let page = 1;
   let total = 0;
   const items: Employee[] = [];
@@ -86,13 +87,13 @@ async function listAllEmployees(params: {
     items.push(...response.items);
     total = response.total;
     page += 1;
-  } while (items.length < total);
+  } while (items.length < total && page <= MAX_PAGES);
 
   return items;
 }
 
 function sectionCSV(title: string, headers: string[], rows: string[][]): string {
-  return `${escapeCSV(title)}\n${toCSV(headers, rows)}`;
+  return `${escapeCSV(title)}\r\n${toCSV(headers, rows)}`;
 }
 
 export const employeeExportRoutes = new Elysia({ prefix: "/api/employees" })
@@ -230,9 +231,9 @@ export const employeeExportRoutes = new Elysia({ prefix: "/api/employees" })
         formatValue(membership.details),
       ]);
 
-      const allowanceHeaders = ["allowanceTypeId", "amount", "note"];
+      const allowanceHeaders = ["allowanceName", "amount", "note"];
       const allowanceRows = aggregate.allowances.map((allowance) => [
-        formatValue(allowance.allowanceTypeId),
+        formatValue(allowance.allowanceName),
         formatValue(allowance.amount),
         formatValue(allowance.note),
       ]);
@@ -244,7 +245,7 @@ export const employeeExportRoutes = new Elysia({ prefix: "/api/employees" })
         sectionCSV("Previous Jobs", previousJobHeaders, previousJobRows),
         sectionCSV("Party Memberships", partyMembershipHeaders, partyMembershipRows),
         sectionCSV("Allowances", allowanceHeaders, allowanceRows),
-      ].join("\n\n");
+      ].join("\r\n\r\n");
 
       return new Response(csv, {
         headers: {
@@ -253,5 +254,9 @@ export const employeeExportRoutes = new Elysia({ prefix: "/api/employees" })
         },
       });
     },
-    { auth: true, params: z.object({ employeeId: z.string().uuid() }), query: exportDetailQuerySchema },
+    {
+      auth: true,
+      params: z.object({ employeeId: z.string().uuid() }),
+      query: exportDetailQuerySchema,
+    },
   );

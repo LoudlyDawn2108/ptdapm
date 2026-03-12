@@ -44,7 +44,7 @@ export const previousJobRoutes = new Elysia({
     },
     {
       auth: true,
-      params: employeeIdParamSchema.and(idParamSchema),
+      params: employeeIdParamSchema.merge(idParamSchema),
       body: updateEmployeePreviousJobSchema,
     },
   )
@@ -55,5 +55,5 @@ export const previousJobRoutes = new Elysia({
       const data = await previousJobService.remove(params.employeeId, params.id);
       return { data };
     },
-    { auth: true, params: employeeIdParamSchema.and(idParamSchema) },
+    { auth: true, params: employeeIdParamSchema.merge(idParamSchema) },
   );

@@ -139,7 +139,6 @@ export const employeePreviousJobs = pgTable("employee_previous_jobs", {
   endedOn: date("ended_on"),
   note: text("note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 export type EmployeePreviousJob = typeof employeePreviousJobs.$inferSelect;
 export type NewEmployeePreviousJob = typeof employeePreviousJobs.$inferInsert;
