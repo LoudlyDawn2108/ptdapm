@@ -28,16 +28,6 @@ export async function listByEmployee(
   return buildPaginatedResponse(items, total, page, pageSize);
 }
 
-export async function getById(id: string): Promise<EmployeeBankAccount> {
-  const [item] = await db
-    .select()
-    .from(employeeBankAccounts)
-    .where(eq(employeeBankAccounts.id, id));
-
-  if (!item) throw new NotFoundError("Không tìm thấy tài khoản ngân hàng");
-  return item;
-}
-
 async function getByIdForEmployee(employeeId: string, id: string): Promise<EmployeeBankAccount> {
   const [item] = await db
     .select()

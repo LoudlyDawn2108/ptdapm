@@ -1,24 +1,13 @@
-import { api } from "@/api/client";
+import { employeesApi } from "@/api/client";
 import { EmployeeForm, type ServerFieldErrors } from "@/components/employees/EmployeeForm";
 import { PageHeader } from "@/components/ui/PageHeader";
 import type { CreateEmployeeInput, ErrorResponse } from "@hrms/shared";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import * as React from "react";
+import { useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/employees/new")({
   component: EmployeeCreatePage,
 });
-
-type EmployeeCreateResponse = {
-  data: { data?: { id: string } } | null;
-  error: { status: number; value: ErrorResponse } | null;
-};
-
-type EmployeesApi = {
-  post: (body: CreateEmployeeInput) => Promise<EmployeeCreateResponse>;
-};
-
-const employeesApi = (api.api as unknown as { employees: EmployeesApi }).employees;
 
 const CONFLICT_FIELD_MAP: Record<string, keyof CreateEmployeeInput> = {
   CCCD: "nationalId",
@@ -52,7 +41,7 @@ function parseErrorResponse(
 
 function EmployeeCreatePage() {
   const navigate = useNavigate();
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (values: CreateEmployeeInput): Promise<ServerFieldErrors | void> => {
     setLoading(true);

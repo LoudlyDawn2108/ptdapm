@@ -29,11 +29,11 @@ export async function listByEmployee(
   return buildPaginatedResponse(items, total, page, pageSize);
 }
 
-export async function getById(id: string): Promise<EmployeePreviousJob> {
+async function getByIdForEmployee(employeeId: string, id: string): Promise<EmployeePreviousJob> {
   const [item] = await db
     .select()
     .from(employeePreviousJobs)
-    .where(eq(employeePreviousJobs.id, id));
+    .where(and(eq(employeePreviousJobs.id, id), eq(employeePreviousJobs.employeeId, employeeId)));
 
   if (!item) throw new NotFoundError("Không tìm thấy quá trình công tác");
   return item;
@@ -57,22 +57,12 @@ export async function update(
   id: string,
   data: UpdateEmployeePreviousJobInput,
 ): Promise<EmployeePreviousJob> {
-  const [existing] = await db
-    .select()
-    .from(employeePreviousJobs)
-    .where(
-      and(
-        eq(employeePreviousJobs.id, id),
-        eq(employeePreviousJobs.employeeId, employeeId),
-      ),
-    );
-
-  if (!existing) throw new NotFoundError("Không tìm thấy quá trình công tác");
+  await getByIdForEmployee(employeeId, id);
 
   const [updated] = await db
     .update(employeePreviousJobs)
-    .set({ ...data })
-    .where(eq(employeePreviousJobs.id, id))
+    .set({ ...data, updatedAt: new Date() })
+    .where(and(eq(employeePreviousJobs.id, id), eq(employeePreviousJobs.employeeId, employeeId)))
     .returning();
 
   if (!updated) throw new Error("Update failed");
@@ -80,25 +70,10 @@ export async function update(
 }
 
 export async function remove(employeeId: string, id: string): Promise<{ id: string }> {
-  const [existing] = await db
-    .select()
-    .from(employeePreviousJobs)
-    .where(
-      and(
-        eq(employeePreviousJobs.id, id),
-        eq(employeePreviousJobs.employeeId, employeeId),
-      ),
-    );
-
-  if (!existing) throw new NotFoundError("Không tìm thấy quá trình công tác");
+  await getByIdForEmployee(employeeId, id);
 
   await db
     .delete(employeePreviousJobs)
-    .where(
-      and(
-        eq(employeePreviousJobs.id, id),
-        eq(employeePreviousJobs.employeeId, employeeId),
-      ),
-    );
+    .where(and(eq(employeePreviousJobs.id, id), eq(employeePreviousJobs.employeeId, employeeId)));
   return { id };
 }
