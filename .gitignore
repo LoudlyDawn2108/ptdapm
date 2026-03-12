@@ -31,3 +31,11 @@ Thumbs.db
 
 # Drizzle
 drizzle/
+.sisyphus/
+nul
+cookies*.txt
+
+*.tsbuildinfo
+
+# Session logs
+session-ses_*.md

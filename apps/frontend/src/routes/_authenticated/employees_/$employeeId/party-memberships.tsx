@@ -1,0 +1,270 @@
+import { employeesApi } from "@/api/client";
+import { PartyMembershipForm } from "@/components/employees/PartyMembershipForm";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { type Column, DataTable } from "@/components/ui/DataTable";
+import { displayValue, toLabel } from "@/lib/formatters";
+import { cn } from "@/lib/utils";
+import {
+  type CreateEmployeePartyMembershipInput,
+  PartyOrgType,
+  type UpdateEmployeePartyMembershipInput,
+} from "@hrms/shared";
+import { createFileRoute } from "@tanstack/react-router";
+import * as React from "react";
+
+export const Route = createFileRoute("/_authenticated/employees_/$employeeId/party-memberships")({
+  component: EmployeePartyTab,
+});
+
+interface PartyMembershipItem {
+  id: string;
+  organizationType: keyof typeof PartyOrgType;
+  joinedOn?: string | null;
+  details?: string | null;
+}
+
+type PartyMembershipListResponse = {
+  data?: {
+    data?: {
+      items: PartyMembershipItem[];
+      total: number;
+      page: number;
+      pageSize: number;
+    };
+  };
+};
+
+type PartyMembershipMutationResponse = {
+  data?: {
+    data?: PartyMembershipItem;
+  };
+};
+
+type PartyMembershipsApi = {
+  get: (args: {
+    query: { page: number; pageSize: number };
+  }) => Promise<PartyMembershipListResponse>;
+  post: (body: CreateEmployeePartyMembershipInput) => Promise<PartyMembershipMutationResponse>;
+} & ((params: { id: string }) => {
+  put: (body: UpdateEmployeePartyMembershipInput) => Promise<PartyMembershipMutationResponse>;
+  delete: () => Promise<unknown>;
+});
+
+function EmployeePartyTab() {
+  const { employeeId } = Route.useParams();
+  const [items, setItems] = React.useState<PartyMembershipItem[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [pagination, setPagination] = React.useState({ page: 1, pageSize: 10, total: 0 });
+  const [formOpen, setFormOpen] = React.useState(false);
+  const [editingItem, setEditingItem] = React.useState<PartyMembershipItem | null>(null);
+  const [formLoading, setFormLoading] = React.useState(false);
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [deleteLoading, setDeleteLoading] = React.useState(false);
+  const [deletingItem, setDeletingItem] = React.useState<PartyMembershipItem | null>(null);
+
+  const queryParams = React.useMemo(
+    () => ({ page: pagination.page, pageSize: pagination.pageSize }),
+    [pagination.page, pagination.pageSize],
+  );
+
+  const loadItems = React.useCallback(
+    async (isActive?: () => boolean) => {
+      setLoading(true);
+      try {
+        const response = await employeesApi({ employeeId })["party-memberships"].get({
+          query: queryParams,
+        });
+        if (isActive && !isActive()) return;
+        const payload = response.data?.data;
+        if (payload) {
+          setItems(payload.items ?? []);
+          setPagination((prev) => ({
+            ...prev,
+            page: payload.page ?? prev.page,
+            pageSize: payload.pageSize ?? prev.pageSize,
+            total: payload.total ?? 0,
+          }));
+        } else {
+          setItems([]);
+          setPagination((prev) => ({ ...prev, total: 0 }));
+        }
+      } catch (error) {
+        console.error(error);
+        if (isActive && !isActive()) return;
+      } finally {
+        if (!isActive || isActive()) {
+          setLoading(false);
+        }
+      }
+    },
+    [employeeId, queryParams],
+  );
+
+  React.useEffect(() => {
+    let active = true;
+    loadItems(() => active);
+    return () => {
+      active = false;
+    };
+  }, [loadItems]);
+
+  const columns = React.useMemo<Column<PartyMembershipItem>[]>(
+    () => [
+      {
+        key: "organizationType",
+        header: "Tổ chức",
+        render: (item) => toLabel(PartyOrgType, item.organizationType),
+      },
+      {
+        key: "joinedOn",
+        header: "Ngày gia nhập",
+        render: (item) => displayValue(item.joinedOn ?? undefined),
+      },
+      {
+        key: "details",
+        header: "Ghi chú",
+        render: (item) => displayValue(item.details ?? undefined),
+      },
+      {
+        key: "actions",
+        header: "Thao tác",
+        headerClassName: "text-right",
+        className: "text-right",
+        render: (item) => (
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              className="h-8 rounded-full border border-border px-3 text-xs font-medium text-foreground transition hover:bg-muted"
+              onClick={(event) => {
+                event.stopPropagation();
+                setEditingItem(item);
+                setFormOpen(true);
+              }}
+            >
+              Sửa
+            </button>
+            <button
+              type="button"
+              className="h-8 rounded-full border border-destructive/40 px-3 text-xs font-medium text-destructive transition hover:bg-destructive/10"
+              onClick={(event) => {
+                event.stopPropagation();
+                setDeletingItem(item);
+                setConfirmOpen(true);
+              }}
+            >
+              Xóa
+            </button>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const handleSubmit = async (values: CreateEmployeePartyMembershipInput) => {
+    setFormLoading(true);
+    try {
+      if (editingItem) {
+        await employeesApi({ employeeId })["party-memberships"]({ id: editingItem.id }).put(values);
+      } else {
+        await employeesApi({ employeeId })["party-memberships"].post(values);
+      }
+      setFormOpen(false);
+      setEditingItem(null);
+      await loadItems();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletingItem) return;
+    setDeleteLoading(true);
+    try {
+      await employeesApi({ employeeId })["party-memberships"]({ id: deletingItem.id }).delete();
+      setConfirmOpen(false);
+      setDeletingItem(null);
+      await loadItems();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-semibold text-foreground">Thông tin Đảng/Đoàn</h3>
+          <p className="text-sm text-muted-foreground">Theo dõi quá trình tham gia tổ chức</p>
+        </div>
+        <button
+          type="button"
+          className="h-10 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+          onClick={() => {
+            setEditingItem(null);
+            setFormOpen(true);
+          }}
+        >
+          Thêm mới
+        </button>
+      </div>
+
+      <DataTable
+        columns={columns}
+        data={items}
+        loading={loading}
+        pagination={{
+          page: pagination.page,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
+          onPageChange: (page) => setPagination((prev) => ({ ...prev, page })),
+          onPageSizeChange: (pageSize) => setPagination((prev) => ({ ...prev, pageSize, page: 1 })),
+        }}
+        className={cn("min-h-[320px]")}
+      />
+
+      <PartyMembershipForm
+        key={editingItem?.id ?? "create-party-membership"}
+        open={formOpen}
+        onClose={() => {
+          setFormOpen(false);
+          setEditingItem(null);
+        }}
+        onSubmit={handleSubmit}
+        defaultValues={
+          editingItem
+            ? {
+                organizationType: editingItem.organizationType,
+                joinedOn: editingItem.joinedOn ?? "",
+                details: editingItem.details ?? "",
+              }
+            : undefined
+        }
+        loading={formLoading}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Xóa thông tin Đảng/Đoàn"
+        description={
+          deletingItem
+            ? `Bạn có chắc chắn muốn xóa ${toLabel(PartyOrgType, deletingItem.organizationType)}?`
+            : "Bạn có chắc chắn muốn xóa bản ghi này?"
+        }
+        confirmText="Xóa"
+        cancelText="Hủy"
+        variant="danger"
+        loading={deleteLoading}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setDeletingItem(null);
+        }}
+        onConfirm={handleDelete}
+      />
+    </div>
+  );
+}

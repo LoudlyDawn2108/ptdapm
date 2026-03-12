@@ -8,8 +8,15 @@ import { dbPlugin } from "./common/plugins/db";
 import { errorPlugin } from "./common/plugins/error-handler";
 import { globalRateLimit, loginRateLimit } from "./common/plugins/rate-limit";
 import { accountRoutes } from "./modules/accounts";
+import { allowanceRoutes } from "./modules/allowances";
 import { authRoutes } from "./modules/auth";
+import { bankAccountRoutes } from "./modules/bank-accounts";
 import { contractTypeRoutes } from "./modules/config/contract-types";
+import { employeeRoutes } from "./modules/employees";
+import { employeeExportRoutes } from "./modules/employees-export";
+import { familyMemberRoutes } from "./modules/family-members";
+import { partyMembershipRoutes } from "./modules/party-memberships";
+import { previousJobRoutes } from "./modules/previous-jobs";
 
 const app = new Elysia()
   .use(cors({ origin: env.FRONTEND_URL, credentials: true }))
@@ -30,7 +37,14 @@ const app = new Elysia()
     timestamp: new Date().toISOString(),
   }))
   .use(authRoutes)
+  .use(allowanceRoutes)
+  .use(employeeExportRoutes)
+  .use(employeeRoutes)
+  .use(familyMemberRoutes)
+  .use(bankAccountRoutes)
   .use(contractTypeRoutes)
+  .use(previousJobRoutes)
+  .use(partyMembershipRoutes)
   .use(accountRoutes)
   .listen(env.PORT);
 
