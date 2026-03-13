@@ -1,21 +1,46 @@
-import { Outlet, createRootRoute } from "@tanstack/react-router";
+import {
+  createRootRouteWithContext,
+  Outlet,
+} from "@tanstack/react-router";
+import type { QueryClient } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/sonner";
 
-export const Route = createRootRoute({
+export interface RouterContext {
+  queryClient: QueryClient;
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootLayout,
+  errorComponent: ({ error }) => (
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <h1 className="text-2xl font-bold">Lỗi</h1>
+      <p className="text-muted-foreground mt-2">{error.message}</p>
+      <a href="/" className="mt-4 underline">
+        Về trang chủ
+      </a>
+    </div>
+  ),
+  notFoundComponent: () => (
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <h1 className="text-2xl font-bold">404 — Không tìm thấy</h1>
+      <a href="/" className="mt-4 underline">
+        Về trang chủ
+      </a>
+    </div>
+  ),
 });
 
 function RootLayout() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border px-6 py-3">
-        <h1 className="text-lg font-semibold">HRMS - Quản lý Nhân sự</h1>
-      </header>
-      <main className="p-6">
-        <Outlet />
-      </main>
-      <footer className="border-t border-border px-6 py-3 text-sm text-muted-foreground">
-        &copy; {new Date().getFullYear()} Trường Đại học Thủy Lợi
-      </footer>
-    </div>
+    <>
+      <Outlet />
+      <Toaster
+        richColors
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+        }}
+      />
+    </>
   );
 }
