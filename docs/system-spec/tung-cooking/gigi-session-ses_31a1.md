@@ -42,29 +42,7 @@ IMPORTANT: These are markdown table cells (pipe-delimited). All content for a ce
 ```
 <path>D:\Hoc\PTDAPM\tlu-hr-code\ptdapm\docs\transformed_doc\uc11-20.md</path>
 <type>file</type>
-<content>85: | **Tên use case** | **Thêm mới danh mục loại phụ cấp** |
-86: | Tác nhân chính | Phòng TCCB |
-87: | Mục đích (mô tả) | Phòng TCCB thêm mới loại phụ cấp phục vụ cho việc quản lý và nhập liệu thông tin nhân sự. |
-88: | Mức độ ưu tiên  (Priority) | Bắt buộc |
-89: | Điều kiện kích hoạt  (Trigger) | Tại màn hình danh sách danh mục loại phụ cấp, Phòng TCCB chọn chức năng “Thêm”. |
-90: | Điều kiện tiên quyết  (Precondition) | Người dùng đăng nhập với vai trò Phòng TCCB. |
-91: | Điều kiện thành công  (Post-condition) | Danh mục loại phụ cấp được thêm thành công |
-92: | Điều kiện thất bại | Loại phụ cấp  không được cập nhật mới trong CSDL |
-93: | Luồng sự kiện chính  (Basic Flow) | 1.  Phòng TCCB truy cập chức năng thêm mới danh mục loại phụ cấp.  2.  Hệ thống hiển thị màn hình nhập danh mục loại phụ cấp.  3.  Phòng TCCB thêm các các thông tin   * Tên loại phụ cấp * Mô tả * Cách tính   4.  Phòng TCCB bấm lưu  5. Hệ thống kiểm tra dữ liệu hợp lệ  6. Hệ thống lưu thông tin thành công  7. Hệ thống lưu lịch sử thay đổi và thông báo thêm thành công. |
-94: | Luồng sự kiện thay thế  (Alternative Flow) | **Không có** |
-95: | Luồng sự kiện ngoại lệ  (Exception Flow) | **E1: Dữ liệu lưu không hợp lệ**   1. Tại bước 5, Hệ thống validate phát hiện lỗi:  * Tên loại phụ cấp dài quá 200 từ, có ký tự đặc biệt không hợp lệ. * Thông tin bắt buộc đầy đủ  1. Hệ thống báo lỗi 2. Dữ liệu không được lưu   **E2: Hủy thao tác**   1. Tại bước 2, Phòng TCCB chọn “Hủy”. 2. Quay lại màn hình danh sách. |
-96: 
-97: ### 4.17. Use Case: Sửa danh mục loại phụ cấp
-98: 
-99: |  |  |
-100: | --- | --- |
-101: | **Tên use case** | **Sửa danh mục loại phụ cấp** |
-102: | Tác nhân chính | Phòng TCCB |
-103: | Mục đích (mô tả) | Phòng TCCB sửa loại phụ cấp phục vụ cho việc quản lý và nhập liệu thông tin nhân sự nếu có nhập liệu danh mục sai sót |
-104: | Mức độ ưu tiên  (Priority) | Bắt buộc |
-
-(Showing lines 85-104 of 159. Use offset=105 to continue.)
-</content>
+<content></content>
 ```
 
 **Tool: read**

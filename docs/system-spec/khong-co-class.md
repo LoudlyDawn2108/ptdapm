@@ -167,62 +167,11 @@ Từ các FEAT đã được phân tách và xác định, chi tiết thành cá
 
 * UC Xem chi tiết các thống kê nhân sự và báo cáo
 
-#### Bảng truy vết FEAT → UC
-
-| FEAT | UC tương ứng |
-|------|-------------|
-| FEAT 1.1 | UC 4.1 (Đăng nhập) |
-| FEAT 1.2 | UC 4.2 (Đăng xuất) |
-| FEAT 1.3 | UC 4.2 A1 (Đăng xuất tự động) |
-| FEAT 1.4 | UC 4.3 (Đổi mật khẩu) |
-| FEAT 2.1 | UC 4.4 (Tìm kiếm tài khoản) |
-| FEAT 2.2 | UC 4.5 (Thêm tài khoản) |
-| FEAT 2.3 | UC 4.6 (Sửa tài khoản) |
-| FEAT 2.4 | UC 4.7 (Phân quyền tài khoản) |
-| FEAT 2.5 | UC 4.8 (Đổi trạng thái tài khoản) |
-| FEAT 2.6 | UC 4.8 A2 (Tự động khóa TK) |
-| FEAT 3.1 | Cơ cấu tổ chức phân cấp (implicit) |
-| FEAT 3.2 | UC 4.9 (Tạo mới đơn vị) |
-| FEAT 3.3 | UC 4.10 (Sửa đơn vị) |
-| FEAT 3.4 | UC 4.11 (Cập nhật trạng thái đơn vị) |
-| FEAT 3.5 | UC 4.32 (Xem chi tiết đơn vị) |
-| FEAT 4.1 | UC 4.30 (Bổ nhiệm và điều chuyển) |
-| FEAT 4.2 | UC 4.31 (Bãi nhiệm) |
-| FEAT 5.1 | UC 4.22 (Thêm hợp đồng) |
-| FEAT 6.1 | UC 4.29 (Ghi nhận đánh giá) |
-| FEAT 7.1 | UC 4.23 (Tìm kiếm hồ sơ) |
-| FEAT 7.2 | UC 4.24 (Lọc hồ sơ) |
-| FEAT 7.3 | UC 4.25 (Thêm hồ sơ) |
-| FEAT 7.4 | UC 4.26 (Chỉnh sửa hồ sơ) |
-| FEAT 7.5 | UC 4.27 (Đánh dấu thôi việc) |
-| FEAT 7.6 | UC 4.27 A1 (Thôi việc tự động) |
-| FEAT 7.7 | UC 4.28 (Xem chi tiết hồ sơ) |
-| FEAT 7.8 | UC 4.28 A1/A2 (In/Xuất Excel) |
-| FEAT 8.1 | UC 4.33 (Mở khóa đào tạo) |
-| FEAT 8.2 | UC 4.34 (Sửa khóa đào tạo) |
-| FEAT 8.3 | UC 4.35 (Xem chi tiết khóa ĐT) |
-| FEAT 8.4 | UC 4.36 (Ghi nhận kết quả ĐT) |
-| FEAT 9.1 | UC 4.12 (Thêm hệ số lương) |
-| FEAT 9.2 | UC 4.13 (Sửa hệ số lương) |
-| FEAT 9.3 | UC 4.14, UC 4.15 (Xóa/Ngừng SD hệ số lương) |
-| FEAT 9.4 | UC 4.16, UC 4.17, UC 4.18 (Thêm/Sửa/Ngừng SD loại phụ cấp) |
-| FEAT 9.5 | UC 4.19, UC 4.20, UC 4.21 (Thêm/Sửa/Ngừng SD loại hợp đồng) |
-| FEAT 10.1 | UC 4.37 (Xem thống kê) |
-| FEAT 11.1 | UC 4.38 (Xem hồ sơ cá nhân) |
-| FEAT 11.2 | UC 4.39 (Xem đơn vị công tác) |
-| FEAT 11.3 | UC 4.40 (Đăng ký đào tạo) |
-| FEAT 11.4 | UC 4.41 (Xem khóa ĐT đã ĐK) |
-| FEAT 12.1 | Yêu cầu phi chức năng (auto logging) |
-| FEAT 12.2 | UC 4.42 (Xem nhật ký hệ thống) |
-
 ## 3.3. Vẽ biểu đồ UCs (UC tổng quát, UC phân rã theo các tác nhân)
 
 ### 3.3.1. Biểu đồ Use Case tổng quát (Nguyễn Hồng Phúc)
 
 > **Ghi chú quan hệ giữa các UC:** UC 4.5 (Thêm tài khoản) và UC 4.6 (Sửa tài khoản) **<<include>>** UC 4.7 (Phân quyền) để thực hiện phân quyền vai trò cho tài khoản trong cùng luồng tạo/sửa.
-
-
-> **Tổng số Use Case:** 42 UC chi tiết được đặc tả trong các tài liệu UC 4.1–4.42.
 
 ### 3.3.2. Biểu đồ Use Case phân rã theo tác nhân
 
@@ -272,7 +221,7 @@ Từ các FEAT đã được phân tách và xác định, chi tiết thành cá
   + Đăng ký tham gia đào tạo
   + Xem danh sách các khóa đào tạo đã đăng ký
 
-## 3.4. Ma trận truy xuất yêu cầu (Traceability Matrix)
+## 3.4. Ma trận truy vết yêu cầu (Traceability Matrix)
 
 | FEAT | UC tương ứng |
 |------|-------------|
@@ -317,7 +266,7 @@ Từ các FEAT đã được phân tách và xác định, chi tiết thành cá
 | FEAT 11.2 | UC 4.39 (Xem thông tin chi tiết đơn vị đang công tác) |
 | FEAT 11.3 | UC 4.40 (Đăng ký tham gia khóa đào tạo) |
 | FEAT 11.4 | UC 4.41 (Xem danh sách các khóa đào tạo đã đăng ký) |
-| FEAT 12.1 | UC 4.42 (Xem nhật ký hệ thống — Audit Log) — ghi vết |
+| FEAT 12.1 | SUPL Ghi nhật ký (auto logging) |
 | FEAT 12.2 | UC 4.42 (Xem nhật ký hệ thống — Audit Log) — truy xuất |
 
 # IV. Luồng sự kiện và các UCs chính
