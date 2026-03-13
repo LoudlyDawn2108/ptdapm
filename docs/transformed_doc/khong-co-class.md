@@ -87,11 +87,11 @@ Bản RMP này áp dụng cho toàn bộ các yêu cầu của hệ thống HRMS
 | --- | --- | --- |
 | **STRQ 1:** Cần hệ thống cho phép đăng nhập, đăng xuất, đổi mật khẩu như một hệ thống phần mềm nhân sự khác tài khoản có phân quyền nhiều tài khoản. | * Phân tách * Làm cho đầy đủ | * **FEAT 1.1:** Mọi người dùng có thể đăng nhập bằng tài khoản. * **FEAT 1.2:** Mọi người dùng có thể đăng xuất khỏi tài khoản đang sử dụng. * **FEAT 1.3:** Hệ thống tự động đăng xuất khỏi phiên làm việc nếu người dùng không thao tác với trang web trong 30 phút. * **FEAT 1.4:** Mọi người dùng có thể đổi mật khẩu tài khoản đang sử dụng. |
 | **STRQ 2:** Quản trị viên là người có thể quản lý tài khoản như thêm, sửa, khóa hoặc phân quyền người dùng. | * Phân tách * Thêm chi tiết * Làm cho đầy đủ | * **FEAT 2.1:** Hệ thống cho phép quản trị viên có thể tìm kiếm tài khoản người dùng. * **FEAT 2.2:** Hệ thống cho phép quản trị viên có thể thêm mới tài khoản người dùng. * **FEAT 2.3:** Hệ thống cho phép quản trị viên có thể sửa tài khoản người dùng. * **FEAT 2.4:** Hệ thống cho phép quản trị viên phân quyền cho tài khoản thành viên hệ thống tương ứng với các nhóm nghiệp vụ. * **FEAT 2.5:** Hệ thống cho phép quản trị viên có thể thay đổi trạng thái của tài khoản người dùng (Trạng thái: Khóa/Mở khóa). * **FEAT 2.6:** Hệ thống có thể tự động khóa tài khoản của nhân sự đã thôi việc. |
-| **STRQ 3:** Quản trị viên và phòng TCCB có thể quản lý cơ cấu tổ chức, thêm vào các đơn vị mới, chỉnh sửa thông tin hoặc thông báo giải thể, sáp nhập đơn vị. | * Phân tách * Làm cho đầy đủ * Thêm chi tiết * Sửa chữa | * **FEAT 3.1:** Hệ thống cung cấp cơ cấu tổ chức phân cấp đơn vị theo dạng cha-con có gốc là trường Đại học Thủy Lợi. * **FEAT 3.2:** Hệ thống cho phép quản trị viên và phòng TCCB thêm mới đơn vị tổ chức nhân sự. * **FEAT 3.3:** Hệ thống cho phép quản trị viên và phòng TCCB sửa thông tin đơn vị tổ chức nhân sự. * **FEAT 3.4:** Hệ thống cho phép quản trị viên và phòng TCCB thay đổi trạng thái của đơn vị tổ chức nhân sự (Trạng thái: Giải thể/Sáp nhập). * **FEAT 3.5:** Hệ thống cho phép quản trị viên và phòng nhân sự xem chi tiết thông tin đơn vị tổ chức nhân sự. |
-| **STRQ 4:** Phòng nhân sự có thể điều chuyển và bổ nhiệm nhân sự vào các đơn vị. | * Thêm chi tiết | * **FEAT 4.1:** Hệ thống cho phép phòng nhân sự bổ nhiệm và điều chuyển nhân sự vào một đơn vị tổ chức nhân sự. * **FEAT 4.2:** Hệ thống cho phép phòng nhân sự bãi nhiệm nhân sự khỏi đơn vị tổ chức đó. |
-| **STRQ 5:** Phòng nhân sự có thể tạo hợp đồng lao động của nhân sự. | * Thêm chi tiết | * **FEAT 5.1:** Hệ thống cho phép phòng nhân sự tạo hợp đồng cho nhân sự không có hợp đồng hoặc cần gia hạn hợp đồng. |
-| **STRQ 6:** Phòng nhân sự có thể ghi nhận đánh giá nhân sự. | * Sao chép | * **FEAT 6.1:** Hệ thống cho phép phòng nhân sự ghi đánh giá cho nhân sự (Loại đánh giá: Khen thưởng/Kỷ luật). |
-| **STRQ 7:** Phòng nhân sự muốn quản lý hồ sơ nhân sự như thêm, sửa hồ sơ và cho phép đánh dấu thôi việc hồ sơ nếu nhân sự không làm có thêm phương pháp tìm kiếm và lọc để tiện quản lý. | * Phân tách * Làm cho rõ ràng * Thêm chi tiết | * **FEAT 7.1:** Hệ thống cho phép phòng nhân sự và phòng tài chính tìm kiếm hồ sơ nhân sự bằng nhiều từ khóa. * **FEAT 7.2:** Hệ thống cho phép phòng nhân sự và phòng tài chính lọc đa tiêu chí hồ sơ nhân sự. * **FEAT 7.3:** Hệ thống cho phép phòng nhân sự thêm mới hồ sơ nhân sự (gồm nhập tay hoặc upload từ Excel). * **FEAT 7.4:** Hệ thống cho phép phòng nhân sự chỉnh sửa hồ sơ nhân sự (thông tin cá nhân, trình độ học vấn, khen thưởng/kỷ luật, quá trình công tác, thông tin hợp đồng), bao gồm ẩn/hiện các mục khen thưởng, kỷ luật đối với các vai trò khác. * **FEAT 7.5:** Hệ thống cho phép phòng nhân sự đánh dấu thôi việc nhân sự. * **FEAT 7.6:** Hệ thống có thể tự động đánh dấu thôi việc nhân sự nếu hợp đồng hết hạn quá thời gian cho phép của loại hợp đồng. * **FEAT 7.7:** Hệ thống cho phép phòng nhân sự và phòng tài chính có thể xem chi tiết hồ sơ nhân sự theo từng chế độ xem. * **FEAT 7.8:** Hệ thống cho phép phòng nhân sự và phòng tài chính có thể in hoặc xuất Excel hồ sơ nhân sự. |
+| **STRQ 3:** Quản trị viên và phòng TCCB có thể quản lý cơ cấu tổ chức, thêm vào các đơn vị mới, chỉnh sửa thông tin hoặc thông báo giải thể, sáp nhập đơn vị. | * Phân tách * Làm cho đầy đủ * Thêm chi tiết * Sửa chữa | * **FEAT 3.1:** Hệ thống cung cấp cơ cấu tổ chức phân cấp đơn vị theo dạng cha-con có gốc là trường Đại học Thủy Lợi. * **FEAT 3.2:** Hệ thống cho phép quản trị viên và phòng TCCB thêm mới đơn vị tổ chức nhân sự. * **FEAT 3.3:** Hệ thống cho phép quản trị viên và phòng TCCB sửa thông tin đơn vị tổ chức nhân sự. * **FEAT 3.4:** Hệ thống cho phép quản trị viên và phòng TCCB thay đổi trạng thái của đơn vị tổ chức nhân sự (Trạng thái: Giải thể/Sáp nhập). * **FEAT 3.5:** Hệ thống cho phép quản trị viên và phòng TCCB xem chi tiết thông tin đơn vị tổ chức nhân sự. |
+| **STRQ 4:** Phòng TCCB có thể điều chuyển và bổ nhiệm nhân sự vào các đơn vị. | * Thêm chi tiết | * **FEAT 4.1:** Hệ thống cho phép phòng TCCB bổ nhiệm và điều chuyển nhân sự vào một đơn vị tổ chức nhân sự. * **FEAT 4.2:** Hệ thống cho phép phòng TCCB bãi nhiệm nhân sự khỏi đơn vị tổ chức đó. |
+| **STRQ 5:** Phòng TCCB có thể tạo hợp đồng lao động của nhân sự. | * Thêm chi tiết | * **FEAT 5.1:** Hệ thống cho phép phòng TCCB tạo hợp đồng cho nhân sự không có hợp đồng hoặc cần gia hạn hợp đồng. |
+| **STRQ 6:** Phòng TCCB có thể ghi nhận đánh giá nhân sự. | * Sao chép | * **FEAT 6.1:** Hệ thống cho phép phòng TCCB ghi đánh giá cho nhân sự (Loại đánh giá: Khen thưởng/Kỷ luật). |
+| **STRQ 7:** Phòng TCCB muốn quản lý hồ sơ nhân sự như thêm, sửa hồ sơ và cho phép đánh dấu thôi việc hồ sơ nếu nhân sự không làm có thêm phương pháp tìm kiếm và lọc để tiện quản lý. | * Phân tách * Làm cho rõ ràng * Thêm chi tiết | * **FEAT 7.1:** Hệ thống cho phép phòng TCCB và phòng tài chính tìm kiếm hồ sơ nhân sự bằng nhiều từ khóa. * **FEAT 7.2:** Hệ thống cho phép phòng TCCB và phòng tài chính lọc đa tiêu chí hồ sơ nhân sự. * **FEAT 7.3:** Hệ thống cho phép phòng TCCB thêm mới hồ sơ nhân sự (gồm nhập tay hoặc upload từ Excel). * **FEAT 7.4:** Hệ thống cho phép phòng TCCB chỉnh sửa hồ sơ nhân sự (thông tin cá nhân, trình độ học vấn, khen thưởng/kỷ luật, quá trình công tác, thông tin hợp đồng), bao gồm ẩn/hiện các mục khen thưởng, kỷ luật đối với các vai trò khác. * **FEAT 7.5:** Hệ thống cho phép phòng TCCB đánh dấu thôi việc nhân sự. * **FEAT 7.6:** Hệ thống có thể tự động đánh dấu thôi việc nhân sự nếu hợp đồng hết hạn quá thời gian cho phép của loại hợp đồng. * **FEAT 7.7:** Hệ thống cho phép phòng TCCB và phòng tài chính có thể xem chi tiết hồ sơ nhân sự theo từng chế độ xem. * **FEAT 7.8:** Hệ thống cho phép phòng TCCB và phòng tài chính có thể in hoặc xuất Excel hồ sơ nhân sự. |
 | **STRQ 8:** Phòng nhân sự cần hệ thống cho phép mở khóa đào tạo, quản lý khóa đào tạo cho nhân sự. | * Phân tách * Làm cho đầy đủ | * **FEAT 8.1:** Hệ thống cho phép phòng nhân sự mở khóa đào tạo (cấu hình chuyên sâu về thời gian, địa điểm, chứng chỉ) cho cán bộ. * **FEAT 8.2:** Hệ thống cho phép phòng nhân sự chỉnh sửa khóa đào tạo đã mở cho cán bộ tùy theo trạng thái chưa diễn ra hay đang diễn ra, bao gồm thay đổi trạng thái khóa đào tạo (Đang mở đăng ký → Đang đào tạo → Đã hoàn thành). * **FEAT 8.3:** Hệ thống cho phép phòng nhân sự xem thông tin khóa đào tạo đã mở cho cán bộ kèm danh sách người đã đăng ký. * **FEAT 8.4:** Hệ thống cho phép phòng nhân sự ghi nhận kết quả đào tạo cho cán bộ đã tham gia và lưu trực tiếp chứng chỉ vào hồ sơ nhân sự. |
 | **STRQ 9:** Phòng nhân sự có thể cấu hình lương, loại phụ cấp, loại hợp đồng. | * Phân tách * Làm cho đầy đủ | * **FEAT 9.1:** Hệ thống cho phép phòng nhân sự thêm mới hệ số lương (Hệ số lương được thêm sẽ được dùng làm thông tin cho hồ sơ). * **FEAT 9.2:** Hệ thống cho phép phòng nhân sự sửa thông tin đối với hệ số lương mới được tạo phục vụ sửa chữa nhập liệu lỗi. * **FEAT 9.3:** Hệ thống cho phép phòng nhân sự xóa hệ số lương khi không được hồ sơ nào sử dụng, hoặc đưa vào trạng thái ngừng sử dụng nếu đã kích hoạt. * **FEAT 9.4:** Hệ thống cho phép phòng nhân sự cấu hình (Thêm/Sửa/Ngừng sử dụng) danh mục loại phụ cấp. * **FEAT 9.5:** Hệ thống cho phép phòng nhân sự cấu hình (Thêm/Sửa/Ngừng sử dụng) danh mục loại hợp đồng. |
 
@@ -115,6 +115,8 @@ Dựa vào các yêu cầu thu thập (STRQ và FEAT), phân tích xác định 
 ## 3.2. Xác định các Use Case (UCs)
 
 Từ các FEAT đã được phân tách và xác định, chi tiết thành các Use Case (UC) chính cho hệ thống:
+
+> **Ghi chú:** Tổng cộng hệ thống bao gồm **42 Use Case** (UC 4.1 – UC 4.42), được phân nhóm theo chức năng như sau:
 
 **► Nhóm UC Hệ thống & Tài khoản:**
 
@@ -165,11 +167,62 @@ Từ các FEAT đã được phân tách và xác định, chi tiết thành cá
 
 * UC Xem chi tiết các thống kê nhân sự và báo cáo
 
+#### Bảng truy vết FEAT → UC
+
+| FEAT | UC tương ứng |
+|------|-------------|
+| FEAT 1.1 | UC 4.1 (Đăng nhập) |
+| FEAT 1.2 | UC 4.2 (Đăng xuất) |
+| FEAT 1.3 | UC 4.2 A1 (Đăng xuất tự động) |
+| FEAT 1.4 | UC 4.3 (Đổi mật khẩu) |
+| FEAT 2.1 | UC 4.4 (Tìm kiếm tài khoản) |
+| FEAT 2.2 | UC 4.5 (Thêm tài khoản) |
+| FEAT 2.3 | UC 4.6 (Sửa tài khoản) |
+| FEAT 2.4 | UC 4.7 (Phân quyền tài khoản) |
+| FEAT 2.5 | UC 4.8 (Đổi trạng thái tài khoản) |
+| FEAT 2.6 | UC 4.8 A2 (Tự động khóa TK) |
+| FEAT 3.1 | Cơ cấu tổ chức phân cấp (implicit) |
+| FEAT 3.2 | UC 4.9 (Tạo mới đơn vị) |
+| FEAT 3.3 | UC 4.10 (Sửa đơn vị) |
+| FEAT 3.4 | UC 4.11 (Cập nhật trạng thái đơn vị) |
+| FEAT 3.5 | UC 4.32 (Xem chi tiết đơn vị) |
+| FEAT 4.1 | UC 4.30 (Bổ nhiệm và điều chuyển) |
+| FEAT 4.2 | UC 4.31 (Bãi nhiệm) |
+| FEAT 5.1 | UC 4.22 (Thêm hợp đồng) |
+| FEAT 6.1 | UC 4.29 (Ghi nhận đánh giá) |
+| FEAT 7.1 | UC 4.23 (Tìm kiếm hồ sơ) |
+| FEAT 7.2 | UC 4.24 (Lọc hồ sơ) |
+| FEAT 7.3 | UC 4.25 (Thêm hồ sơ) |
+| FEAT 7.4 | UC 4.26 (Chỉnh sửa hồ sơ) |
+| FEAT 7.5 | UC 4.27 (Đánh dấu thôi việc) |
+| FEAT 7.6 | UC 4.27 A1 (Thôi việc tự động) |
+| FEAT 7.7 | UC 4.28 (Xem chi tiết hồ sơ) |
+| FEAT 7.8 | UC 4.28 A1/A2 (In/Xuất Excel) |
+| FEAT 8.1 | UC 4.33 (Mở khóa đào tạo) |
+| FEAT 8.2 | UC 4.34 (Sửa khóa đào tạo) |
+| FEAT 8.3 | UC 4.35 (Xem chi tiết khóa ĐT) |
+| FEAT 8.4 | UC 4.36 (Ghi nhận kết quả ĐT) |
+| FEAT 9.1 | UC 4.12 (Thêm hệ số lương) |
+| FEAT 9.2 | UC 4.13 (Sửa hệ số lương) |
+| FEAT 9.3 | UC 4.14, UC 4.15 (Xóa/Ngừng SD hệ số lương) |
+| FEAT 9.4 | UC 4.16, UC 4.17, UC 4.18 (Thêm/Sửa/Ngừng SD loại phụ cấp) |
+| FEAT 9.5 | UC 4.19, UC 4.20, UC 4.21 (Thêm/Sửa/Ngừng SD loại hợp đồng) |
+| FEAT 10.1 | UC 4.37 (Xem thống kê) |
+| FEAT 11.1 | UC 4.38 (Xem hồ sơ cá nhân) |
+| FEAT 11.2 | UC 4.39 (Xem đơn vị công tác) |
+| FEAT 11.3 | UC 4.40 (Đăng ký đào tạo) |
+| FEAT 11.4 | UC 4.41 (Xem khóa ĐT đã ĐK) |
+| FEAT 12.1 | Yêu cầu phi chức năng (auto logging) |
+| FEAT 12.2 | UC 4.42 (Xem nhật ký hệ thống) |
+
 ## 3.3. Vẽ biểu đồ UCs (UC tổng quát, UC phân rã theo các tác nhân)
 
 ### 3.3.1. Biểu đồ Use Case tổng quát (Nguyễn Hồng Phúc)
 
 > **Ghi chú quan hệ giữa các UC:** UC 4.5 (Thêm tài khoản) và UC 4.6 (Sửa tài khoản) **<<include>>** UC 4.7 (Phân quyền) để thực hiện phân quyền vai trò cho tài khoản trong cùng luồng tạo/sửa.
+
+
+> **Tổng số Use Case:** 42 UC chi tiết được đặc tả trong các tài liệu UC 4.1–4.42.
 
 ### 3.3.2. Biểu đồ Use Case phân rã theo tác nhân
 
@@ -218,6 +271,54 @@ Từ các FEAT đã được phân tách và xác định, chi tiết thành cá
   + Xem thông tin chi tiết đơn vị công tác
   + Đăng ký tham gia đào tạo
   + Xem danh sách các khóa đào tạo đã đăng ký
+
+## 3.4. Ma trận truy xuất yêu cầu (Traceability Matrix)
+
+| FEAT | UC tương ứng |
+|------|-------------|
+| FEAT 1.1 | UC 4.1 (Đăng nhập) |
+| FEAT 1.2 | UC 4.2 (Đăng xuất) |
+| FEAT 1.3 | UC 4.2 A1 (Đăng xuất tự động) |
+| FEAT 1.4 | UC 4.3 (Đổi mật khẩu) |
+| FEAT 2.1 | UC 4.4 (Tìm kiếm tài khoản người dùng) |
+| FEAT 2.2 | UC 4.5 (Thêm mới tài khoản người dùng) |
+| FEAT 2.3 | UC 4.6 (Sửa thông tin tài khoản người dùng) |
+| FEAT 2.4 | UC 4.7 (Phân quyền tài khoản người dùng) |
+| FEAT 2.5 | UC 4.8 (Thay đổi trạng thái cho tài khoản người dùng) |
+| FEAT 2.6 | UC 4.8 A2 (Tự động khóa tài khoản) |
+| FEAT 3.1 | UC 4.9 (Tạo mới đơn vị tổ chức nhân sự) — cấu trúc cây |
+| FEAT 3.2 | UC 4.9 (Tạo mới đơn vị tổ chức nhân sự) |
+| FEAT 3.3 | UC 4.10 (Sửa thông tin đơn vị tổ chức nhân sự) |
+| FEAT 3.4 | UC 4.11 (Cập nhật trạng thái cho đơn vị tổ chức nhân sự) |
+| FEAT 3.5 | UC 4.32 (Xem chi tiết thông tin đơn vị tổ chức nhân sự) |
+| FEAT 4.1 | UC 4.30 (Bổ nhiệm và điều chuyển nhân sự cho đơn vị tổ chức nhân sự) |
+| FEAT 4.2 | UC 4.31 (Bãi nhiệm nhân sự khỏi đơn vị tổ chức nhân sự) |
+| FEAT 5.1 | UC 4.22 (Thêm mới Hợp đồng lao động) |
+| FEAT 6.1 | UC 4.29 (Ghi nhận đánh giá cho nhân sự) |
+| FEAT 7.1 | UC 4.23 (Tìm kiếm hồ sơ nhân sự) |
+| FEAT 7.2 | UC 4.24 (Lọc danh sách hồ sơ nhân sự) |
+| FEAT 7.3 | UC 4.25 (Thêm mới Hồ sơ nhân sự) |
+| FEAT 7.4 | UC 4.26 (Chỉnh sửa trong chi tiết hồ sơ nhân sự) |
+| FEAT 7.5 | UC 4.27 (Đánh dấu thôi việc nhân sự) |
+| FEAT 7.6 | UC 4.27 A1 (Thôi việc nhân sự tự động) |
+| FEAT 7.7 | UC 4.28 (Xem Chi tiết thông tin hồ sơ nhân sự) |
+| FEAT 7.8 | UC 4.28 A1/A2 (In hồ sơ / Xuất Excel) |
+| FEAT 8.1 | UC 4.33 (Mở khóa đào tạo cho cán bộ giảng viên) |
+| FEAT 8.2 | UC 4.34 (Sửa thông tin khóa đào tạo đã mở) |
+| FEAT 8.3 | UC 4.35 (Xem chi tiết thông tin khóa đào tạo đã mở) |
+| FEAT 8.4 | UC 4.36 (Ghi nhận kết quả đào tạo của cán bộ giảng viên) |
+| FEAT 9.1 | UC 4.12 (Thêm mới danh mục hệ số lương) |
+| FEAT 9.2 | UC 4.13 (Sửa danh mục hệ số lương) |
+| FEAT 9.3 | UC 4.14 (Xóa danh mục hệ số lương), UC 4.15 (Ngừng sử dụng danh mục hệ số lương) |
+| FEAT 9.4 | UC 4.16 (Thêm mới danh mục loại phụ cấp), UC 4.17 (Sửa danh mục loại phụ cấp), UC 4.18 (Ngừng sử dụng danh mục loại phụ cấp) |
+| FEAT 9.5 | UC 4.19 (Thêm mới danh mục loại hợp đồng), UC 4.20 (Sửa danh mục loại hợp đồng), UC 4.21 (Ngừng sử dụng danh mục loại hợp đồng) |
+| FEAT 10.1 | UC 4.37 (Xem chi tiết các thống kê) |
+| FEAT 11.1 | UC 4.38 (Xem các thông tin trong hồ sơ cá nhân của nhân sự) |
+| FEAT 11.2 | UC 4.39 (Xem thông tin chi tiết đơn vị đang công tác) |
+| FEAT 11.3 | UC 4.40 (Đăng ký tham gia khóa đào tạo) |
+| FEAT 11.4 | UC 4.41 (Xem danh sách các khóa đào tạo đã đăng ký) |
+| FEAT 12.1 | UC 4.42 (Xem nhật ký hệ thống — Audit Log) — ghi vết |
+| FEAT 12.2 | UC 4.42 (Xem nhật ký hệ thống — Audit Log) — truy xuất |
 
 # IV. Luồng sự kiện và các UCs chính
 
