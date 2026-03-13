@@ -2,7 +2,6 @@ import { describe, expect, mock, test } from "bun:test";
 import { Elysia } from "elysia";
 import { errorPlugin } from "../../common/plugins/error-handler";
 
-// Mock the employee service to return fake data without hitting DB
 mock.module("../employees/employee.service", () => {
   return {
     list: mock(async () => {
@@ -79,6 +78,11 @@ mock.module("../employees/employee.service", () => {
         previousJobs: [],
         partyMemberships: [],
         allowances: [],
+        degrees: [],
+        certifications: [],
+        foreignWorkPermits: [],
+        contracts: [],
+        evaluations: [],
       };
     }),
   };
@@ -114,19 +118,15 @@ mock.module("../auth/auth.service", () => {
   };
 });
 
-// Import MUST be after mock.module in bun:test
 const { employeeExportRoutes } = await import("./index");
 
-// Setup Elysia app for testing
 const app = new Elysia().use(errorPlugin).use(employeeExportRoutes);
 
 describe("Employee Export API", () => {
-  test("GET /api/employees/export without format returns 400", async () => {
+  test("GET /api/employees/export without format defaults to CSV (200)", async () => {
     const res = await app.handle(new Request("http://localhost/api/employees/export"));
-    expect(res.status).toBe(400);
-
-    const data = await res.json();
-    expect(data.error).toBe("Định dạng không hợp lệ");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type")).toBe("text/csv");
   });
 
   test("GET /api/employees/export?format=csv returns valid CSV", async () => {
@@ -149,11 +149,11 @@ describe("Employee Export API", () => {
     expect(csvText).toContain("EMP002,Tran Thi B,NU,,,,,pending,");
   });
 
-  test("GET /api/employees/:id/export without format returns 400", async () => {
-    // using a proper uuid format that zod accepts
+  test("GET /api/employees/:id/export without format defaults to CSV (200)", async () => {
     const validUuid = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
     const res = await app.handle(new Request(`http://localhost/api/employees/${validUuid}/export`));
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type")).toBe("text/csv");
   });
 
   test("GET /api/employees/:id/export?format=csv returns multi-section CSV", async () => {
@@ -169,23 +169,63 @@ describe("Employee Export API", () => {
 
     const csvText = await res.text();
 
-    // Check Employee section
     expect(csvText).toContain("Employee");
     expect(csvText).toContain(
       "staffCode,fullName,gender,dob,nationalId,email,phone,workStatus,contractStatus,address,hometown,taxCode,socialInsuranceNo,healthInsuranceNo,currentOrgUnitId,currentPositionTitle",
     );
 
-    // The mock always returns EMP001 regardless of ID passed
     expect(csvText).toContain(
       "EMP001,Nguyen Van A,NAM,1990-01-01,123456789,nva@tlu.edu.vn,0123456789,working,active,Hanoi,Hanoi,TAX123,SOC123,HEA123,,",
     );
 
-    // Check Family section
     expect(csvText).toContain("Family Members");
     expect(csvText).toContain("Vo,Le Thi C,1992-02-02,0987654321,true,None");
 
-    // Check Bank Accounts section
     expect(csvText).toContain("Bank Accounts");
     expect(csvText).toContain("Techcombank,1900123456,true");
+  });
+
+  test("GET /api/employees/export?format=xlsx returns Excel file", async () => {
+    const res = await app.handle(new Request("http://localhost/api/employees/export?format=xlsx"));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type")).toBe(
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    expect(res.headers.get("Content-Disposition")).toBe('attachment; filename="employees.xlsx"');
+
+    const buffer = await res.arrayBuffer();
+    expect(buffer.byteLength).toBeGreaterThan(0);
+  });
+
+  test("GET /api/employees/:id/export?format=xlsx returns Excel file", async () => {
+    const validUuid = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
+    const res = await app.handle(
+      new Request(`http://localhost/api/employees/${validUuid}/export?format=xlsx`),
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type")).toBe(
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    expect(res.headers.get("Content-Disposition")).toBe(
+      `attachment; filename="employee-${validUuid}.xlsx"`,
+    );
+
+    const buffer = await res.arrayBuffer();
+    expect(buffer.byteLength).toBeGreaterThan(0);
+  });
+
+  test("GET /api/employees/:id/export?format=pdf returns PDF file", async () => {
+    const validUuid = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
+    const res = await app.handle(
+      new Request(`http://localhost/api/employees/${validUuid}/export?format=pdf`),
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type")).toBe("application/pdf");
+    expect(res.headers.get("Content-Disposition")).toBe(
+      `attachment; filename="employee-${validUuid}.pdf"`,
+    );
+
+    const buffer = await res.arrayBuffer();
+    expect(buffer.byteLength).toBeGreaterThan(0);
   });
 });

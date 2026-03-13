@@ -1,5 +1,11 @@
-import type { CreateEmployeeInput, UpdateEmployeeInput } from "@hrms/shared";
-import { type SQL, and, eq, ilike, ne, or } from "drizzle-orm";
+import {
+  type CreateEmployeeInput,
+  type ImportEmployeeRowInput,
+  type UpdateEmployeeInput,
+  importEmployeeRowSchema,
+} from "@hrms/shared";
+import { type SQL, and, eq, ilike, inArray, ne, or } from "drizzle-orm";
+import ExcelJS from "exceljs";
 import { BadRequestError, FieldValidationError, NotFoundError } from "../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
 import { db } from "../../db";
@@ -9,10 +15,15 @@ import {
   allowanceTypes,
   employeeAllowances,
   employeeBankAccounts,
+  employeeCertifications,
+  employeeDegrees,
+  employeeEvaluations,
   employeeFamilyMembers,
+  employeeForeignWorkPermits,
   employeePartyMemberships,
   employeePreviousJobs,
   employees,
+  employmentContracts,
 } from "../../db/schema";
 
 function normalizeOptional(value?: string | null): string | undefined {
@@ -145,32 +156,182 @@ async function getById(id: string): Promise<Employee> {
   return employee;
 }
 
-export async function getAggregateById(id: string) {
+function filterEvaluationsByRole<T extends { visibleToEmployee: boolean; visibleToTckt: boolean }>(
+  evaluations: T[],
+  userRole?: string,
+) {
+  if (userRole === "EMPLOYEE") {
+    return evaluations.filter((evaluation) => evaluation.visibleToEmployee);
+  }
+
+  if (userRole === "TCKT") {
+    return evaluations.filter((evaluation) => evaluation.visibleToTckt);
+  }
+
+  return evaluations;
+}
+
+function formatDateToIso(date: Date) {
+  const year = date.getUTCFullYear();
+  const month = `${date.getUTCMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getUTCDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeCellText(value: unknown): string | undefined {
+  if (value == null) return undefined;
+
+  if (value instanceof Date) {
+    return formatDateToIso(value);
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? trimmed : undefined;
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (typeof value === "object") {
+    if ("text" in value && typeof value.text === "string") {
+      return normalizeCellText(value.text);
+    }
+
+    if ("result" in value) {
+      return normalizeCellText(value.result);
+    }
+
+    if ("richText" in value && Array.isArray(value.richText)) {
+      const text = value.richText
+        .map((item) =>
+          typeof item === "object" && item !== null && "text" in item ? item.text : "",
+        )
+        .join("");
+      return normalizeCellText(text);
+    }
+  }
+
+  const normalized = String(value).trim();
+  return normalized ? normalized : undefined;
+}
+
+function normalizeImportedDate(value: unknown): string | undefined {
+  if (value instanceof Date) {
+    return formatDateToIso(value);
+  }
+
+  if (typeof value === "number") {
+    const date = new Date(Date.UTC(1899, 11, 30));
+    date.setUTCDate(date.getUTCDate() + value);
+    return formatDateToIso(date);
+  }
+
+  return normalizeCellText(value);
+}
+
+function collectRowErrors(rowErrors: Map<number, string[]>) {
+  return Array.from(rowErrors.entries())
+    .sort(([rowA], [rowB]) => rowA - rowB)
+    .map(([row, errors]) => ({ row, errors }));
+}
+
+function addRowError(rowErrors: Map<number, string[]>, row: number, message: string) {
+  const errors = rowErrors.get(row) ?? [];
+
+  if (!errors.includes(message)) {
+    errors.push(message);
+  }
+
+  rowErrors.set(row, errors);
+}
+
+type ImportRowCandidate = {
+  fullName?: string;
+  dob?: string;
+  gender?: string;
+  nationalId?: string;
+  phone?: string;
+  email?: string;
+  hometown?: string;
+  address?: string;
+};
+
+function mapImportRow(row: ExcelJS.Row, headers: Map<number, string>): ImportRowCandidate | null {
+  const values = Object.fromEntries(
+    Array.from(headers.entries()).map(([columnIndex, header]) => {
+      const cellValue = row.getCell(columnIndex).value;
+      const normalizedValue =
+        header === "dob" ? normalizeImportedDate(cellValue) : normalizeCellText(cellValue);
+      return [header, normalizedValue];
+    }),
+  );
+
+  const candidate = {
+    fullName: values.fullName,
+    dob: values.dob,
+    gender: values.gender,
+    nationalId: values.nationalId,
+    phone: values.phone,
+    email: values.email,
+    hometown: values.hometown,
+    address: values.address,
+  };
+
+  const hasAnyValue = Object.values(candidate).some((value) => value != null && value !== "");
+  if (!hasAnyValue) {
+    return null;
+  }
+
+  return candidate;
+}
+
+export async function getAggregateById(id: string, userRole?: string) {
   const employee = await getById(id);
 
-  const [familyMembers, bankAccounts, previousJobs, partyMemberships, allowancesRaw] =
-    await Promise.all([
-      db.select().from(employeeFamilyMembers).where(eq(employeeFamilyMembers.employeeId, id)),
-      db.select().from(employeeBankAccounts).where(eq(employeeBankAccounts.employeeId, id)),
-      db.select().from(employeePreviousJobs).where(eq(employeePreviousJobs.employeeId, id)),
-      db.select().from(employeePartyMemberships).where(eq(employeePartyMemberships.employeeId, id)),
-      db
-        .select({
-          id: employeeAllowances.id,
-          employeeId: employeeAllowances.employeeId,
-          allowanceTypeId: employeeAllowances.allowanceTypeId,
-          amount: employeeAllowances.amount,
-          note: employeeAllowances.note,
-          createdAt: employeeAllowances.createdAt,
-          updatedAt: employeeAllowances.updatedAt,
-          allowanceName: allowanceTypes.allowanceName,
-        })
-        .from(employeeAllowances)
-        .innerJoin(allowanceTypes, eq(employeeAllowances.allowanceTypeId, allowanceTypes.id))
-        .where(eq(employeeAllowances.employeeId, id)),
-    ]);
+  const [
+    familyMembers,
+    bankAccounts,
+    previousJobs,
+    partyMemberships,
+    allowancesRaw,
+    degrees,
+    certifications,
+    foreignWorkPermits,
+    contracts,
+    evaluationsRaw,
+  ] = await Promise.all([
+    db.select().from(employeeFamilyMembers).where(eq(employeeFamilyMembers.employeeId, id)),
+    db.select().from(employeeBankAccounts).where(eq(employeeBankAccounts.employeeId, id)),
+    db.select().from(employeePreviousJobs).where(eq(employeePreviousJobs.employeeId, id)),
+    db.select().from(employeePartyMemberships).where(eq(employeePartyMemberships.employeeId, id)),
+    db
+      .select({
+        id: employeeAllowances.id,
+        employeeId: employeeAllowances.employeeId,
+        allowanceTypeId: employeeAllowances.allowanceTypeId,
+        amount: employeeAllowances.amount,
+        note: employeeAllowances.note,
+        createdAt: employeeAllowances.createdAt,
+        updatedAt: employeeAllowances.updatedAt,
+        allowanceName: allowanceTypes.allowanceName,
+      })
+      .from(employeeAllowances)
+      .innerJoin(allowanceTypes, eq(employeeAllowances.allowanceTypeId, allowanceTypes.id))
+      .where(eq(employeeAllowances.employeeId, id)),
+    db.select().from(employeeDegrees).where(eq(employeeDegrees.employeeId, id)),
+    db.select().from(employeeCertifications).where(eq(employeeCertifications.employeeId, id)),
+    db
+      .select()
+      .from(employeeForeignWorkPermits)
+      .where(eq(employeeForeignWorkPermits.employeeId, id)),
+    db.select().from(employmentContracts).where(eq(employmentContracts.employeeId, id)),
+    db.select().from(employeeEvaluations).where(eq(employeeEvaluations.employeeId, id)),
+  ]);
 
   const allowances = allowancesRaw;
+  const evaluations = filterEvaluationsByRole(evaluationsRaw, userRole);
 
   return {
     employee,
@@ -178,8 +339,144 @@ export async function getAggregateById(id: string) {
     bankAccounts,
     previousJobs,
     partyMemberships,
+    degrees,
+    certifications,
+    foreignWorkPermits,
     allowances,
+    contracts,
+    evaluations,
   };
+}
+
+export async function importFromExcel(buffer: ArrayBuffer) {
+  const workbook = new ExcelJS.Workbook();
+
+  try {
+    await workbook.xlsx.load(buffer);
+  } catch {
+    throw new BadRequestError("File Excel không hợp lệ");
+  }
+
+  const worksheet = workbook.getWorksheet(1);
+
+  if (!worksheet) {
+    throw new BadRequestError("File Excel không có dữ liệu");
+  }
+
+  const headers = new Map<number, string>();
+  worksheet.getRow(1).eachCell({ includeEmpty: true }, (cell, columnIndex) => {
+    const header = normalizeCellText(cell.value);
+    if (header) {
+      headers.set(columnIndex, header);
+    }
+  });
+
+  if (headers.size === 0) {
+    throw new BadRequestError("File Excel không có tiêu đề cột");
+  }
+
+  const parsedRows: Array<{ rowNumber: number; data: ImportEmployeeRowInput }> = [];
+  const rowErrors = new Map<number, string[]>();
+
+  worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    if (rowNumber === 1) {
+      return;
+    }
+
+    const mappedRow = mapImportRow(row, headers);
+    if (!mappedRow) {
+      return;
+    }
+
+    const parsedRow = importEmployeeRowSchema.safeParse(mappedRow);
+
+    if (!parsedRow.success) {
+      for (const issue of parsedRow.error.issues) {
+        addRowError(rowErrors, rowNumber, issue.message);
+      }
+      return;
+    }
+
+    parsedRows.push({ rowNumber, data: parsedRow.data });
+  });
+
+  if (rowErrors.size > 0) {
+    return { imported: 0, errors: collectRowErrors(rowErrors) };
+  }
+
+  const rowsByNationalId = new Map<string, number[]>();
+  for (const { rowNumber, data } of parsedRows) {
+    const rows = rowsByNationalId.get(data.nationalId) ?? [];
+    rows.push(rowNumber);
+    rowsByNationalId.set(data.nationalId, rows);
+  }
+
+  for (const rows of rowsByNationalId.values()) {
+    if (rows.length > 1) {
+      for (const rowNumber of rows) {
+        addRowError(rowErrors, rowNumber, "Số CCCD/CMND bị trùng trong file import");
+      }
+    }
+  }
+
+  if (rowErrors.size > 0) {
+    return { imported: 0, errors: collectRowErrors(rowErrors) };
+  }
+
+  const nationalIds = parsedRows.map(({ data }) => data.nationalId);
+  if (nationalIds.length > 0) {
+    const existingEmployees = await db
+      .select({ nationalId: employees.nationalId })
+      .from(employees)
+      .where(inArray(employees.nationalId, nationalIds));
+    const existingNationalIds = new Set(existingEmployees.map((employee) => employee.nationalId));
+
+    for (const { rowNumber, data } of parsedRows) {
+      if (existingNationalIds.has(data.nationalId)) {
+        addRowError(rowErrors, rowNumber, "Số CCCD/CMND đã tồn tại trong hệ thống");
+      }
+    }
+  }
+
+  if (rowErrors.size > 0) {
+    return { imported: 0, errors: collectRowErrors(rowErrors) };
+  }
+
+  const insertValues: NewEmployee[] = parsedRows.map(({ data }) => ({
+    fullName: data.fullName,
+    dob: data.dob,
+    gender: data.gender,
+    nationalId: data.nationalId,
+    hometown: data.hometown ?? null,
+    address: data.address ?? "",
+    email: data.email ?? "",
+    phone: data.phone ?? "",
+    workStatus: "pending",
+    contractStatus: "none",
+  }));
+
+  const inserted = await db.insert(employees).values(insertValues).returning({ id: employees.id });
+
+  return { imported: inserted.length, errors: [] };
+}
+
+export async function generateImportTemplate() {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Employees");
+
+  worksheet.addRow([
+    "fullName",
+    "dob",
+    "gender",
+    "nationalId",
+    "phone",
+    "email",
+    "hometown",
+    "address",
+  ]);
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  return buffer;
 }
 
 export async function getByEmail(email: string): Promise<Employee | null> {
