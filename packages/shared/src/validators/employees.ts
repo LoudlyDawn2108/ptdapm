@@ -249,3 +249,16 @@ export type CreateEmployeeAllowanceFormInput = z.input<typeof createEmployeeAllo
 export const updateEmployeeAllowanceSchema = createEmployeeAllowanceSchema.partial();
 
 export type UpdateEmployeeAllowanceInput = z.infer<typeof updateEmployeeAllowanceSchema>;
+
+export const importEmployeeRowSchema = z.object({
+  fullName: z.string().min(1, "Họ tên không được để trống"),
+  dob: z.string().refine((v) => /^\d{4}-\d{2}-\d{2}$/.test(v), "Ngày sinh không hợp lệ"),
+  gender: z.string().min(1, "Giới tính không được để trống"),
+  nationalId: z.string().min(1, "Số CCCD/CMND không được để trống"),
+  phone: z.string().optional(),
+  email: z.string().email("Email không hợp lệ").optional(),
+  hometown: z.string().optional(),
+  address: z.string().optional(),
+});
+
+export type ImportEmployeeRowInput = z.infer<typeof importEmployeeRowSchema>;
