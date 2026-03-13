@@ -9,12 +9,17 @@ import { errorPlugin } from "./common/plugins/error-handler";
 import { globalRateLimit, loginRateLimit } from "./common/plugins/rate-limit";
 import { accountRoutes } from "./modules/accounts";
 import { allowanceRoutes } from "./modules/allowances";
+import { assignmentRoutes } from "./modules/assignments";
 import { authRoutes } from "./modules/auth";
 import { bankAccountRoutes } from "./modules/bank-accounts";
+import { allowanceTypeRoutes } from "./modules/config/allowance-types";
 import { contractTypeRoutes } from "./modules/config/contract-types";
+import { salaryGradeRoutes } from "./modules/config/salary-grades";
+import { dashboardRoutes } from "./modules/dashboard";
 import { employeeRoutes } from "./modules/employees";
 import { employeeExportRoutes } from "./modules/employees-export";
 import { familyMemberRoutes } from "./modules/family-members";
+import { orgUnitRoutes } from "./modules/org-units";
 import { partyMembershipRoutes } from "./modules/party-memberships";
 import { previousJobRoutes } from "./modules/previous-jobs";
 
@@ -47,6 +52,11 @@ const app = new Elysia()
   .use(familyMemberRoutes)
   .use(bankAccountRoutes)
   .use(contractTypeRoutes)
+  .use(salaryGradeRoutes)
+  .use(allowanceTypeRoutes)
+  .use(orgUnitRoutes)
+  .use(assignmentRoutes)
+  .use(dashboardRoutes)
   .use(previousJobRoutes)
   .use(partyMembershipRoutes)
   .use(accountRoutes)
