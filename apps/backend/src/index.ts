@@ -23,7 +23,11 @@ const app = new Elysia()
   .use(
     openapi({
       mapJsonSchema: {
-        zod: z.toJSONSchema,
+        zod: (schema: z.ZodType) =>
+          z.toJSONSchema(schema, {
+            unrepresentable: "any",
+            io: "input",
+          }) as Record<string, unknown>,
       },
     }),
   )

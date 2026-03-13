@@ -100,6 +100,8 @@ export function EmployeeForm({
       currentPositionTitle: normalizeOptionalValue(defaultValues?.currentPositionTitle),
       salaryGradeStepId: normalizeRequiredValue(defaultValues?.salaryGradeStepId),
       portraitFileId: normalizeRequiredValue(defaultValues?.portraitFileId),
+      terminatedOn: normalizeOptionalValue(defaultValues?.terminatedOn),
+      terminationReason: normalizeOptionalValue(defaultValues?.terminationReason),
     }),
     [defaultValues],
   );
@@ -353,6 +355,26 @@ export function EmployeeForm({
         <div className="flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 text-sm">
           <input type="checkbox" className="h-4 w-4 accent-primary" {...register("isForeigner")} />
           <span>Người nước ngoài</span>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-muted/20 p-5">
+        <h3 className="mb-4 text-sm font-semibold text-foreground">Thông tin thôi việc</h3>
+        <div className="grid gap-6 md:grid-cols-2">
+          <FormField label="Ngày thôi việc" error={errors.terminatedOn?.message}>
+            <input
+              type="date"
+              className="h-11 rounded-xl border border-border bg-background px-4 text-sm"
+              {...register("terminatedOn")}
+            />
+          </FormField>
+          <FormField label="Lý do thôi việc" error={errors.terminationReason?.message}>
+            <input
+              className="h-11 rounded-xl border border-border bg-background px-4 text-sm"
+              placeholder="Nhập lý do thôi việc"
+              {...register("terminationReason")}
+            />
+          </FormField>
         </div>
       </div>
 

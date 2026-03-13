@@ -97,7 +97,7 @@ Bản RMP này áp dụng cho toàn bộ các yêu cầu của hệ thống HRMS
 
 > **Ghi chú thiết kế – FEAT 9.4/9.5:** Danh mục loại phụ cấp và loại hợp đồng chỉ hỗ trợ thao tác "Thay đổi trạng thái" (chuyển đổi giữa "Đang sử dụng" và "Ngừng sử dụng") mà không hỗ trợ "Xóa" (khác với hệ số lương ở FEAT 9.3 có hỗ trợ xóa khi chưa được sử dụng). Thiết kế này nhằm đảm bảo tính toàn vẹn dữ liệu và phục vụ kiểm toán – các loại phụ cấp/hợp đồng đã từng được sử dụng trong hệ thống cần được lưu giữ lịch sử.
 | **STRQ 10:** Phòng tài chính và TCCB muốn thống kê chi tiết về nhân sự. | * Thêm các chi tiết | * **FEAT 10.1:** Hệ thống cho phép phòng TCCB và phòng tài chính xem và xuất các thống kê nhân sự thông qua giao diện dashboard hoặc báo cáo tổng hợp: thống kê tổng quan nhân sự, biến động nhân sự, cơ cấu nhân sự theo đơn vị, cơ cấu nhân sự theo trình độ, học hàm, chức danh, đánh giá của cán bộ với khóa đào tạo, hợp đồng và tình trạng làm việc, đào tạo và phát triển, báo cáo bổ nhiệm nhân sự. |
-| **STRQ 11:** Người dùng phần mềm có thể xem hồ sơ cá nhân, xem thông tin đơn vị đang công tác và thực hiện các luồng tác vụ cá nhân. | * Phân tách | * **FEAT 11.1:** Mọi người dùng trong hệ thống có thể xem thông tin cá nhân của bản thân trên không gian thông qua các chế độ Tab hiện hành. * **FEAT 11.2:** Mọi người dùng có thể xem thông tin đơn vị mình đang công tác và cơ cấu các thành phần đơn vị trực thuộc. * **FEAT 11.3:** Mọi người dùng trong hệ thống có thể đăng ký tham gia khóa học/đào tạo được nhà trường phê duyệt mở. * **FEAT 11.4:** Hệ thống cho phép người dùng xem danh sách các khóa đào tạo đã đăng ký và lịch sử đào tạo đã tham gia. |
+| **STRQ 11:** Người dùng phần mềm có thể xem hồ sơ cá nhân, xem thông tin đơn vị đang công tác và thực hiện các luồng tác vụ cá nhân. | * Phân tách | * **FEAT 11.1:** Mọi người dùng trong hệ thống có thể xem thông tin cá nhân của bản thân trên không gian thông qua các chế độ Tab hiện hành. * **FEAT 11.2:** Mọi người dùng có thể xem thông tin đơn vị mình đang công tác và cơ cấu các thành phần đơn vị trực thuộc. * **FEAT 11.3:** Mọi người dùng trong hệ thống có thể đăng ký hoặc hủy đăng ký tham gia khóa học/đào tạo được nhà trường phê duyệt mở. * **FEAT 11.4:** Hệ thống cho phép người dùng xem danh sách các khóa đào tạo đã đăng ký và lịch sử đào tạo đã tham gia. |
 | **STRQ 12:** Hệ thống yêu cầu tự động log dấu vết hoạt động người dùng và đảm bảo an ninh (System Logging). | * Phân tách | * **FEAT 12.1:** Hệ thống có khả năng ghi vết tất cả các tác vụ truy cập tài khoản, thay đổi/cập nhật hệ thống hoặc dữ liệu. * **FEAT 12.2:** Quản trị viên có thể truy xuất xem và xuất Audit log (Nhật ký hệ thống) nhằm truy vết hoạt động. |
 
 # III. MÔ HÌNH HOÁ YÊU CẦU
@@ -160,7 +160,7 @@ Từ các FEAT đã được phân tách và xác định, chi tiết thành cá
 
 * UC Xem thông tin trong hồ sơ cá nhân
 * UC Xem thông tin chi tiết đơn vị đang công tác
-* UC Đăng ký tham gia khóa đào tạo
+* UC Thay đổi trạng thái đăng ký khóa đào tạo
 * UC Xem danh sách các khóa đào tạo đã đăng ký
 
 **► Nhóm UC Báo cáo & Thống kê:**
@@ -185,7 +185,7 @@ Từ các FEAT đã được phân tách và xác định, chi tiết thành cá
   + Thay đổi trạng thái tài khoản
   + Nhóm UC Quản lý Đơn vị tổ chức
   + Xem nhật ký hệ thống (Audit Log)
-  + Nhóm UC Cá nhân (Self-service): Xem hồ sơ cá nhân, Xem đơn vị công tác, Đăng ký đào tạo, Xem khóa đào tạo đã đăng ký *(kế thừa quyền Người dùng)*
+  + Nhóm UC Cá nhân (Self-service): Xem hồ sơ cá nhân, Xem đơn vị công tác, Thay đổi trạng thái đăng ký đào tạo, Xem khóa đào tạo đã đăng ký *(kế thừa quyền Người dùng)*
 
 **b. Phân rã cho Phòng Tổ chức - Cán bộ**
 
@@ -200,7 +200,7 @@ Từ các FEAT đã được phân tách và xác định, chi tiết thành cá
   + Nhóm UC Cấu hình danh mục (lương, phụ cấp, HD)
   + Nhóm UC Quản lý Đơn vị tổ chức (Thêm mới, Sửa thông tin, Thay đổi trạng thái, Xem chi tiết)
   + Xem báo cáo thống kê
-  + Nhóm UC Cá nhân (Self-service): Xem hồ sơ cá nhân, Xem đơn vị công tác, Đăng ký đào tạo, Xem khóa đào tạo đã đăng ký *(kế thừa quyền Người dùng)*
+  + Nhóm UC Cá nhân (Self-service): Xem hồ sơ cá nhân, Xem đơn vị công tác, Thay đổi trạng thái đăng ký đào tạo, Xem khóa đào tạo đã đăng ký *(kế thừa quyền Người dùng)*
 
 **c. Phân rã cho Phòng Tài chính - Kế toán**
 
@@ -209,7 +209,7 @@ Từ các FEAT đã được phân tách và xác định, chi tiết thành cá
   + Đăng nhập / Đăng xuất / Đổi mật khẩu
   + Chế độ xem: Tìm kiếm, Xem và Lọc chi tiết hồ sơ nhân sự
   + Xem chi tiết các thống kê
-  + Nhóm UC Cá nhân (Self-service): Xem hồ sơ cá nhân, Xem đơn vị công tác, Đăng ký đào tạo, Xem khóa đào tạo đã đăng ký *(kế thừa quyền Người dùng)*
+  + Nhóm UC Cá nhân (Self-service): Xem hồ sơ cá nhân, Xem đơn vị công tác, Thay đổi trạng thái đăng ký đào tạo, Xem khóa đào tạo đã đăng ký *(kế thừa quyền Người dùng)*
 
 **d. Phân rã cho Người dùng (Cán bộ/Giảng viên/Nhân viên)**
 
@@ -218,7 +218,7 @@ Từ các FEAT đã được phân tách và xác định, chi tiết thành cá
   + Đăng nhập / Đăng xuất / Đổi mật khẩu
   + Xem hồ sơ cá nhân
   + Xem thông tin chi tiết đơn vị công tác
-  + Đăng ký tham gia đào tạo
+  + Thay đổi trạng thái đăng ký đào tạo
   + Xem danh sách các khóa đào tạo đã đăng ký
 
 ## 3.4. Ma trận truy vết yêu cầu (Traceability Matrix)
@@ -264,7 +264,7 @@ Từ các FEAT đã được phân tách và xác định, chi tiết thành cá
 | FEAT 10.1 | UC 4.37 (Xem chi tiết các thống kê) |
 | FEAT 11.1 | UC 4.38 (Xem các thông tin trong hồ sơ cá nhân của nhân sự) |
 | FEAT 11.2 | UC 4.39 (Xem thông tin chi tiết đơn vị đang công tác) |
-| FEAT 11.3 | UC 4.40 (Đăng ký tham gia khóa đào tạo) |
+| FEAT 11.3 | UC 4.40 (Thay đổi trạng thái đăng ký khóa đào tạo) |
 | FEAT 11.4 | UC 4.41 (Xem danh sách các khóa đào tạo đã đăng ký) |
 | FEAT 12.1 | SUPL Ghi nhật ký (auto logging) |
 | FEAT 12.2 | UC 4.42 (Xem nhật ký hệ thống — Audit Log) — truy xuất |

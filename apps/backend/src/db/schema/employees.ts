@@ -59,6 +59,8 @@ export const employees = pgTable("employees", {
   portraitFileId: uuid("portrait_file_id").references(() => files.id, {
     onDelete: "set null",
   }),
+  terminatedOn: date("terminated_on"),
+  terminationReason: text("termination_reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

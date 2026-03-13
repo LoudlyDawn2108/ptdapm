@@ -119,6 +119,8 @@ classDiagram
         -Boolean laNguoiNuocNgoai
         -TrangThaiLamViec trangThaiLamViec
         -TrangThaiHopDongNS trangThaiHopDong
+        -Date ngayThoiViec
+        -String lyDoThoiViec
         +themMoi()
         +chinhSua()
         +danhDauThoiViec()
