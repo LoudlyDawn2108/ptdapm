@@ -26,11 +26,16 @@ export const employeeListOptions = (params: {
   workStatus?: string;
   contractStatus?: string;
   gender?: string;
+  academicRank?: string;
 }) =>
   queryOptions({
     queryKey: employeeKeys.list(params),
     queryFn: async () => {
-      const { data, error } = await api.api.employees.get({ query: params as any });
+      // Strip undefined/null/empty values — Eden serializes them as "undefined" string
+      const cleanParams = Object.fromEntries(
+        Object.entries(params).filter(([_, v]) => v != null && v !== ""),
+      );
+      const { data, error } = await api.api.employees.get({ query: cleanParams as any });
       if (error) throw handleApiError(error);
       return data;
     },
@@ -96,5 +101,23 @@ export function useDeleteEmployee() {
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: employeeKeys.lists() }),
+  });
+}
+
+export function useMarkResigned() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason?: string }) => {
+      const { data, error } = await api.api.employees({ employeeId: id }).put({
+        workStatus: "terminated",
+        terminationReason: reason,
+      } as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: employeeKeys.lists() });
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.id) });
+    },
   });
 }

@@ -3,6 +3,7 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
+import type { SessionInfo } from "@hrms/shared";
 import { api } from "@/api/client";
 import { handleApiError } from "@/lib/error-handler";
 
@@ -22,7 +23,10 @@ export const sessionOptions = () =>
     queryFn: async () => {
       const { data, error } = await api.auth.session.get();
       if (error) throw new Error("Not authenticated");
-      return data; // { user, session: { expiresAt } }
+      // Backend returns { data: { user, session } }
+      // Eden unwraps to { data: { data: { user, session } } }
+      const payload = (data as any)?.data ?? data;
+      return payload as SessionInfo; // { user, session: { expiresAt } }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes — session doesn't change often
     retry: false, // Don't retry auth — redirect on failure
