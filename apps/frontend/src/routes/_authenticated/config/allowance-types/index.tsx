@@ -4,7 +4,6 @@ import {
   useDeleteAllowanceType,
 } from "@/features/config/allowance-types/api";
 import { allowanceTypeColumns } from "@/features/config/allowance-types/columns";
-import { allowanceTypeStrings as t } from "@/features/config/allowance-types/strings";
 import { useListPage } from "@/hooks/use-list-page";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { authorizeRoute } from "@/lib/permissions";
@@ -34,9 +33,9 @@ function AllowanceTypesPage() {
 
   return (
     <CatalogListPage
-      title={t.page.title}
-      description={t.page.description}
-      addButtonLabel={t.page.addButton}
+      title="Loại phụ cấp"
+      description="Quản lý danh mục loại phụ cấp"
+      addButtonLabel="Thêm loại phụ cấp"
       columns={allowanceTypeColumns}
       queryOptions={allowanceTypeListOptions({
         page: search.page,
@@ -45,12 +44,12 @@ function AllowanceTypesPage() {
       })}
       deleteMutation={deleteMutation}
       deleteConfig={{
-        title: t.delete.title,
+        title: "Xóa loại phụ cấp",
         nameAccessor: "allowanceName",
-        successMessage: t.delete.success,
+        successMessage: "Đã xóa loại phụ cấp",
       }}
-      searchPlaceholder={t.page.searchPlaceholder}
-      emptyMessage={t.page.emptyMessage}
+      searchPlaceholder="Tìm kiếm theo tên..."
+      emptyMessage="Không có loại phụ cấp nào"
       {...listPage}
     />
   );

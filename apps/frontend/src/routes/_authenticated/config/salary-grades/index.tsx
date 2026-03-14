@@ -1,7 +1,6 @@
 import { CatalogListPage } from "@/components/shared/catalog-list-page";
 import { salaryGradeListOptions, useDeleteSalaryGrade } from "@/features/config/salary-grades/api";
 import { salaryGradeColumns } from "@/features/config/salary-grades/columns";
-import { salaryGradeStrings as t } from "@/features/config/salary-grades/strings";
 import { useListPage } from "@/hooks/use-list-page";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { authorizeRoute } from "@/lib/permissions";
@@ -31,9 +30,9 @@ function SalaryGradesPage() {
 
   return (
     <CatalogListPage
-      title={t.page.title}
-      description={t.page.description}
-      addButtonLabel={t.page.addButton}
+      title="Ngạch lương"
+      description="Quản lý hệ thống ngạch lương và bậc lương"
+      addButtonLabel="Thêm ngạch"
       columns={salaryGradeColumns}
       queryOptions={salaryGradeListOptions({
         page: search.page,
@@ -42,12 +41,12 @@ function SalaryGradesPage() {
       })}
       deleteMutation={deleteMutation}
       deleteConfig={{
-        title: t.delete.title,
+        title: "Xóa ngạch lương",
         nameAccessor: "gradeName",
-        successMessage: t.delete.success,
+        successMessage: "Đã xóa ngạch lương",
       }}
-      searchPlaceholder={t.page.searchPlaceholder}
-      emptyMessage={t.page.emptyMessage}
+      searchPlaceholder="Tìm kiếm theo mã ngạch, tên..."
+      emptyMessage="Không có ngạch lương nào"
       {...listPage}
     />
   );

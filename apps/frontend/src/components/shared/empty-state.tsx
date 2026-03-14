@@ -1,4 +1,3 @@
-import { commonStrings as t } from "@/lib/strings";
 import { InboxIcon, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -11,8 +10,8 @@ interface EmptyStateProps {
 
 export function EmptyState({
   icon: Icon = InboxIcon,
-  title = t.empty.title,
-  description = t.empty.description,
+  title = "Không có dữ liệu",
+  description = "Chưa có dữ liệu để hiển thị",
   action,
 }: EmptyStateProps) {
   return (

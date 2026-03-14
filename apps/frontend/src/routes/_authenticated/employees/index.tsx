@@ -12,11 +12,9 @@ import {
 } from "@/components/ui/select";
 import { employeeListOptions, useDeleteEmployee } from "@/features/employees/api";
 import { getEmployeeColumns } from "@/features/employees/columns";
-import { employeeStrings as t } from "@/features/employees/strings";
 import { useListPage } from "@/hooks/use-list-page";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { authorizeRoute } from "@/lib/permissions";
-import { commonStrings } from "@/lib/strings";
 import { Gender, WorkStatus, enumToSortedList } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -64,7 +62,7 @@ function EmployeesPage() {
   if (isError) {
     return (
       <div>
-        <PageHeader title={t.page.title} description={t.page.description} />
+        <PageHeader title="Quản lý nhân sự" description="Danh sách cán bộ, giảng viên, nhân viên" />
         <QueryError error={error} onRetry={refetch} />
       </div>
     );
@@ -73,13 +71,13 @@ function EmployeesPage() {
   return (
     <div>
       <PageHeader
-        title={t.page.title}
-        description={t.page.description}
+        title="Quản lý nhân sự"
+        description="Danh sách cán bộ, giảng viên, nhân viên"
         actions={
           <Button asChild>
             <Link to="/employees/new">
               <Plus className="mr-2 h-4 w-4" />
-              {t.page.addButton}
+              Thêm nhân sự
             </Link>
           </Button>
         }
@@ -87,7 +85,7 @@ function EmployeesPage() {
 
       <div className="mb-4 flex gap-3">
         <Input
-          placeholder={t.page.searchPlaceholder}
+          placeholder="Tìm kiếm theo tên, mã NV, email..."
           className="max-w-sm"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
@@ -105,10 +103,10 @@ function EmployeesPage() {
           }
         >
           <SelectTrigger className="w-48">
-            <SelectValue placeholder={commonStrings.filters.status} />
+            <SelectValue placeholder="Trạng thái" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{commonStrings.filters.allStatuses}</SelectItem>
+            <SelectItem value="all">Tất cả trạng thái</SelectItem>
             {enumToSortedList(WorkStatus).map((s) => (
               <SelectItem key={s.code} value={s.code}>
                 {s.label}
@@ -129,10 +127,10 @@ function EmployeesPage() {
           }
         >
           <SelectTrigger className="w-40">
-            <SelectValue placeholder={commonStrings.filters.gender} />
+            <SelectValue placeholder="Giới tính" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{commonStrings.filters.allGenders}</SelectItem>
+            <SelectItem value="all">Tất cả</SelectItem>
             {enumToSortedList(Gender).map((g) => (
               <SelectItem key={g.code} value={g.code}>
                 {g.label}
@@ -149,7 +147,7 @@ function EmployeesPage() {
         pagination={pagination}
         onPaginationChange={onPaginationChange}
         isLoading={isLoading}
-        emptyMessage={t.page.emptyMessage}
+        emptyMessage="Không có nhân sự nào"
       />
     </div>
   );

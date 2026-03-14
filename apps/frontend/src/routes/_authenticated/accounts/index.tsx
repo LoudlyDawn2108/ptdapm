@@ -13,11 +13,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { accountListOptions, useSetAccountStatus } from "@/features/accounts/api";
-import { accountStrings as t } from "@/features/accounts/strings";
 import { useListPage } from "@/hooks/use-list-page";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { authorizeRoute } from "@/lib/permissions";
-import { commonStrings } from "@/lib/strings";
 import { AuthUserStatus, Role, enumToSortedList } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -64,21 +62,21 @@ function AccountsPage() {
   const columns: ColumnDef<any>[] = [
     {
       accessorKey: "username",
-      header: t.columns.username,
+      header: "Tên đăng nhập",
     },
     {
       accessorKey: "fullName",
-      header: t.columns.fullName,
+      header: "Họ tên",
       cell: ({ row }) => row.original.fullName ?? "—",
     },
     {
       accessorKey: "email",
-      header: t.columns.email,
+      header: "Email",
       cell: ({ row }) => row.original.email ?? "—",
     },
     {
       accessorKey: "roleCode",
-      header: t.columns.role,
+      header: "Vai trò",
       cell: ({ row }) => {
         const role = Role[row.original.roleCode as keyof typeof Role];
         return role?.label ?? row.original.roleCode;
@@ -86,7 +84,7 @@ function AccountsPage() {
     },
     {
       accessorKey: "status",
-      header: t.columns.status,
+      header: "Trạng thái",
       cell: ({ row }) => {
         const status = AuthUserStatus[row.original.status as keyof typeof AuthUserStatus];
         return (
@@ -109,13 +107,13 @@ function AccountsPage() {
                 {isLocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
               </Button>
             }
-            title={isLocked ? t.actions.unlockTitle : t.actions.lockTitle}
+            title={isLocked ? "Mở khóa tài khoản" : "Khóa tài khoản"}
             description={
               isLocked
-                ? t.actions.unlockDescription(row.original.username)
-                : t.actions.lockDescription(row.original.username)
+                ? `Bạn có chắc muốn mở khóa tài khoản "${row.original.username}"?`
+                : `Bạn có chắc muốn khóa tài khoản "${row.original.username}"?`
             }
-            confirmLabel={isLocked ? t.actions.unlockConfirm : t.actions.lockConfirm}
+            confirmLabel={isLocked ? "Mở khóa" : "Khóa"}
             variant={isLocked ? "default" : "destructive"}
             onConfirm={() =>
               setStatusMutation.mutate(
@@ -125,7 +123,7 @@ function AccountsPage() {
                 },
                 {
                   onSuccess: () =>
-                    toast.success(isLocked ? t.actions.unlockSuccess : t.actions.lockSuccess),
+                    toast.success(isLocked ? "Đã mở khóa tài khoản" : "Đã khóa tài khoản"),
                 },
               )
             }
@@ -138,7 +136,10 @@ function AccountsPage() {
   if (isError) {
     return (
       <div>
-        <PageHeader title={t.page.title} description={t.page.description} />
+        <PageHeader
+          title="Quản lý tài khoản"
+          description="Danh sách tài khoản người dùng hệ thống"
+        />
         <QueryError error={error} onRetry={refetch} />
       </div>
     );
@@ -147,13 +148,13 @@ function AccountsPage() {
   return (
     <div>
       <PageHeader
-        title={t.page.title}
-        description={t.page.description}
+        title="Quản lý tài khoản"
+        description="Danh sách tài khoản người dùng hệ thống"
         actions={
           <Button asChild>
             <Link to="/accounts" search={{ page: 1 }}>
               <Plus className="mr-2 h-4 w-4" />
-              {t.page.addButton}
+              Tạo tài khoản
             </Link>
           </Button>
         }
@@ -161,7 +162,7 @@ function AccountsPage() {
 
       <div className="mb-4 flex gap-3">
         <Input
-          placeholder={t.page.searchPlaceholder}
+          placeholder="Tìm kiếm theo tên, email..."
           className="max-w-sm"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
@@ -179,10 +180,10 @@ function AccountsPage() {
           }
         >
           <SelectTrigger className="w-48">
-            <SelectValue placeholder={commonStrings.filters.role} />
+            <SelectValue placeholder="Vai trò" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{commonStrings.filters.allRoles}</SelectItem>
+            <SelectItem value="all">Tất cả vai trò</SelectItem>
             {enumToSortedList(Role).map((r) => (
               <SelectItem key={r.code} value={r.code}>
                 {r.label}
@@ -203,10 +204,10 @@ function AccountsPage() {
           }
         >
           <SelectTrigger className="w-48">
-            <SelectValue placeholder={commonStrings.filters.status} />
+            <SelectValue placeholder="Trạng thái" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{commonStrings.filters.allStatuses}</SelectItem>
+            <SelectItem value="all">Tất cả trạng thái</SelectItem>
             {enumToSortedList(AuthUserStatus).map((s) => (
               <SelectItem key={s.code} value={s.code}>
                 {s.label}
@@ -223,7 +224,7 @@ function AccountsPage() {
         pagination={pagination}
         onPaginationChange={onPaginationChange}
         isLoading={isLoading}
-        emptyMessage={t.page.emptyMessage}
+        emptyMessage="Không có tài khoản nào"
       />
     </div>
   );

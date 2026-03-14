@@ -2,7 +2,6 @@ import { StatusBadgeFromCode } from "@/components/shared/status-badge";
 import type { CatalogStatusCode } from "@hrms/shared";
 import { CatalogStatus } from "@hrms/shared";
 import type { ColumnDef } from "@tanstack/react-table";
-import { contractTypeStrings as t } from "./strings";
 
 export interface ContractTypeRow {
   id: string;
@@ -14,13 +13,13 @@ export interface ContractTypeRow {
 }
 
 export const contractTypeColumns: ColumnDef<ContractTypeRow, unknown>[] = [
-  { accessorKey: "contractTypeName", header: t.columns.contractTypeName },
-  { accessorKey: "minMonths", header: t.columns.minMonths },
-  { accessorKey: "maxMonths", header: t.columns.maxMonths },
-  { accessorKey: "maxRenewals", header: t.columns.maxRenewals },
+  { accessorKey: "contractTypeName", header: "Tên loại hợp đồng" },
+  { accessorKey: "minMonths", header: "Tối thiểu (tháng)" },
+  { accessorKey: "maxMonths", header: "Tối đa (tháng)" },
+  { accessorKey: "maxRenewals", header: "Gia hạn tối đa" },
   {
     accessorKey: "status",
-    header: t.columns.status,
+    header: "Trạng thái",
     cell: ({ row }) => {
       const s = CatalogStatus[row.original.status as keyof typeof CatalogStatus];
       return (

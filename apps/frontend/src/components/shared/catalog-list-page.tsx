@@ -4,7 +4,6 @@ import { QueryError } from "@/components/shared/query-error";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
-import { commonStrings as t } from "@/lib/strings";
 import type { UseMutationResult, UseQueryOptions } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import type { ColumnDef, OnChangeFn, PaginationState } from "@tanstack/react-table";
@@ -87,8 +86,8 @@ export function CatalogListPage<TData extends { id: string }>({
             </Button>
           }
           title={deleteConfig.title}
-          description={`${t.deleteConfirmPrefix} "${name}"?`}
-          confirmLabel={t.actions.delete}
+          description={`Bạn có chắc muốn xóa "${name}"?`}
+          confirmLabel="Xóa"
           variant="destructive"
           onConfirm={() =>
             deleteMutation.mutate(item.id, {

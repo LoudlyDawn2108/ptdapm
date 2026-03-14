@@ -12,7 +12,6 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/features/auth/hooks";
 import { canAccessRoute } from "@/lib/permissions";
-import { commonStrings } from "@/lib/strings";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Building2,
@@ -23,7 +22,6 @@ import {
   UsersRound,
 } from "lucide-react";
 import tluLogo from "../../../assets/tlu-logo.png";
-import { sidebarStrings as t } from "./strings";
 
 interface NavItem {
   title: string;
@@ -38,45 +36,45 @@ interface NavGroupConfig {
 
 const navGroups: NavGroupConfig[] = [
   {
-    label: t.groups.accounts,
+    label: "Tài khoản",
     items: [
       {
-        title: t.items.accountList,
+        title: "Danh sách tài khoản",
         to: "/accounts",
         icon: CircleUserRound,
       },
     ],
   },
   {
-    label: t.groups.personnel,
+    label: "Hồ sơ nhân sự",
     items: [
       {
-        title: t.items.personnelList,
+        title: "Danh sách hồ sơ",
         to: "/employees",
         icon: UsersRound,
       },
       {
-        title: t.items.orgChart,
+        title: "Sơ đồ tổ chức",
         to: "/org-units",
         icon: Building2,
       },
     ],
   },
   {
-    label: t.groups.orgStructure,
+    label: "Cơ cấu tổ chức",
     items: [
       {
-        title: t.items.salaryGrades,
+        title: "Ngạch lương",
         to: "/config/salary-grades",
         icon: Settings,
       },
       {
-        title: t.items.allowances,
+        title: "Phụ cấp",
         to: "/config/allowance-types",
         icon: Settings,
       },
       {
-        title: t.items.contracts,
+        title: "Hợp đồng",
         to: "/config/contract-types",
         icon: ClipboardList,
       },
@@ -125,14 +123,14 @@ export function AppSidebar() {
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton size="lg" asChild tooltip={commonStrings.app.name}>
+              <SidebarMenuButton size="lg" asChild tooltip="Quản lý nhân sự">
                 <Link to="/">
                   <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
                     <img src={tluLogo} alt="TLU Logo" className="size-7 object-contain" />
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{commonStrings.app.name}</span>
-                    <span className="truncate text-xs">{commonStrings.app.orgName}</span>
+                    <span className="truncate font-semibold">Quản lý nhân sự</span>
+                    <span className="truncate text-xs">Trường Đại học Thủy Lợi</span>
                   </div>
                 </Link>
               </SidebarMenuButton>

@@ -2,7 +2,6 @@ import { StatusBadgeFromCode } from "@/components/shared/status-badge";
 import type { CatalogStatusCode } from "@hrms/shared";
 import { CatalogStatus } from "@hrms/shared";
 import type { ColumnDef } from "@tanstack/react-table";
-import { salaryGradeStrings as t } from "./strings";
 
 export interface SalaryGradeRow {
   id: string;
@@ -12,11 +11,11 @@ export interface SalaryGradeRow {
 }
 
 export const salaryGradeColumns: ColumnDef<SalaryGradeRow, unknown>[] = [
-  { accessorKey: "gradeCode", header: t.columns.gradeCode },
-  { accessorKey: "gradeName", header: t.columns.gradeName },
+  { accessorKey: "gradeCode", header: "Mã ngạch" },
+  { accessorKey: "gradeName", header: "Tên ngạch lương" },
   {
     accessorKey: "status",
-    header: t.columns.status,
+    header: "Trạng thái",
     cell: ({ row }) => {
       const s = CatalogStatus[row.original.status as keyof typeof CatalogStatus];
       return (

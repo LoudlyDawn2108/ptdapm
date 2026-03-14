@@ -4,7 +4,6 @@ import {
   useDeleteContractType,
 } from "@/features/config/contract-types/api";
 import { contractTypeColumns } from "@/features/config/contract-types/columns";
-import { contractTypeStrings as t } from "@/features/config/contract-types/strings";
 import { useListPage } from "@/hooks/use-list-page";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { authorizeRoute } from "@/lib/permissions";
@@ -34,9 +33,9 @@ function ContractTypesPage() {
 
   return (
     <CatalogListPage
-      title={t.page.title}
-      description={t.page.description}
-      addButtonLabel={t.page.addButton}
+      title="Loại hợp đồng"
+      description="Quản lý danh mục loại hợp đồng lao động"
+      addButtonLabel="Thêm loại HĐ"
       columns={contractTypeColumns}
       queryOptions={contractTypeListOptions({
         page: search.page,
@@ -45,12 +44,12 @@ function ContractTypesPage() {
       })}
       deleteMutation={deleteMutation}
       deleteConfig={{
-        title: t.delete.title,
+        title: "Xóa loại hợp đồng",
         nameAccessor: "contractTypeName",
-        successMessage: t.delete.success,
+        successMessage: "Đã xóa loại hợp đồng",
       }}
-      searchPlaceholder={t.page.searchPlaceholder}
-      emptyMessage={t.page.emptyMessage}
+      searchPlaceholder="Tìm kiếm theo tên..."
+      emptyMessage="Không có loại hợp đồng nào"
       {...listPage}
     />
   );

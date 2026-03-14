@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { orgUnitTreeOptions } from "@/features/org-units/api";
-import { orgUnitStrings as t } from "@/features/org-units/strings";
 import { useDebounce } from "@/hooks/use-debounce";
 import { ORG_TREE_BASE_PADDING_PX, ORG_TREE_INDENT_PX, SKELETON_ROW_COUNT } from "@/lib/constants";
 import { authorizeRoute } from "@/lib/permissions";
@@ -85,7 +84,7 @@ function OrgUnitsPage() {
   if (isError) {
     return (
       <div>
-        <PageHeader title={t.page.title} description={t.page.description} />
+        <PageHeader title="Đơn vị tổ chức" description="Cơ cấu tổ chức trường Đại học Thủy Lợi" />
         <QueryError error={error} onRetry={refetch} />
       </div>
     );
@@ -94,19 +93,19 @@ function OrgUnitsPage() {
   return (
     <div>
       <PageHeader
-        title={t.page.title}
-        description={t.page.description}
+        title="Đơn vị tổ chức"
+        description="Cơ cấu tổ chức trường Đại học Thủy Lợi"
         actions={
           <Button>
             <Plus className="mr-2 h-4 w-4" />
-            {t.page.addButton}
+            Thêm đơn vị
           </Button>
         }
       />
 
       <div className="mb-4">
         <Input
-          placeholder={t.page.searchPlaceholder}
+          placeholder="Tìm kiếm đơn vị..."
           className="max-w-sm"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
@@ -115,7 +114,7 @@ function OrgUnitsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{t.page.treeTitle}</CardTitle>
+          <CardTitle className="text-base">Cây tổ chức</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -127,7 +126,7 @@ function OrgUnitsPage() {
           ) : filteredTree.length > 0 ? (
             filteredTree.map((node: any) => <OrgUnitNode key={node.id} node={node} />)
           ) : (
-            <EmptyState description={t.page.emptySearch} />
+            <EmptyState description="Không tìm thấy đơn vị nào" />
           )}
         </CardContent>
       </Card>

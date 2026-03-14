@@ -2,7 +2,6 @@ import { PageHeader } from "@/components/layout/page-header";
 import { QueryError } from "@/components/shared/query-error";
 import { Skeleton } from "@/components/ui/skeleton";
 import { statisticsOptions } from "@/features/dashboard/api";
-import { dashboardStrings as t } from "@/features/dashboard/strings";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { BarChart3, Building2, GraduationCap, Users } from "lucide-react";
@@ -45,7 +44,10 @@ function DashboardPage() {
   if (isError) {
     return (
       <div>
-        <PageHeader title={t.page.title} description={t.page.description} />
+        <PageHeader
+          title="Bảng điều khiển"
+          description="Tổng quan Hệ thống Quản lý Nhân sự — Trường Đại học Thủy Lợi"
+        />
         <QueryError error={error} onRetry={refetch} />
       </div>
     );
@@ -53,28 +55,31 @@ function DashboardPage() {
 
   return (
     <div>
-      <PageHeader title={t.page.title} description={t.page.description} />
+      <PageHeader
+        title="Bảng điều khiển"
+        description="Tổng quan Hệ thống Quản lý Nhân sự — Trường Đại học Thủy Lợi"
+      />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title={t.stats.totalEmployees}
+          title="Tổng nhân sự"
           value={stats?.totalEmployees ?? 0}
           icon={Users}
           loading={isLoading}
         />
         <StatCard
-          title={t.stats.activeEmployees}
+          title="Đang công tác"
           value={stats?.activeEmployees ?? 0}
           icon={BarChart3}
           loading={isLoading}
         />
         <StatCard
-          title={t.stats.totalOrgUnits}
+          title="Đơn vị tổ chức"
           value={stats?.totalOrgUnits ?? 0}
           icon={Building2}
           loading={isLoading}
         />
         <StatCard
-          title={t.stats.totalTrainingCourses}
+          title="Khóa đào tạo"
           value={stats?.totalTrainingCourses ?? 0}
           icon={GraduationCap}
           loading={isLoading}

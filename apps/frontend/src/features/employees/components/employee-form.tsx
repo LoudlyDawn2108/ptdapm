@@ -29,7 +29,6 @@ import {
 } from "@hrms/shared";
 import { Loader2, Save } from "lucide-react";
 import { Controller, type Path, useForm } from "react-hook-form";
-import { employeeStrings as t } from "../strings";
 
 type FormValues = CreateEmployeeFormInput;
 
@@ -45,8 +44,8 @@ export function EmployeeForm({
   defaultValues,
   onSubmitAction,
   isPending,
-  submitLabel = t.form.saveLabel,
-  pendingLabel = t.form.savingLabel,
+  submitLabel = "Lưu nhân sự",
+  pendingLabel = "Đang lưu...",
 }: EmployeeFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(createEmployeeSchema),
@@ -133,38 +132,38 @@ export function EmployeeForm({
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">{t.form.personalInfoTitle}</CardTitle>
+            <CardTitle className="text-base">Thông tin cá nhân</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {renderInput("fullName", t.form.fields.fullName)}
-            {renderInput("dob", t.form.fields.dob, "date")}
-            {renderSelect("gender", t.form.fields.gender, enumToSortedList(Gender))}
-            {renderInput("nationalId", t.form.fields.nationalId)}
-            {renderInput("hometown", t.form.fields.hometown)}
-            {renderInput("address", t.form.fields.address)}
-            {renderInput("email", t.form.fields.email, "email")}
-            {renderInput("phone", t.form.fields.phone, "tel")}
+            {renderInput("fullName", "Họ tên")}
+            {renderInput("dob", "Ngày sinh", "date")}
+            {renderSelect("gender", "Giới tính", enumToSortedList(Gender))}
+            {renderInput("nationalId", "Số CCCD/CMND")}
+            {renderInput("hometown", "Quê quán")}
+            {renderInput("address", "Địa chỉ")}
+            {renderInput("email", "Email", "email")}
+            {renderInput("phone", "Số điện thoại", "tel")}
             <div className="flex items-center gap-2">
               <Checkbox
                 id="isForeigner"
                 checked={form.watch("isForeigner")}
                 onCheckedChange={(v) => form.setValue("isForeigner", !!v)}
               />
-              <Label htmlFor="isForeigner">{t.form.fields.isForeigner}</Label>
+              <Label htmlFor="isForeigner">Là người nước ngoài</Label>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">{t.form.careerInfoTitle}</CardTitle>
+            <CardTitle className="text-base">Thông tin nghề nghiệp</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {renderInput("staffCode", t.form.fields.staffCode)}
-            {renderInput("currentPositionTitle", t.form.fields.positionTitle)}
+            {renderInput("staffCode", "Mã nhân viên")}
+            {renderInput("currentPositionTitle", "Chức danh hiện tại")}
 
             <div className="space-y-2">
-              <Label>{t.form.fields.orgUnit}</Label>
+              <Label>Đơn vị công tác</Label>
               <Controller
                 name="currentOrgUnitId"
                 control={form.control}
@@ -175,7 +174,7 @@ export function EmployeeForm({
                     value={field.value as string}
                     onChange={field.onChange}
                     onBlur={field.onBlur}
-                    placeholder={t.form.fields.orgUnitPlaceholder}
+                    placeholder="Chọn đơn vị công tác..."
                   />
                 )}
               />
@@ -187,7 +186,7 @@ export function EmployeeForm({
             </div>
 
             <div className="space-y-2">
-              <Label>{t.form.fields.salaryGrade}</Label>
+              <Label>Bậc lương</Label>
               <Controller
                 name="salaryGradeStepId"
                 control={form.control}
@@ -198,7 +197,7 @@ export function EmployeeForm({
                     value={field.value as string}
                     onChange={field.onChange}
                     onBlur={field.onBlur}
-                    placeholder={t.form.fields.salaryGradePlaceholder}
+                    placeholder="Chọn bậc lương..."
                   />
                 )}
               />
@@ -208,32 +207,20 @@ export function EmployeeForm({
                 </p>
               )}
             </div>
-            {renderSelect("workStatus", t.form.fields.workStatus, enumToSortedList(WorkStatus))}
+            {renderSelect("workStatus", "Trạng thái làm việc", enumToSortedList(WorkStatus))}
             {renderSelect(
               "contractStatus",
-              t.form.fields.contractStatus,
+              "Trạng thái hợp đồng",
               enumToSortedList(ContractStatus),
             )}
-            {renderSelect(
-              "educationLevel",
-              t.form.fields.educationLevel,
-              enumToSortedList(EducationLevel),
-            )}
-            {renderSelect(
-              "trainingLevel",
-              t.form.fields.trainingLevel,
-              enumToSortedList(TrainingLevel),
-            )}
+            {renderSelect("educationLevel", "Trình độ văn hóa", enumToSortedList(EducationLevel))}
+            {renderSelect("trainingLevel", "Trình độ đào tạo", enumToSortedList(TrainingLevel))}
             {renderSelect(
               "academicTitle",
-              t.form.fields.academicTitle,
+              "Chức danh nghề nghiệp",
               enumToSortedList(AcademicTitle),
             )}
-            {renderSelect(
-              "academicRank",
-              t.form.fields.academicRank,
-              enumToSortedList(AcademicRank),
-            )}
+            {renderSelect("academicRank", "Học hàm", enumToSortedList(AcademicRank))}
           </CardContent>
         </Card>
       </div>

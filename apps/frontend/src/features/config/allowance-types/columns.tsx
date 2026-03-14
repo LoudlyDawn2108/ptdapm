@@ -2,7 +2,6 @@ import { StatusBadgeFromCode } from "@/components/shared/status-badge";
 import type { CatalogStatusCode } from "@hrms/shared";
 import { CatalogStatus } from "@hrms/shared";
 import type { ColumnDef } from "@tanstack/react-table";
-import { allowanceTypeStrings as t } from "./strings";
 
 export interface AllowanceTypeRow {
   id: string;
@@ -13,20 +12,20 @@ export interface AllowanceTypeRow {
 }
 
 export const allowanceTypeColumns: ColumnDef<AllowanceTypeRow, unknown>[] = [
-  { accessorKey: "allowanceName", header: t.columns.allowanceName },
+  { accessorKey: "allowanceName", header: "Tên loại phụ cấp" },
   {
     accessorKey: "description",
-    header: t.columns.description,
+    header: "Mô tả",
     cell: ({ row }) => row.original.description ?? "—",
   },
   {
     accessorKey: "calcMethod",
-    header: t.columns.calcMethod,
+    header: "Phương thức tính",
     cell: ({ row }) => row.original.calcMethod ?? "—",
   },
   {
     accessorKey: "status",
-    header: t.columns.status,
+    header: "Trạng thái",
     cell: ({ row }) => {
       const s = CatalogStatus[row.original.status as keyof typeof CatalogStatus];
       return (
