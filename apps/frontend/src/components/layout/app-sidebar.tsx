@@ -9,6 +9,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/features/auth/hooks";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
@@ -148,6 +149,7 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
             <SidebarMenuItem key={item.to}>
               <SidebarMenuButton
                 asChild
+                tooltip={item.title}
                 isActive={item.to === "/" ? currentPath === "/" : currentPath.startsWith(item.to)}
               >
                 <Link to={item.to}>
@@ -165,30 +167,32 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
 
 export function AppSidebar() {
   return (
-    <Sidebar variant="inset" collapsible="icon">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link to="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <img src={tluLogo} alt="TLU Logo" className="size-7 object-contain" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Quản lý nhân sự</span>
-                  <span className="truncate text-xs">Trường Đại học Thủy Lợi</span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
+    <TooltipProvider delayDuration={0}>
+      <Sidebar variant="inset" collapsible="icon">
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg" asChild tooltip="Quản lý nhân sự">
+                <Link to="/">
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
+                    <img src={tluLogo} alt="TLU Logo" className="size-7 object-contain" />
+                  </div>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">Quản lý nhân sự</span>
+                    <span className="truncate text-xs">Trường Đại học Thủy Lợi</span>
+                  </div>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
 
-      <SidebarContent>
-        {navGroups.map((group) => (
-          <NavGroup key={group.label} label={group.label} items={group.items} />
-        ))}
-      </SidebarContent>
-    </Sidebar>
+        <SidebarContent>
+          {navGroups.map((group) => (
+            <NavGroup key={group.label} label={group.label} items={group.items} />
+          ))}
+        </SidebarContent>
+      </Sidebar>
+    </TooltipProvider>
   );
 }
