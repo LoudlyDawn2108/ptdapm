@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -30,6 +31,17 @@ interface DataTableProps<TData, TValue> {
   onSortingChange?: OnChangeFn<SortingState>;
   isLoading?: boolean;
   emptyMessage?: string;
+  tableWrapperClassName?: string;
+  tableClassName?: string;
+  headerClassName?: string;
+  headerRowClassName?: string;
+  headerCellClassName?: string;
+  rowClassName?: string;
+  cellClassName?: string;
+  paginationClassName?: string;
+  paginationInfoClassName?: string;
+  paginationButtonClassName?: string;
+  paginationLabel?: string;
 }
 
 export function DataTable<TData, TValue>({
@@ -42,6 +54,17 @@ export function DataTable<TData, TValue>({
   onSortingChange,
   isLoading = false,
   emptyMessage = "Không có dữ liệu",
+  tableWrapperClassName,
+  tableClassName,
+  headerClassName,
+  headerRowClassName,
+  headerCellClassName,
+  rowClassName,
+  cellClassName,
+  paginationClassName,
+  paginationInfoClassName,
+  paginationButtonClassName,
+  paginationLabel,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
@@ -71,13 +94,13 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
+      <div className={cn("rounded-md border", tableWrapperClassName)}>
+        <Table className={tableClassName}>
+          <TableHeader className={headerClassName}>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className={headerRowClassName}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
+                  <TableHead key={header.id} className={headerCellClassName}>
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -92,9 +115,9 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow key={row.id} className={rowClassName}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className={cellClassName}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext(),
@@ -119,9 +142,14 @@ export function DataTable<TData, TValue>({
 
       {/* Pagination Controls */}
       {pagination && pageCount > 0 && (
-        <div className="flex items-center justify-between px-2">
-          <p className="text-sm text-muted-foreground">
-            Trang {pagination.pageIndex + 1} / {pageCount}
+        <div
+          className={cn(
+            "flex items-center justify-between px-2",
+            paginationClassName,
+          )}
+        >
+          <p className={cn("text-sm text-muted-foreground", paginationInfoClassName)}>
+            {paginationLabel ?? `Trang ${pagination.pageIndex + 1} / ${pageCount}`}
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -129,6 +157,7 @@ export function DataTable<TData, TValue>({
               size="sm"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
+              className={paginationButtonClassName}
             >
               <ChevronLeft className="h-4 w-4" />
               Trước
@@ -138,6 +167,7 @@ export function DataTable<TData, TValue>({
               size="sm"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
+              className={paginationButtonClassName}
             >
               Sau
               <ChevronRight className="h-4 w-4" />
