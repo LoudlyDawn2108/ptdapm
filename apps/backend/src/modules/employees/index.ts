@@ -11,7 +11,7 @@ import {
 import { Elysia } from "elysia";
 import { z } from "zod";
 import { authPlugin } from "../../common/plugins/auth";
-import { NotFoundError } from "../../common/utils/errors";
+import { BadRequestError, NotFoundError } from "../../common/utils/errors";
 import { requireRole } from "../../common/utils/role-guard";
 import * as employeeService from "./employee.service";
 
@@ -31,16 +31,52 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
   .get(
     "/me",
     async ({ user }) => {
-      const data = await employeeService.getByEmail(user.email ?? "");
-      if (!data) throw new NotFoundError("Không tìm thấy hồ sơ nhân viên");
+      const employee = await employeeService.getByEmail(user.email ?? "");
+      if (!employee) throw new NotFoundError("Không tìm thấy hồ sơ nhân viên");
+      const data = await employeeService.getAggregateById(employee.id, user.role);
       return { data };
     },
     { auth: true },
   )
   .get(
+    "/import/template",
+    async ({ user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
+      const data = await employeeService.generateImportTemplate();
+      return new Response(data, {
+        headers: {
+          "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "Content-Disposition": 'attachment; filename="import-template.xlsx"',
+        },
+      });
+    },
+    { auth: true },
+  )
+  .post(
+    "/import",
+    async ({ body, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
+      const file = body.file;
+      if (!file) throw new BadRequestError("File không được để trống");
+      if (!file.name.endsWith(".xlsx") && !file.name.endsWith(".xls")) {
+        throw new BadRequestError("Chỉ hỗ trợ file Excel (.xlsx, .xls)");
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        throw new BadRequestError("File quá lớn (tối đa 5MB)");
+      }
+      const buffer = await file.arrayBuffer();
+      const data = await employeeService.importFromExcel(buffer);
+      return { data };
+    },
+    {
+      auth: true,
+      body: z.object({ file: z.instanceof(File) }),
+    },
+  )
+  .get(
     "/",
     async ({ query, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+      requireRole(user.role, "ADMIN", "TCCB", "TCKT");
       const data = await employeeService.list(
         query.page,
         query.pageSize,
@@ -60,8 +96,8 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
   .get(
     "/:employeeId",
     async ({ params, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
-      const data = await employeeService.getAggregateById(params.employeeId);
+      requireRole(user.role, "ADMIN", "TCCB", "TCKT");
+      const data = await employeeService.getAggregateById(params.employeeId, user.role);
       return { data };
     },
     { auth: true, params: z.object({ employeeId: z.string().uuid() }) },

@@ -83,7 +83,6 @@ const requiredEmail = (requiredMessage: string, invalidMessage: string) =>
     z.string({ error: requiredMessage }).min(1, requiredMessage).email(invalidMessage),
   );
 
-
 const genderSchema = z.enum(GENDER_CODES as [GenderCode, ...GenderCode[]]);
 const workStatusSchema = z.enum(WORK_STATUS_CODES as [WorkStatusCode, ...WorkStatusCode[]]);
 const contractStatusSchema = z.enum(
@@ -135,6 +134,8 @@ export const createEmployeeSchema = z.object({
   currentPositionTitle: optionalText(),
   salaryGradeStepId: requiredUuid("Bậc lương không được để trống"),
   portraitFileId: requiredUuid("Ảnh chân dung không được để trống"),
+  terminatedOn: optionalDate(),
+  terminationReason: optionalText(),
 });
 
 export type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;
@@ -186,25 +187,8 @@ const employeePreviousJobFieldsSchema = z.object({
   note: z.string().nullish(),
 });
 
-export const createEmployeePreviousJobSchema = employeePreviousJobFieldsSchema
-  .superRefine((data, ctx) => {
-    const started = new Date(data.startedOn);
-    const ended = new Date(data.endedOn);
-    if (!Number.isNaN(started.getTime()) && !Number.isNaN(ended.getTime()) && ended < started) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Ngày kết thúc phải sau ngày bắt đầu",
-        path: ["endedOn"],
-      });
-    }
-  });
-
-export type CreateEmployeePreviousJobInput = z.infer<typeof createEmployeePreviousJobSchema>;
-
-export const updateEmployeePreviousJobSchema = employeePreviousJobFieldsSchema.partial().superRefine(
+export const createEmployeePreviousJobSchema = employeePreviousJobFieldsSchema.superRefine(
   (data, ctx) => {
-    if (data.startedOn == null || data.endedOn == null) return;
-
     const started = new Date(data.startedOn);
     const ended = new Date(data.endedOn);
     if (!Number.isNaN(started.getTime()) && !Number.isNaN(ended.getTime()) && ended < started) {
@@ -216,6 +200,24 @@ export const updateEmployeePreviousJobSchema = employeePreviousJobFieldsSchema.p
     }
   },
 );
+
+export type CreateEmployeePreviousJobInput = z.infer<typeof createEmployeePreviousJobSchema>;
+
+export const updateEmployeePreviousJobSchema = employeePreviousJobFieldsSchema
+  .partial()
+  .superRefine((data, ctx) => {
+    if (data.startedOn == null || data.endedOn == null) return;
+
+    const started = new Date(data.startedOn);
+    const ended = new Date(data.endedOn);
+    if (!Number.isNaN(started.getTime()) && !Number.isNaN(ended.getTime()) && ended < started) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Ngày kết thúc phải sau ngày bắt đầu",
+        path: ["endedOn"],
+      });
+    }
+  });
 
 export type UpdateEmployeePreviousJobInput = z.infer<typeof updateEmployeePreviousJobSchema>;
 
@@ -247,3 +249,16 @@ export type CreateEmployeeAllowanceFormInput = z.input<typeof createEmployeeAllo
 export const updateEmployeeAllowanceSchema = createEmployeeAllowanceSchema.partial();
 
 export type UpdateEmployeeAllowanceInput = z.infer<typeof updateEmployeeAllowanceSchema>;
+
+export const importEmployeeRowSchema = z.object({
+  fullName: z.string().min(1, "Họ tên không được để trống"),
+  dob: z.string().refine((v) => /^\d{4}-\d{2}-\d{2}$/.test(v), "Ngày sinh không hợp lệ"),
+  gender: z.string().min(1, "Giới tính không được để trống"),
+  nationalId: z.string().min(1, "Số CCCD/CMND không được để trống"),
+  phone: z.string().optional(),
+  email: z.string().email("Email không hợp lệ").optional(),
+  hometown: z.string().optional(),
+  address: z.string().optional(),
+});
+
+export type ImportEmployeeRowInput = z.infer<typeof importEmployeeRowSchema>;

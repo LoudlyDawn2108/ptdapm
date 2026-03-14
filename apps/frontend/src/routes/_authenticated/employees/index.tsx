@@ -1,340 +1,255 @@
-import { employeesApi } from "@/api/client";
-import { type Column, DataTable } from "@/components/ui/DataTable";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { displayValue, toLabel } from "@/lib/formatters";
-import { cn } from "@/lib/utils";
-import { AcademicRank, ContractStatus, Gender, WorkStatus, enumToSortedList } from "@hrms/shared";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import * as React from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { z } from "zod";
+import { toast } from "sonner";
+import { PageHeader } from "@/components/layout/page-header";
+import { DataTable } from "@/components/ui/data-table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { StatusBadgeFromCode } from "@/components/shared/status-badge";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import {
+  employeeListOptions,
+  useDeleteEmployee,
+} from "@/features/employees/api";
+import {
+  WorkStatus,
+  Gender,
+  enumToSortedList,
+} from "@hrms/shared";
+import { useDebounce } from "@/hooks/use-debounce";
+import { Plus, Eye, Trash2 } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
 
-export const Route = createFileRoute("/_authenticated/employees/")({ component: EmployeeListPage });
+const searchSchema = z.object({
+  page: z.number().default(1),
+  pageSize: z.number().default(20),
+  search: z.string().optional(),
+  workStatus: z.string().optional(),
+  gender: z.string().optional(),
+  orgUnitId: z.string().optional(),
+});
 
-interface EmployeeListItem {
-  id: string;
-  staffCode?: string | null;
-  fullName?: string | null;
-  gender?: keyof typeof Gender | null;
-  email?: string | null;
-  phone?: string | null;
-  workStatus?: keyof typeof WorkStatus | null;
-}
+export const Route = createFileRoute("/_authenticated/employees/")({
+  validateSearch: searchSchema,
+  component: EmployeesPage,
+});
 
-type EmployeeListResponse = {
-  data?: {
-    data?: {
-      items: EmployeeListItem[];
-      total: number;
-      page: number;
-      pageSize: number;
-    };
+function EmployeesPage() {
+  const navigate = useNavigate({ from: "/employees" });
+  const search = Route.useSearch();
+  const [searchText, setSearchText] = useState(search.search ?? "");
+  const debouncedSearch = useDebounce(searchText);
+  const deleteMutation = useDeleteEmployee();
+
+  const params = {
+    page: search.page,
+    pageSize: search.pageSize,
+    search: debouncedSearch || undefined,
+    workStatus: search.workStatus,
+    gender: search.gender,
+    orgUnitId: search.orgUnitId,
   };
-};
 
-const genderOptions = enumToSortedList(Gender);
-const academicRankOptions = enumToSortedList(AcademicRank);
-const workStatusOptions = enumToSortedList(WorkStatus);
-const contractStatusOptions = enumToSortedList(ContractStatus);
+  const { data, isLoading } = useQuery(employeeListOptions(params));
+  const result = data?.data;
 
-function EmployeeListPage() {
-  const navigate = useNavigate();
-  const [search, setSearch] = React.useState("");
-  const [filters, setFilters] = React.useState<{
-    orgUnitId?: string;
-    positionTitle?: string;
-    gender?: string;
-    academicRank?: string;
-    workStatus?: string;
-    contractStatus?: string;
-  }>({});
-  const [pagination, setPagination] = React.useState({ page: 1, pageSize: 10, total: 0 });
-  const [employees, setEmployees] = React.useState<EmployeeListItem[]>([]);
-  const [loading, setLoading] = React.useState(false);
-
-  const hasSearch = search.trim().length > 0;
-  const hasFilters = Boolean(
-    filters.orgUnitId?.trim() ||
-      filters.positionTitle?.trim() ||
-      filters.gender ||
-      filters.academicRank ||
-      filters.workStatus ||
-      filters.contractStatus,
-  );
-
-  const emptyText = hasSearch
-    ? "Không tìm thấy hồ sơ phù hợp."
-    : hasFilters
-      ? "Không có hồ sơ phù hợp với tiêu chí lọc."
-      : "Không có dữ liệu";
-
-  const queryParams = React.useMemo(() => {
-    const params: Record<string, string | number | undefined> = {
-      page: pagination.page,
-      pageSize: pagination.pageSize,
-    };
-
-    if (search.trim()) params.search = search.trim();
-    if (filters.orgUnitId?.trim()) params.orgUnitId = filters.orgUnitId.trim();
-    if (filters.positionTitle?.trim()) params.positionTitle = filters.positionTitle.trim();
-    if (filters.gender) params.gender = filters.gender;
-    if (filters.academicRank) params.academicRank = filters.academicRank;
-    if (filters.workStatus) params.workStatus = filters.workStatus;
-    if (filters.contractStatus) params.contractStatus = filters.contractStatus;
-
-    return params;
-  }, [filters, pagination.page, pagination.pageSize, search]);
-
-  React.useEffect(() => {
-    let active = true;
-
-    const loadEmployees = async () => {
-      setLoading(true);
-      const response = await employeesApi.get({ query: queryParams });
-      if (!active) return;
-
-      const payload = response.data?.data;
-      if (payload) {
-        setEmployees(payload.items ?? []);
-        setPagination((prev) => ({
-          ...prev,
-          page: payload.page ?? prev.page,
-          pageSize: payload.pageSize ?? prev.pageSize,
-          total: payload.total ?? 0,
-        }));
-      } else {
-        setEmployees([]);
-        setPagination((prev) => ({ ...prev, total: 0 }));
-      }
-
-      setLoading(false);
-    };
-
-    loadEmployees();
-
-    return () => {
-      active = false;
-    };
-  }, [queryParams]);
-
-  const columns = React.useMemo<Column<EmployeeListItem>[]>(
-    () => [
-      { key: "staffCode", header: "Mã cán bộ", render: (item) => displayValue(item.staffCode) },
-      { key: "fullName", header: "Họ và tên", render: (item) => displayValue(item.fullName) },
-      { key: "gender", header: "Giới tính", render: (item) => toLabel(Gender, item.gender) },
-      { key: "email", header: "Email", render: (item) => displayValue(item.email) },
-      { key: "phone", header: "SĐT", render: (item) => displayValue(item.phone) },
-      {
-        key: "workStatus",
-        header: "Trạng thái",
-        render: (item) => toLabel(WorkStatus, item.workStatus),
+  const columns: ColumnDef<any>[] = [
+    {
+      accessorKey: "staffCode",
+      header: "Mã NV",
+      cell: ({ row }) => row.original.staffCode ?? "—",
+    },
+    {
+      accessorKey: "fullName",
+      header: "Họ tên",
+      cell: ({ row }) => (
+        <Link
+          to="/employees/$employeeId"
+          params={{ employeeId: row.original.id }}
+          className="font-medium text-primary hover:underline"
+        >
+          {row.original.fullName}
+        </Link>
+      ),
+    },
+    {
+      accessorKey: "gender",
+      header: "Giới tính",
+      cell: ({ row }) => {
+        const g = Gender[row.original.gender as keyof typeof Gender];
+        return g?.label ?? row.original.gender ?? "—";
       },
-      {
-        key: "actions",
-        header: "Thao tác",
-        headerClassName: "text-right",
-        className: "text-right",
-        render: (item) => (
-          <button
-            type="button"
-            className="rounded-full border border-border px-4 py-1 text-xs font-medium text-foreground transition hover:bg-muted"
-            onClick={(event) => {
-              event.stopPropagation();
-              navigate({ to: "/employees/$employeeId", params: { employeeId: item.id } });
-            }}
-          >
-            Xem
-          </button>
-        ),
+    },
+    {
+      accessorKey: "phone",
+      header: "Điện thoại",
+      cell: ({ row }) => row.original.phone ?? "—",
+    },
+    {
+      accessorKey: "email",
+      header: "Email",
+      cell: ({ row }) => row.original.email ?? "—",
+    },
+    {
+      accessorKey: "currentOrgUnitName",
+      header: "Đơn vị",
+      cell: ({ row }) => row.original.currentOrgUnitName ?? "—",
+    },
+    {
+      accessorKey: "workStatus",
+      header: "Trạng thái",
+      cell: ({ row }) => {
+        const ws =
+          WorkStatus[row.original.workStatus as keyof typeof WorkStatus];
+        return (
+          <StatusBadgeFromCode
+            code={row.original.workStatus}
+            label={ws?.label ?? row.original.workStatus}
+          />
+        );
       },
-    ],
-    [navigate],
-  );
-
-  const handleExport = React.useCallback(() => {
-    const params = new URLSearchParams();
-    params.set("format", "csv");
-    if (search.trim()) params.set("search", search.trim());
-    if (filters.orgUnitId?.trim()) params.set("orgUnitId", filters.orgUnitId.trim());
-    if (filters.positionTitle?.trim()) params.set("positionTitle", filters.positionTitle.trim());
-    if (filters.gender) params.set("gender", filters.gender);
-    if (filters.academicRank) params.set("academicRank", filters.academicRank);
-    if (filters.workStatus) params.set("workStatus", filters.workStatus);
-    if (filters.contractStatus) params.set("contractStatus", filters.contractStatus);
-
-    const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
-    window.open(`${baseUrl}/api/employees/export?${params.toString()}`, "_blank");
-  }, [
-    filters.academicRank,
-    filters.contractStatus,
-    filters.gender,
-    filters.orgUnitId,
-    filters.positionTitle,
-    filters.workStatus,
-    search,
-  ]);
+    },
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" asChild>
+            <Link
+              to="/employees/$employeeId"
+              params={{ employeeId: row.original.id }}
+            >
+              <Eye className="h-4 w-4" />
+            </Link>
+          </Button>
+          <ConfirmDialog
+            trigger={
+              <Button variant="ghost" size="sm">
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            }
+            title="Xóa nhân sự"
+            description={`Bạn có chắc muốn xóa nhân sự "${row.original.fullName}"?`}
+            confirmLabel="Xóa"
+            variant="destructive"
+            onConfirm={() =>
+              deleteMutation.mutate(row.original.id, {
+                onSuccess: () => toast.success("Đã xóa nhân sự"),
+              })
+            }
+          />
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="space-y-6">
+    <div>
       <PageHeader
-        title="Nhân sự"
-        description="Quản lý danh sách nhân sự trong hệ thống"
+        title="Quản lý nhân sự"
+        description="Danh sách cán bộ, giảng viên, nhân viên"
         actions={
-          <>
-            <button
-              type="button"
-              className="h-10 rounded-full border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
-              onClick={handleExport}
-            >
-              Export
-            </button>
-            <button
-              type="button"
-              className="h-10 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
-              onClick={() => navigate({ to: "/employees/new" })}
-            >
-              Thêm mới
-            </button>
-          </>
+          <Button asChild>
+            <Link to="/employees/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Thêm nhân sự
+            </Link>
+          </Button>
         }
       />
 
-      <div className="rounded-2xl border border-border bg-card p-5">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          <label className="space-y-2 text-sm text-muted-foreground">
-            Tìm kiếm
-            <input
-              className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground"
-              placeholder="Tìm theo mã, họ tên, CCCD, email, SĐT"
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-            />
-          </label>
-
-          <label className="space-y-2 text-sm text-muted-foreground">
-            Đơn vị công tác
-            <input
-              className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground"
-              placeholder="Nhập mã đơn vị"
-              value={filters.orgUnitId ?? ""}
-              onChange={(event) => {
-                setFilters((prev) => ({ ...prev, orgUnitId: event.target.value }));
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-            />
-          </label>
-          <label className="space-y-2 text-sm text-muted-foreground">
-            Chức vụ đơn vị
-            <input
-              className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground"
-              placeholder="Nhập chức vụ"
-              value={filters.positionTitle ?? ""}
-              onChange={(event) => {
-                setFilters((prev) => ({ ...prev, positionTitle: event.target.value }));
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-            />
-          </label>
-
-          <label className="space-y-2 text-sm text-muted-foreground">
-            Giới tính
-            <select
-              className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground"
-              value={filters.gender ?? ""}
-              onChange={(event) => {
-                const value = event.target.value || undefined;
-                setFilters((prev) => ({ ...prev, gender: value }));
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-            >
-              <option value="">Tất cả</option>
-              {genderOptions.map((option) => (
-                <option key={option.code} value={option.code}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="space-y-2 text-sm text-muted-foreground">
-            Chức danh khoa học
-            <select
-              className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground"
-              value={filters.academicRank ?? ""}
-              onChange={(event) => {
-                const value = event.target.value || undefined;
-                setFilters((prev) => ({ ...prev, academicRank: value }));
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-            >
-              <option value="">Tất cả</option>
-              {academicRankOptions.map((option) => (
-                <option key={option.code} value={option.code}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="space-y-2 text-sm text-muted-foreground">
-            Trạng thái làm việc
-            <select
-              className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground"
-              value={filters.workStatus ?? ""}
-              onChange={(event) => {
-                const value = event.target.value || undefined;
-                setFilters((prev) => ({ ...prev, workStatus: value }));
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-            >
-              <option value="">Tất cả</option>
-              {workStatusOptions.map((option) => (
-                <option key={option.code} value={option.code}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="space-y-2 text-sm text-muted-foreground">
-            Trạng thái hợp đồng
-            <select
-              className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground"
-              value={filters.contractStatus ?? ""}
-              onChange={(event) => {
-                const value = event.target.value || undefined;
-                setFilters((prev) => ({ ...prev, contractStatus: value }));
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-            >
-              <option value="">Tất cả</option>
-              {contractStatusOptions.map((option) => (
-                <option key={option.code} value={option.code}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+      <div className="mb-4 flex gap-3">
+        <Input
+          placeholder="Tìm kiếm theo tên, mã NV, email..."
+          className="max-w-sm"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+        />
+        <Select
+          value={search.workStatus ?? "all"}
+          onValueChange={(v) =>
+            navigate({
+              search: (prev) => ({
+                ...prev,
+                workStatus: v === "all" ? undefined : v,
+                page: 1,
+              }),
+            })
+          }
+        >
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Trạng thái" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả trạng thái</SelectItem>
+            {enumToSortedList(WorkStatus).map((s) => (
+              <SelectItem key={s.code} value={s.code}>
+                {s.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={search.gender ?? "all"}
+          onValueChange={(v) =>
+            navigate({
+              search: (prev) => ({
+                ...prev,
+                gender: v === "all" ? undefined : v,
+                page: 1,
+              }),
+            })
+          }
+        >
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Giới tính" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả</SelectItem>
+            {enumToSortedList(Gender).map((g) => (
+              <SelectItem key={g.code} value={g.code}>
+                {g.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <DataTable
         columns={columns}
-        data={employees}
-        loading={loading}
-        emptyText={emptyText}
-        onRowClick={(item) =>
-          navigate({ to: "/employees/$employeeId", params: { employeeId: item.id } })
-        }
+        data={result?.items ?? []}
+        pageCount={result?.totalPages ?? 0}
         pagination={{
-          page: pagination.page,
-          pageSize: pagination.pageSize,
-          total: pagination.total,
-          onPageChange: (page) => setPagination((prev) => ({ ...prev, page })),
-          onPageSizeChange: (pageSize) => setPagination((prev) => ({ ...prev, pageSize, page: 1 })),
+          pageIndex: (search.page ?? 1) - 1,
+          pageSize: search.pageSize ?? 20,
         }}
-        className={cn("min-h-[340px]")}
+        onPaginationChange={(updater) => {
+          const next =
+            typeof updater === "function"
+              ? updater({
+                  pageIndex: (search.page ?? 1) - 1,
+                  pageSize: search.pageSize ?? 20,
+                })
+              : updater;
+          navigate({
+            search: (prev) => ({
+              ...prev,
+              page: next.pageIndex + 1,
+              pageSize: next.pageSize,
+            }),
+          });
+        }}
+        isLoading={isLoading}
+        emptyMessage="Không có nhân sự nào"
       />
     </div>
   );

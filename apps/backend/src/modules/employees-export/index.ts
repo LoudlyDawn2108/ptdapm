@@ -8,13 +8,25 @@ import {
 import { Elysia } from "elysia";
 import { z } from "zod";
 import { authPlugin } from "../../common/plugins/auth";
-import { BadRequestError } from "../../common/utils/errors";
 import { requireRole } from "../../common/utils/role-guard";
 import type { Employee } from "../../db/schema";
 import * as employeeService from "../employees/employee.service";
+import {
+  exportEmployeePdf,
+  exportEmployeesXlsx,
+  exportSingleEmployeeXlsx,
+} from "./employees-export.service";
+
+const listFormatSchema = z.enum(["csv", "xlsx"]);
+const detailFormatSchema = z.enum(["csv", "xlsx", "pdf"]);
+
+const getAggregateById: (
+  id: string,
+  userRole?: string,
+) => ReturnType<typeof employeeService.getAggregateById> = employeeService.getAggregateById;
 
 const exportListQuerySchema = z.object({
-  format: z.string().optional(),
+  format: listFormatSchema.optional(),
   search: z.string().optional(),
   orgUnitId: z.string().optional(),
   workStatus: z.enum(WORK_STATUS_CODES as [string, ...string[]]).optional(),
@@ -26,7 +38,7 @@ const exportListQuerySchema = z.object({
 });
 
 const exportDetailQuerySchema = z.object({
-  format: z.string().optional(),
+  format: detailFormatSchema.optional(),
 });
 
 function escapeCSV(value: string | null | undefined): string {
@@ -47,12 +59,6 @@ function formatValue(value: unknown): string {
   if (value === null || value === undefined) return "";
   if (value instanceof Date) return value.toISOString().split("T")[0] ?? "";
   return String(value);
-}
-
-function ensureCsvFormat(format?: string) {
-  if (format !== "csv") {
-    throw new BadRequestError("Định dạng không hợp lệ");
-  }
 }
 
 async function listAllEmployees(params: {
@@ -96,13 +102,222 @@ function sectionCSV(title: string, headers: string[], rows: string[][]): string 
   return `${escapeCSV(title)}\r\n${toCSV(headers, rows)}`;
 }
 
+function responseWithFile(buffer: string | Buffer, filename: string, contentType: string) {
+  return new Response(buffer, {
+    headers: {
+      "Content-Type": contentType,
+      "Content-Disposition": `attachment; filename="${filename}"`,
+    },
+  });
+}
+
+function buildEmployeesCsv(employees: Employee[]) {
+  const headers = [
+    "staffCode",
+    "fullName",
+    "gender",
+    "dob",
+    "nationalId",
+    "email",
+    "phone",
+    "workStatus",
+    "contractStatus",
+  ];
+
+  const rows = employees.map((employee) => [
+    formatValue(employee.staffCode),
+    formatValue(employee.fullName),
+    formatValue(employee.gender),
+    formatValue(employee.dob),
+    formatValue(employee.nationalId),
+    formatValue(employee.email),
+    formatValue(employee.phone),
+    formatValue(employee.workStatus),
+    formatValue(employee.contractStatus),
+  ]);
+
+  return toCSV(headers, rows);
+}
+
+function buildEmployeeAggregateCsv(
+  aggregate: Awaited<ReturnType<typeof employeeService.getAggregateById>>,
+) {
+  const employee = aggregate.employee;
+  const degrees = aggregate.degrees ?? [];
+  const certifications = aggregate.certifications ?? [];
+  const foreignWorkPermits = aggregate.foreignWorkPermits ?? [];
+  const contracts = aggregate.contracts ?? [];
+  const evaluations = aggregate.evaluations ?? [];
+
+  const employeeHeaders = [
+    "staffCode",
+    "fullName",
+    "gender",
+    "dob",
+    "nationalId",
+    "email",
+    "phone",
+    "workStatus",
+    "contractStatus",
+    "address",
+    "hometown",
+    "taxCode",
+    "socialInsuranceNo",
+    "healthInsuranceNo",
+    "currentOrgUnitId",
+    "currentPositionTitle",
+  ];
+
+  const employeeRows = [
+    [
+      formatValue(employee.staffCode),
+      formatValue(employee.fullName),
+      formatValue(employee.gender),
+      formatValue(employee.dob),
+      formatValue(employee.nationalId),
+      formatValue(employee.email),
+      formatValue(employee.phone),
+      formatValue(employee.workStatus),
+      formatValue(employee.contractStatus),
+      formatValue(employee.address),
+      formatValue(employee.hometown),
+      formatValue(employee.taxCode),
+      formatValue(employee.socialInsuranceNo),
+      formatValue(employee.healthInsuranceNo),
+      formatValue(employee.currentOrgUnitId),
+      formatValue(employee.currentPositionTitle),
+    ],
+  ];
+
+  const familyMemberHeaders = ["relation", "fullName", "dob", "phone", "isDependent", "note"];
+  const familyMemberRows = aggregate.familyMembers.map((member) => [
+    formatValue(member.relation),
+    formatValue(member.fullName),
+    formatValue(member.dob),
+    formatValue(member.phone),
+    formatValue(member.isDependent),
+    formatValue(member.note),
+  ]);
+
+  const bankAccountHeaders = ["bankName", "accountNo", "isPrimary"];
+  const bankAccountRows = aggregate.bankAccounts.map((account) => [
+    formatValue(account.bankName),
+    formatValue(account.accountNo),
+    formatValue(account.isPrimary),
+  ]);
+
+  const previousJobHeaders = ["workplace", "startedOn", "endedOn", "note"];
+  const previousJobRows = aggregate.previousJobs.map((job) => [
+    formatValue(job.workplace),
+    formatValue(job.startedOn),
+    formatValue(job.endedOn),
+    formatValue(job.note),
+  ]);
+
+  const partyMembershipHeaders = ["organizationType", "joinedOn", "details"];
+  const partyMembershipRows = aggregate.partyMemberships.map((membership) => [
+    formatValue(membership.organizationType),
+    formatValue(membership.joinedOn),
+    formatValue(membership.details),
+  ]);
+
+  const allowanceHeaders = ["allowanceName", "amount", "note"];
+  const allowanceRows = aggregate.allowances.map((allowance) => [
+    formatValue(allowance.allowanceName),
+    formatValue(allowance.amount),
+    formatValue(allowance.note),
+  ]);
+
+  const degreeHeaders = ["degreeName", "school", "major", "graduationYear", "classification"];
+  const degreeRows = degrees.map((degree) => [
+    formatValue(degree.degreeName),
+    formatValue(degree.school),
+    formatValue(degree.major),
+    formatValue(degree.graduationYear),
+    formatValue(degree.classification),
+  ]);
+
+  const certificationHeaders = ["certName", "issuedBy", "issuedOn", "expiresOn"];
+  const certificationRows = certifications.map((certification) => [
+    formatValue(certification.certName),
+    formatValue(certification.issuedBy),
+    formatValue(certification.issuedOn),
+    formatValue(certification.expiresOn),
+  ]);
+
+  const foreignWorkPermitHeaders = [
+    "visaNo",
+    "visaExpiresOn",
+    "passportNo",
+    "passportExpiresOn",
+    "workPermitNo",
+    "workPermitExpiresOn",
+  ];
+  const foreignWorkPermitRows = foreignWorkPermits.map((permit) => [
+    formatValue(permit.visaNo),
+    formatValue(permit.visaExpiresOn),
+    formatValue(permit.passportNo),
+    formatValue(permit.passportExpiresOn),
+    formatValue(permit.workPermitNo),
+    formatValue(permit.workPermitExpiresOn),
+  ]);
+
+  const contractHeaders = [
+    "contractNo",
+    "signedOn",
+    "effectiveFrom",
+    "effectiveTo",
+    "orgUnitId",
+    "status",
+  ];
+  const contractRows = contracts.map((contract) => [
+    formatValue(contract.contractNo),
+    formatValue(contract.signedOn),
+    formatValue(contract.effectiveFrom),
+    formatValue(contract.effectiveTo),
+    formatValue(contract.orgUnitId),
+    formatValue(contract.status),
+  ]);
+
+  const evaluationHeaders = [
+    "evalType",
+    "rewardName",
+    "disciplineName",
+    "decisionOn",
+    "decisionNo",
+    "isActive",
+  ];
+  const evaluationRows = evaluations.map((evaluation) => [
+    formatValue(evaluation.evalType),
+    formatValue(evaluation.rewardName),
+    formatValue(evaluation.disciplineName),
+    formatValue(evaluation.decisionOn),
+    formatValue(evaluation.decisionNo),
+    formatValue(evaluation.isActive),
+  ]);
+
+  return [
+    sectionCSV("Employee", employeeHeaders, employeeRows),
+    sectionCSV("Family Members", familyMemberHeaders, familyMemberRows),
+    sectionCSV("Bank Accounts", bankAccountHeaders, bankAccountRows),
+    sectionCSV("Previous Jobs", previousJobHeaders, previousJobRows),
+    sectionCSV("Party Memberships", partyMembershipHeaders, partyMembershipRows),
+    sectionCSV("Allowances", allowanceHeaders, allowanceRows),
+    sectionCSV("Degrees", degreeHeaders, degreeRows),
+    sectionCSV("Certifications", certificationHeaders, certificationRows),
+    sectionCSV("Foreign Work Permits", foreignWorkPermitHeaders, foreignWorkPermitRows),
+    sectionCSV("Contracts", contractHeaders, contractRows),
+    sectionCSV("Evaluations", evaluationHeaders, evaluationRows),
+  ].join("\r\n\r\n");
+}
+
 export const employeeExportRoutes = new Elysia({ prefix: "/api/employees" })
   .use(authPlugin)
   .get(
     "/export",
     async ({ query, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
-      ensureCsvFormat(query.format);
+      requireRole(user.role, "ADMIN", "TCCB", "TCKT");
+      const format = query.format ?? "csv";
 
       const employees = await listAllEmployees({
         search: query.search,
@@ -115,144 +330,44 @@ export const employeeExportRoutes = new Elysia({ prefix: "/api/employees" })
         positionTitle: query.positionTitle,
       });
 
-      const headers = [
-        "staffCode",
-        "fullName",
-        "gender",
-        "dob",
-        "nationalId",
-        "email",
-        "phone",
-        "workStatus",
-        "contractStatus",
-      ];
+      if (format === "xlsx") {
+        const buffer = await exportEmployeesXlsx(employees);
+        return responseWithFile(
+          buffer,
+          "employees.xlsx",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        );
+      }
 
-      const rows = employees.map((employee) => [
-        formatValue(employee.staffCode),
-        formatValue(employee.fullName),
-        formatValue(employee.gender),
-        formatValue(employee.dob),
-        formatValue(employee.nationalId),
-        formatValue(employee.email),
-        formatValue(employee.phone),
-        formatValue(employee.workStatus),
-        formatValue(employee.contractStatus),
-      ]);
-
-      const csv = toCSV(headers, rows);
-
-      return new Response(csv, {
-        headers: {
-          "Content-Type": "text/csv",
-          "Content-Disposition": 'attachment; filename="employees.csv"',
-        },
-      });
+      const csv = buildEmployeesCsv(employees);
+      return responseWithFile(csv, "employees.csv", "text/csv");
     },
     { auth: true, query: exportListQuerySchema },
   )
   .get(
     "/:employeeId/export",
     async ({ params, query, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
-      ensureCsvFormat(query.format);
+      requireRole(user.role, "ADMIN", "TCCB", "TCKT");
+      const format = query.format ?? "csv";
 
-      const aggregate = await employeeService.getAggregateById(params.employeeId);
-      const employee = aggregate.employee;
+      const aggregate = await getAggregateById(params.employeeId, user.role);
 
-      const employeeHeaders = [
-        "staffCode",
-        "fullName",
-        "gender",
-        "dob",
-        "nationalId",
-        "email",
-        "phone",
-        "workStatus",
-        "contractStatus",
-        "address",
-        "hometown",
-        "taxCode",
-        "socialInsuranceNo",
-        "healthInsuranceNo",
-        "currentOrgUnitId",
-        "currentPositionTitle",
-      ];
+      if (format === "xlsx") {
+        const buffer = await exportSingleEmployeeXlsx(aggregate);
+        return responseWithFile(
+          buffer,
+          `employee-${params.employeeId}.xlsx`,
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        );
+      }
 
-      const employeeRows = [
-        [
-          formatValue(employee.staffCode),
-          formatValue(employee.fullName),
-          formatValue(employee.gender),
-          formatValue(employee.dob),
-          formatValue(employee.nationalId),
-          formatValue(employee.email),
-          formatValue(employee.phone),
-          formatValue(employee.workStatus),
-          formatValue(employee.contractStatus),
-          formatValue(employee.address),
-          formatValue(employee.hometown),
-          formatValue(employee.taxCode),
-          formatValue(employee.socialInsuranceNo),
-          formatValue(employee.healthInsuranceNo),
-          formatValue(employee.currentOrgUnitId),
-          formatValue(employee.currentPositionTitle),
-        ],
-      ];
+      if (format === "pdf") {
+        const buffer = await exportEmployeePdf(aggregate);
+        return responseWithFile(buffer, `employee-${params.employeeId}.pdf`, "application/pdf");
+      }
 
-      const familyMemberHeaders = ["relation", "fullName", "dob", "phone", "isDependent", "note"];
-      const familyMemberRows = aggregate.familyMembers.map((member) => [
-        formatValue(member.relation),
-        formatValue(member.fullName),
-        formatValue(member.dob),
-        formatValue(member.phone),
-        formatValue(member.isDependent),
-        formatValue(member.note),
-      ]);
-
-      const bankAccountHeaders = ["bankName", "accountNo", "isPrimary"];
-      const bankAccountRows = aggregate.bankAccounts.map((account) => [
-        formatValue(account.bankName),
-        formatValue(account.accountNo),
-        formatValue(account.isPrimary),
-      ]);
-
-      const previousJobHeaders = ["workplace", "startedOn", "endedOn", "note"];
-      const previousJobRows = aggregate.previousJobs.map((job) => [
-        formatValue(job.workplace),
-        formatValue(job.startedOn),
-        formatValue(job.endedOn),
-        formatValue(job.note),
-      ]);
-
-      const partyMembershipHeaders = ["organizationType", "joinedOn", "details"];
-      const partyMembershipRows = aggregate.partyMemberships.map((membership) => [
-        formatValue(membership.organizationType),
-        formatValue(membership.joinedOn),
-        formatValue(membership.details),
-      ]);
-
-      const allowanceHeaders = ["allowanceName", "amount", "note"];
-      const allowanceRows = aggregate.allowances.map((allowance) => [
-        formatValue(allowance.allowanceName),
-        formatValue(allowance.amount),
-        formatValue(allowance.note),
-      ]);
-
-      const csv = [
-        sectionCSV("Employee", employeeHeaders, employeeRows),
-        sectionCSV("Family Members", familyMemberHeaders, familyMemberRows),
-        sectionCSV("Bank Accounts", bankAccountHeaders, bankAccountRows),
-        sectionCSV("Previous Jobs", previousJobHeaders, previousJobRows),
-        sectionCSV("Party Memberships", partyMembershipHeaders, partyMembershipRows),
-        sectionCSV("Allowances", allowanceHeaders, allowanceRows),
-      ].join("\r\n\r\n");
-
-      return new Response(csv, {
-        headers: {
-          "Content-Type": "text/csv",
-          "Content-Disposition": `attachment; filename="employee-${params.employeeId}.csv"`,
-        },
-      });
+      const csv = buildEmployeeAggregateCsv(aggregate);
+      return responseWithFile(csv, `employee-${params.employeeId}.csv`, "text/csv");
     },
     {
       auth: true,
