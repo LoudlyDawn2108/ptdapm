@@ -1,7 +1,7 @@
-import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { handleApiError } from "@/lib/error-handler";
 import type { CreateEmployeeInput, UpdateEmployeeInput } from "@hrms/shared";
+import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // ──────────────────────────────────────────
 // Keys
@@ -9,8 +9,7 @@ import type { CreateEmployeeInput, UpdateEmployeeInput } from "@hrms/shared";
 export const employeeKeys = {
   all: ["employees"] as const,
   lists: () => [...employeeKeys.all, "list"] as const,
-  list: (params: Record<string, unknown>) =>
-    [...employeeKeys.lists(), params] as const,
+  list: (params: Record<string, unknown>) => [...employeeKeys.lists(), params] as const,
   detail: (id: string) => [...employeeKeys.all, "detail", id] as const,
   me: () => [...employeeKeys.all, "me"] as const,
 };
@@ -30,7 +29,9 @@ export const employeeListOptions = (params: {
   queryOptions({
     queryKey: employeeKeys.list(params),
     queryFn: async () => {
-      const { data, error } = await api.api.employees.get({ query: params as any });
+      const { data, error } = await api.api.employees.get({
+        query: params as Record<string, unknown>,
+      });
       if (error) throw handleApiError(error);
       return data;
     },
@@ -64,7 +65,7 @@ export function useCreateEmployee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateEmployeeInput) => {
-      const { data, error } = await api.api.employees.post(input as any);
+      const { data, error } = await api.api.employees.post(input as Record<string, unknown>);
       if (error) throw handleApiError(error);
       return data;
     },
@@ -76,7 +77,9 @@ export function useUpdateEmployee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: UpdateEmployeeInput & { id: string }) => {
-      const { data, error } = await api.api.employees({ employeeId: id }).put(input as any);
+      const { data, error } = await api.api
+        .employees({ employeeId: id })
+        .put(input as Record<string, unknown>);
       if (error) throw handleApiError(error);
       return data;
     },

@@ -1,8 +1,9 @@
+import type { RoleCode } from "@hrms/shared";
 import { useRouteContext } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 interface RoleGuardProps {
-  roles: string[];
+  roles: RoleCode[];
   children: ReactNode;
   fallback?: ReactNode;
 }
@@ -11,11 +12,7 @@ interface RoleGuardProps {
  * Conditional render by role.
  * Reads user from the _authenticated route context.
  */
-export function RoleGuard({
-  roles,
-  children,
-  fallback = null,
-}: RoleGuardProps) {
+export function RoleGuard({ roles, children, fallback = null }: RoleGuardProps) {
   const { user } = useRouteContext({ from: "/_authenticated" });
   if (!roles.includes(user.role)) return <>{fallback}</>;
   return <>{children}</>;

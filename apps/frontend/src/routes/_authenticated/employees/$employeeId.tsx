@@ -1,24 +1,26 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/layout/page-header";
-import { employeeDetailOptions } from "@/features/employees/api";
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
+import { StatusBadgeFromCode } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatusBadgeFromCode } from "@/components/shared/status-badge";
+import { employeeDetailOptions } from "@/features/employees/api";
+import { formatDate } from "@/lib/date-utils";
+import { authorizeRoute } from "@/lib/permissions";
 import {
-  Gender,
-  WorkStatus,
+  AcademicRank,
+  AcademicTitle,
   ContractStatus,
   EducationLevel,
+  Gender,
   TrainingLevel,
-  AcademicTitle,
-  AcademicRank,
+  WorkStatus,
 } from "@hrms/shared";
-import { formatDate } from "@/lib/date-utils";
+import { useQuery } from "@tanstack/react-query";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { ArrowLeft, Pencil } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/employees/$employeeId")({
+  beforeLoad: authorizeRoute("/employees"),
   component: EmployeeDetailPage,
 });
 
@@ -55,12 +57,18 @@ function EmployeeDetailPage() {
   }
 
   const genderLabel = Gender[emp.gender as keyof typeof Gender]?.label ?? emp.gender;
-  const workStatusLabel = WorkStatus[emp.workStatus as keyof typeof WorkStatus]?.label ?? emp.workStatus;
-  const contractStatusLabel = ContractStatus[emp.contractStatus as keyof typeof ContractStatus]?.label ?? emp.contractStatus;
-  const eduLabel = EducationLevel[emp.educationLevel as keyof typeof EducationLevel]?.label ?? emp.educationLevel;
-  const trainingLabel = TrainingLevel[emp.trainingLevel as keyof typeof TrainingLevel]?.label ?? emp.trainingLevel;
-  const titleLabel = AcademicTitle[emp.academicTitle as keyof typeof AcademicTitle]?.label ?? emp.academicTitle;
-  const rankLabel = AcademicRank[emp.academicRank as keyof typeof AcademicRank]?.label ?? emp.academicRank;
+  const workStatusLabel =
+    WorkStatus[emp.workStatus as keyof typeof WorkStatus]?.label ?? emp.workStatus;
+  const contractStatusLabel =
+    ContractStatus[emp.contractStatus as keyof typeof ContractStatus]?.label ?? emp.contractStatus;
+  const eduLabel =
+    EducationLevel[emp.educationLevel as keyof typeof EducationLevel]?.label ?? emp.educationLevel;
+  const trainingLabel =
+    TrainingLevel[emp.trainingLevel as keyof typeof TrainingLevel]?.label ?? emp.trainingLevel;
+  const titleLabel =
+    AcademicTitle[emp.academicTitle as keyof typeof AcademicTitle]?.label ?? emp.academicTitle;
+  const rankLabel =
+    AcademicRank[emp.academicRank as keyof typeof AcademicRank]?.label ?? emp.academicRank;
 
   return (
     <div>
@@ -76,10 +84,7 @@ function EmployeeDetailPage() {
               </Link>
             </Button>
             <Button asChild>
-              <Link
-                to="/employees/$employeeId"
-                params={{ employeeId }}
-              >
+              <Link to="/employees/$employeeId" params={{ employeeId }}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Chỉnh sửa
               </Link>
@@ -115,26 +120,17 @@ function EmployeeDetailPage() {
             <dl>
               <InfoRow label="Đơn vị công tác" value={emp.currentOrgUnitName} />
               <InfoRow label="Chức danh" value={emp.currentPositionTitle} />
-              <InfoRow
-                label="Trạng thái"
-                value={undefined}
-              />
+              <InfoRow label="Trạng thái" value={undefined} />
               <div className="grid grid-cols-3 gap-2 py-2 border-b">
                 <dt className="text-sm text-muted-foreground">Trạng thái</dt>
                 <dd className="col-span-2">
-                  <StatusBadgeFromCode
-                    code={emp.workStatus}
-                    label={workStatusLabel}
-                  />
+                  <StatusBadgeFromCode code={emp.workStatus} label={workStatusLabel} />
                 </dd>
               </div>
               <div className="grid grid-cols-3 gap-2 py-2 border-b">
                 <dt className="text-sm text-muted-foreground">Hợp đồng</dt>
                 <dd className="col-span-2">
-                  <StatusBadgeFromCode
-                    code={emp.contractStatus}
-                    label={contractStatusLabel}
-                  />
+                  <StatusBadgeFromCode code={emp.contractStatus} label={contractStatusLabel} />
                 </dd>
               </div>
               <InfoRow label="Trình độ văn hóa" value={eduLabel} />

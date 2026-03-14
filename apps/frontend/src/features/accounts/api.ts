@@ -1,7 +1,7 @@
-import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { handleApiError } from "@/lib/error-handler";
-import type { CreateAccountInput, UpdateAccountInput, SetAccountStatusInput } from "@hrms/shared";
+import type { CreateAccountInput, SetAccountStatusInput, UpdateAccountInput } from "@hrms/shared";
+import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // ──────────────────────────────────────────
 // Keys
@@ -9,8 +9,7 @@ import type { CreateAccountInput, UpdateAccountInput, SetAccountStatusInput } fr
 export const accountKeys = {
   all: ["accounts"] as const,
   lists: () => [...accountKeys.all, "list"] as const,
-  list: (params: Record<string, unknown>) =>
-    [...accountKeys.lists(), params] as const,
+  list: (params: Record<string, unknown>) => [...accountKeys.lists(), params] as const,
   detail: (id: string) => [...accountKeys.all, "detail", id] as const,
 };
 
@@ -27,7 +26,9 @@ export const accountListOptions = (params: {
   queryOptions({
     queryKey: accountKeys.list(params),
     queryFn: async () => {
-      const { data, error } = await api.api.accounts.get({ query: params as any });
+      const { data, error } = await api.api.accounts.get({
+        query: params as Record<string, unknown>,
+      });
       if (error) throw handleApiError(error);
       return data;
     },
@@ -78,7 +79,9 @@ export function useSetAccountStatus() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { data, error } = await api.api.accounts({ id }).status.patch({ status } as any);
+      const { data, error } = await api.api
+        .accounts({ id })
+        .status.patch({ status } as Record<string, unknown>);
       if (error) throw handleApiError(error);
       return data;
     },

@@ -1,11 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { z } from "zod";
-import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
-import { DataTable } from "@/components/ui/data-table";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { StatusBadgeFromCode } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -14,16 +11,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { StatusBadgeFromCode } from "@/components/shared/status-badge";
-import { ConfirmDialog } from "@/components/shared/confirm-dialog";
-import {
-  accountListOptions,
-  useSetAccountStatus,
-} from "@/features/accounts/api";
-import { Role, AuthUserStatus, enumToSortedList } from "@hrms/shared";
-import { useDebounce } from "@/hooks/use-debounce";
-import { Plus, Lock, Unlock } from "lucide-react";
+import { accountListOptions, useSetAccountStatus } from "@/features/accounts/api";
+import { useListPage } from "@/hooks/use-list-page";
+import { authorizeRoute } from "@/lib/permissions";
+import { AuthUserStatus, Role, enumToSortedList } from "@hrms/shared";
+import { useQuery } from "@tanstack/react-query";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
+import { Lock, Plus, Unlock } from "lucide-react";
+import { toast } from "sonner";
+import { z } from "zod";
 
 const searchSchema = z.object({
   page: z.number().default(1),
@@ -34,6 +31,7 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/_authenticated/accounts/")({
+  beforeLoad: authorizeRoute("/accounts"),
   validateSearch: searchSchema,
   component: AccountsPage,
 });
@@ -41,13 +39,16 @@ export const Route = createFileRoute("/_authenticated/accounts/")({
 function AccountsPage() {
   const navigate = useNavigate({ from: "/accounts" });
   const search = Route.useSearch();
-  const [searchText, setSearchText] = useState(search.search ?? "");
-  const debouncedSearch = useDebounce(searchText);
+  const { searchText, setSearchText, debouncedSearch, pagination, onPaginationChange } =
+    useListPage({
+      search,
+      onNavigate: (update) => navigate({ search: (prev) => ({ ...prev, ...update }) }),
+    });
 
   const params = {
     page: search.page,
     pageSize: search.pageSize,
-    search: debouncedSearch || undefined,
+    search: debouncedSearch,
     role: search.role,
     status: search.status,
   };
@@ -83,8 +84,7 @@ function AccountsPage() {
       accessorKey: "status",
       header: "Trạng thái",
       cell: ({ row }) => {
-        const status =
-          AuthUserStatus[row.original.status as keyof typeof AuthUserStatus];
+        const status = AuthUserStatus[row.original.status as keyof typeof AuthUserStatus];
         return (
           <StatusBadgeFromCode
             code={row.original.status}
@@ -102,11 +102,7 @@ function AccountsPage() {
           <ConfirmDialog
             trigger={
               <Button variant="ghost" size="sm">
-                {isLocked ? (
-                  <Unlock className="h-4 w-4" />
-                ) : (
-                  <Lock className="h-4 w-4" />
-                )}
+                {isLocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
               </Button>
             }
             title={isLocked ? "Mở khóa tài khoản" : "Khóa tài khoản"}
@@ -121,11 +117,7 @@ function AccountsPage() {
                 },
                 {
                   onSuccess: () =>
-                    toast.success(
-                      isLocked
-                        ? "Đã mở khóa tài khoản"
-                        : "Đã khóa tài khoản",
-                    ),
+                    toast.success(isLocked ? "Đã mở khóa tài khoản" : "Đã khóa tài khoản"),
                 },
               )
             }
@@ -211,26 +203,8 @@ function AccountsPage() {
         columns={columns}
         data={result?.items ?? []}
         pageCount={result?.totalPages ?? 0}
-        pagination={{
-          pageIndex: (search.page ?? 1) - 1,
-          pageSize: search.pageSize ?? 20,
-        }}
-        onPaginationChange={(updater) => {
-          const next =
-            typeof updater === "function"
-              ? updater({
-                  pageIndex: (search.page ?? 1) - 1,
-                  pageSize: search.pageSize ?? 20,
-                })
-              : updater;
-          navigate({
-            search: (prev) => ({
-              ...prev,
-              page: next.pageIndex + 1,
-              pageSize: next.pageSize,
-            }),
-          });
-        }}
+        pagination={pagination}
+        onPaginationChange={onPaginationChange}
         isLoading={isLoading}
         emptyMessage="Không có tài khoản nào"
       />

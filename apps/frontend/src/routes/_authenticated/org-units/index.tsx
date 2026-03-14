@@ -1,31 +1,30 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatusBadgeFromCode } from "@/components/shared/status-badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
+import { StatusBadgeFromCode } from "@/components/shared/status-badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { orgUnitTreeOptions } from "@/features/org-units/api";
-import { OrgUnitType, OrgUnitStatus } from "@hrms/shared";
-import { Plus, Building2, ChevronRight, ChevronDown } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
+import { authorizeRoute } from "@/lib/permissions";
+import { OrgUnitStatus, OrgUnitType } from "@hrms/shared";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { Building2, ChevronDown, ChevronRight, Plus } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/org-units/")({
+  beforeLoad: authorizeRoute("/org-units"),
   component: OrgUnitsPage,
 });
 
 function OrgUnitNode({ node, level = 0 }: { node: any; level?: number }) {
   const [expanded, setExpanded] = useState(level < 2);
   const hasChildren = node.children?.length > 0;
-  const typeLabel =
-    OrgUnitType[node.unitType as keyof typeof OrgUnitType]?.label ??
-    node.unitType;
+  const typeLabel = OrgUnitType[node.unitType as keyof typeof OrgUnitType]?.label ?? node.unitType;
   const statusLabel =
-    OrgUnitStatus[node.status as keyof typeof OrgUnitStatus]?.label ??
-    node.status;
+    OrgUnitStatus[node.status as keyof typeof OrgUnitStatus]?.label ?? node.status;
 
   return (
     <div>
@@ -46,11 +45,7 @@ function OrgUnitNode({ node, level = 0 }: { node: any; level?: number }) {
         <Building2 className="h-4 w-4 shrink-0 text-primary" />
         <span className="font-medium text-sm">{node.unitName}</span>
         <span className="text-xs text-muted-foreground">({typeLabel})</span>
-        <StatusBadgeFromCode
-          code={node.status}
-          label={statusLabel}
-          className="ml-auto text-xs"
-        />
+        <StatusBadgeFromCode code={node.status} label={statusLabel} className="ml-auto text-xs" />
       </div>
       {expanded &&
         hasChildren &&
@@ -72,9 +67,7 @@ function OrgUnitsPage() {
     if (!search) return nodes;
     return nodes
       .map((node) => {
-        const matchesName = node.unitName
-          ?.toLowerCase()
-          .includes(search.toLowerCase());
+        const matchesName = node.unitName?.toLowerCase().includes(search.toLowerCase());
         const filteredChildren = filterTree(node.children ?? [], search);
         if (matchesName || filteredChildren.length > 0) {
           return { ...node, children: filteredChildren };
@@ -120,9 +113,7 @@ function OrgUnitsPage() {
               ))}
             </div>
           ) : filteredTree.length > 0 ? (
-            filteredTree.map((node: any) => (
-              <OrgUnitNode key={node.id} node={node} />
-            ))
+            filteredTree.map((node: any) => <OrgUnitNode key={node.id} node={node} />)
           ) : (
             <EmptyState description="Không tìm thấy đơn vị nào" />
           )}
