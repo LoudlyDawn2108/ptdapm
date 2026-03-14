@@ -1,20 +1,19 @@
-import { createFileRoute, redirect, Outlet } from "@tanstack/react-router";
-import { sessionOptions } from "@/features/auth/api";
-import { useAuthStore } from "@/stores/auth";
-import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { useIdleTimeout } from "@/hooks/use-idle-timeout";
+import { AppSidebar } from "@/components/layout/app-sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { sessionOptions } from "@/features/auth/api";
 import { useLogout } from "@/features/auth/api";
-import { toast } from "sonner";
+import { useIdleTimeout } from "@/hooks/use-idle-timeout";
+import { useAuthStore } from "@/stores/auth";
+import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
+import type React from "react";
 import { useCallback } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ context }) => {
     try {
-      const session = await context.queryClient.ensureQueryData(
-        sessionOptions(),
-      );
+      const session = await context.queryClient.ensureQueryData(sessionOptions());
       // Sync user to Zustand for convenient synchronous access
       useAuthStore.getState().setUser(session.user);
       // Pass user to all child routes via context
@@ -37,7 +36,14 @@ function AuthenticatedLayout() {
   useIdleTimeout(handleIdleTimeout);
 
   return (
-    <SidebarProvider>
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "17.5rem",
+          "--sidebar-width-icon": "44px",
+        } as React.CSSProperties
+      }
+    >
       <AppSidebar />
       <SidebarInset>
         <AppHeader />
