@@ -14,6 +14,7 @@ export const employeeStrings = {
     editTooltip: "Chức năng chỉnh sửa đang được phát triển",
     personalInfoTitle: "Thông tin cá nhân",
     careerInfoTitle: "Thông tin nghề nghiệp",
+    staffCodePrefix: "Mã NV",
   },
   columns: {
     staffCode: "Mã NV",

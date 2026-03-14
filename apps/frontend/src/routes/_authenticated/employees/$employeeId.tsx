@@ -86,7 +86,7 @@ function EmployeeDetailPage() {
     <div>
       <PageHeader
         title={emp.fullName ?? "Nhân sự"}
-        description={`Mã NV: ${emp.staffCode ?? "—"}`}
+        description={`${t.detail.staffCodePrefix}: ${emp.staffCode ?? "—"}`}
         actions={
           <div className="flex gap-2">
             <Button variant="outline" asChild>
