@@ -9,6 +9,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { commonStrings as t } from "@/lib/strings";
 import type { ReactNode } from "react";
 
 interface ConfirmDialogProps {
@@ -24,7 +25,7 @@ export function ConfirmDialog({
   trigger,
   title,
   description,
-  confirmLabel = "Xác nhận",
+  confirmLabel = t.actions.confirm,
   onConfirm,
   variant = "default",
 }: ConfirmDialogProps) {
@@ -37,7 +38,7 @@ export function ConfirmDialog({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Hủy</AlertDialogCancel>
+          <AlertDialogCancel>{t.actions.cancel}</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             className={variant === "destructive" ? "bg-destructive" : ""}

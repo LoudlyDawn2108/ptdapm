@@ -16,19 +16,11 @@ export const ROUTE_PERMISSIONS: Record<string, RoleCode[]> = {
   "/employees": ["ADMIN", "TCCB", "TCKT"],
   "/employees/new": ["ADMIN", "TCCB"],
   "/org-units": ["ADMIN", "TCCB"],
-  "/reports": ["ADMIN", "TCCB", "TCKT"],
 
   // --- Cơ cấu tổ chức (config) ---
   "/config/salary-grades": ["ADMIN", "TCCB"],
-  "/config/salary-coefficients": ["ADMIN", "TCCB"],
   "/config/allowance-types": ["ADMIN", "TCCB"],
   "/config/contract-types": ["ADMIN", "TCCB"],
-
-  // --- Đào tạo ---
-  "/training": ["ADMIN", "TCCB"],
-
-  // --- Cá nhân (self-service) ---
-  "/my/training": ["EMPLOYEE"],
 };
 
 export function canAccessRoute(role: RoleCode, path: string): boolean {

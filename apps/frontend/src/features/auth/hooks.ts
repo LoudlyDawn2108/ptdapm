@@ -1,8 +1,12 @@
-import { useAuthStore } from "@/stores/auth";
 import type { RoleCode } from "@hrms/shared";
+import { useRouteContext } from "@tanstack/react-router";
 
+/**
+ * Convenient hook for accessing the authenticated user from route context.
+ * Must be called inside the `/_authenticated` subtree.
+ */
 export function useAuth() {
-  const user = useAuthStore((s) => s.user);
+  const { user } = useRouteContext({ from: "/_authenticated" });
   return {
     user,
     isAdmin: user?.role === "ADMIN",

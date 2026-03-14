@@ -1,11 +1,14 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
+import { QueryError } from "@/components/shared/query-error";
 import { StatusBadgeFromCode } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { employeeDetailOptions } from "@/features/employees/api";
+import { employeeStrings as t } from "@/features/employees/strings";
 import { formatDate } from "@/lib/date-utils";
 import { authorizeRoute } from "@/lib/permissions";
+import { commonStrings } from "@/lib/strings";
 import {
   AcademicRank,
   AcademicTitle,
@@ -35,14 +38,23 @@ function InfoRow({ label, value }: { label: string; value: string | undefined | 
 
 function EmployeeDetailPage() {
   const { employeeId } = Route.useParams();
-  const { data, isLoading } = useQuery(employeeDetailOptions(employeeId));
+  const { data, isLoading, isError, error, refetch } = useQuery(employeeDetailOptions(employeeId));
   const emp = data?.data;
 
   if (isLoading) {
     return (
       <div>
-        <PageHeader title="Thông tin nhân sự" />
+        <PageHeader title={t.detail.title} />
         <FormSkeleton fields={8} />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div>
+        <PageHeader title={t.detail.title} />
+        <QueryError error={error} onRetry={refetch} />
       </div>
     );
   }
@@ -50,8 +62,8 @@ function EmployeeDetailPage() {
   if (!emp) {
     return (
       <div>
-        <PageHeader title="Không tìm thấy" />
-        <p>Không tìm thấy thông tin nhân sự.</p>
+        <PageHeader title={t.detail.notFound} />
+        <p>{t.detail.notFoundDescription}</p>
       </div>
     );
   }
@@ -80,14 +92,12 @@ function EmployeeDetailPage() {
             <Button variant="outline" asChild>
               <Link to="/employees">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Quay lại
+                {commonStrings.actions.back}
               </Link>
             </Button>
-            <Button asChild>
-              <Link to="/employees/$employeeId" params={{ employeeId }}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Chỉnh sửa
-              </Link>
+            <Button disabled title={t.detail.editTooltip}>
+              <Pencil className="mr-2 h-4 w-4" />
+              {commonStrings.actions.edit}
             </Button>
           </div>
         }
@@ -96,47 +106,46 @@ function EmployeeDetailPage() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Thông tin cá nhân</CardTitle>
+            <CardTitle className="text-base">{t.detail.personalInfoTitle}</CardTitle>
           </CardHeader>
           <CardContent>
             <dl>
-              <InfoRow label="Họ tên" value={emp.fullName} />
-              <InfoRow label="Ngày sinh" value={formatDate(emp.dob)} />
-              <InfoRow label="Giới tính" value={genderLabel} />
-              <InfoRow label="CCCD/CMND" value={emp.nationalId} />
-              <InfoRow label="Quê quán" value={emp.hometown} />
-              <InfoRow label="Địa chỉ" value={emp.address} />
-              <InfoRow label="Email" value={emp.email} />
-              <InfoRow label="Điện thoại" value={emp.phone} />
+              <InfoRow label={t.detailLabels.fullName} value={emp.fullName} />
+              <InfoRow label={t.detailLabels.dob} value={formatDate(emp.dob)} />
+              <InfoRow label={t.detailLabels.gender} value={genderLabel} />
+              <InfoRow label={t.detailLabels.nationalId} value={emp.nationalId} />
+              <InfoRow label={t.detailLabels.hometown} value={emp.hometown} />
+              <InfoRow label={t.detailLabels.address} value={emp.address} />
+              <InfoRow label={t.detailLabels.email} value={emp.email} />
+              <InfoRow label={t.detailLabels.phone} value={emp.phone} />
             </dl>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Thông tin nghề nghiệp</CardTitle>
+            <CardTitle className="text-base">{t.detail.careerInfoTitle}</CardTitle>
           </CardHeader>
           <CardContent>
             <dl>
-              <InfoRow label="Đơn vị công tác" value={emp.currentOrgUnitName} />
-              <InfoRow label="Chức danh" value={emp.currentPositionTitle} />
-              <InfoRow label="Trạng thái" value={undefined} />
+              <InfoRow label={t.detailLabels.orgUnit} value={emp.currentOrgUnitName} />
+              <InfoRow label={t.detailLabels.positionTitle} value={emp.currentPositionTitle} />
               <div className="grid grid-cols-3 gap-2 py-2 border-b">
-                <dt className="text-sm text-muted-foreground">Trạng thái</dt>
+                <dt className="text-sm text-muted-foreground">{t.detailLabels.workStatus}</dt>
                 <dd className="col-span-2">
                   <StatusBadgeFromCode code={emp.workStatus} label={workStatusLabel} />
                 </dd>
               </div>
               <div className="grid grid-cols-3 gap-2 py-2 border-b">
-                <dt className="text-sm text-muted-foreground">Hợp đồng</dt>
+                <dt className="text-sm text-muted-foreground">{t.detailLabels.contractStatus}</dt>
                 <dd className="col-span-2">
                   <StatusBadgeFromCode code={emp.contractStatus} label={contractStatusLabel} />
                 </dd>
               </div>
-              <InfoRow label="Trình độ văn hóa" value={eduLabel} />
-              <InfoRow label="Trình độ đào tạo" value={trainingLabel} />
-              <InfoRow label="Chức danh nghề nghiệp" value={titleLabel} />
-              <InfoRow label="Học hàm" value={rankLabel} />
+              <InfoRow label={t.detailLabels.educationLevel} value={eduLabel} />
+              <InfoRow label={t.detailLabels.trainingLevel} value={trainingLabel} />
+              <InfoRow label={t.detailLabels.academicTitle} value={titleLabel} />
+              <InfoRow label={t.detailLabels.academicRank} value={rankLabel} />
             </dl>
           </CardContent>
         </Card>

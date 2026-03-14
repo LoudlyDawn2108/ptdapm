@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/layout/page-header";
+import { QueryError } from "@/components/shared/query-error";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
@@ -11,8 +12,11 @@ import {
 } from "@/components/ui/select";
 import { employeeListOptions, useDeleteEmployee } from "@/features/employees/api";
 import { getEmployeeColumns } from "@/features/employees/columns";
+import { employeeStrings as t } from "@/features/employees/strings";
 import { useListPage } from "@/hooks/use-list-page";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { authorizeRoute } from "@/lib/permissions";
+import { commonStrings } from "@/lib/strings";
 import { Gender, WorkStatus, enumToSortedList } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -21,7 +25,7 @@ import { z } from "zod";
 
 const searchSchema = z.object({
   page: z.number().default(1),
-  pageSize: z.number().default(20),
+  pageSize: z.number().default(DEFAULT_PAGE_SIZE),
   search: z.string().optional(),
   workStatus: z.string().optional(),
   gender: z.string().optional(),
@@ -53,20 +57,29 @@ function EmployeesPage() {
     orgUnitId: search.orgUnitId,
   };
 
-  const { data, isLoading } = useQuery(employeeListOptions(params));
+  const { data, isLoading, isError, error, refetch } = useQuery(employeeListOptions(params));
   const result = data?.data;
   const columns = getEmployeeColumns(deleteMutation);
+
+  if (isError) {
+    return (
+      <div>
+        <PageHeader title={t.page.title} description={t.page.description} />
+        <QueryError error={error} onRetry={refetch} />
+      </div>
+    );
+  }
 
   return (
     <div>
       <PageHeader
-        title="Quản lý nhân sự"
-        description="Danh sách cán bộ, giảng viên, nhân viên"
+        title={t.page.title}
+        description={t.page.description}
         actions={
           <Button asChild>
             <Link to="/employees/new">
               <Plus className="mr-2 h-4 w-4" />
-              Thêm nhân sự
+              {t.page.addButton}
             </Link>
           </Button>
         }
@@ -74,7 +87,7 @@ function EmployeesPage() {
 
       <div className="mb-4 flex gap-3">
         <Input
-          placeholder="Tìm kiếm theo tên, mã NV, email..."
+          placeholder={t.page.searchPlaceholder}
           className="max-w-sm"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
@@ -92,10 +105,10 @@ function EmployeesPage() {
           }
         >
           <SelectTrigger className="w-48">
-            <SelectValue placeholder="Trạng thái" />
+            <SelectValue placeholder={commonStrings.filters.status} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tất cả trạng thái</SelectItem>
+            <SelectItem value="all">{commonStrings.filters.allStatuses}</SelectItem>
             {enumToSortedList(WorkStatus).map((s) => (
               <SelectItem key={s.code} value={s.code}>
                 {s.label}
@@ -116,10 +129,10 @@ function EmployeesPage() {
           }
         >
           <SelectTrigger className="w-40">
-            <SelectValue placeholder="Giới tính" />
+            <SelectValue placeholder={commonStrings.filters.gender} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tất cả</SelectItem>
+            <SelectItem value="all">{commonStrings.filters.allGenders}</SelectItem>
             {enumToSortedList(Gender).map((g) => (
               <SelectItem key={g.code} value={g.code}>
                 {g.label}
@@ -136,7 +149,7 @@ function EmployeesPage() {
         pagination={pagination}
         onPaginationChange={onPaginationChange}
         isLoading={isLoading}
-        emptyMessage="Không có nhân sự nào"
+        emptyMessage={t.page.emptyMessage}
       />
     </div>
   );

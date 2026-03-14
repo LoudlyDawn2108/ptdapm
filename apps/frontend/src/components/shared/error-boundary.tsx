@@ -1,3 +1,4 @@
+import { commonStrings as t } from "@/lib/strings";
 import { Component, type ReactNode } from "react";
 
 interface Props {
@@ -22,16 +23,16 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         this.props.fallback ?? (
           <div className="flex flex-col items-center justify-center p-8">
-            <h2 className="text-lg font-semibold">Đã xảy ra lỗi</h2>
+            <h2 className="text-lg font-semibold">{t.errors.boundary}</h2>
             <p className="text-muted-foreground mt-2">
-              {this.state.error?.message ?? "Vui lòng thử lại sau"}
+              {this.state.error?.message ?? t.errors.boundaryDescription}
             </p>
             <button
               type="button"
               className="mt-4 underline"
               onClick={() => window.location.reload()}
             >
-              Tải lại trang
+              {t.actions.retry}
             </button>
           </div>
         )

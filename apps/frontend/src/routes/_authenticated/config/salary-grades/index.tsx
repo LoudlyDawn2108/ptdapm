@@ -1,14 +1,16 @@
 import { CatalogListPage } from "@/components/shared/catalog-list-page";
 import { salaryGradeListOptions, useDeleteSalaryGrade } from "@/features/config/salary-grades/api";
 import { salaryGradeColumns } from "@/features/config/salary-grades/columns";
+import { salaryGradeStrings as t } from "@/features/config/salary-grades/strings";
 import { useListPage } from "@/hooks/use-list-page";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { authorizeRoute } from "@/lib/permissions";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 
 const searchSchema = z.object({
   page: z.number().default(1),
-  pageSize: z.number().default(20),
+  pageSize: z.number().default(DEFAULT_PAGE_SIZE),
   search: z.string().optional(),
 });
 
@@ -29,9 +31,9 @@ function SalaryGradesPage() {
 
   return (
     <CatalogListPage
-      title="Ngạch lương"
-      description="Quản lý hệ thống ngạch lương và bậc lương"
-      addButtonLabel="Thêm ngạch"
+      title={t.page.title}
+      description={t.page.description}
+      addButtonLabel={t.page.addButton}
       columns={salaryGradeColumns}
       queryOptions={salaryGradeListOptions({
         page: search.page,
@@ -40,12 +42,12 @@ function SalaryGradesPage() {
       })}
       deleteMutation={deleteMutation}
       deleteConfig={{
-        title: "Xóa ngạch lương",
+        title: t.delete.title,
         nameAccessor: "gradeName",
-        successMessage: "Đã xóa ngạch lương",
+        successMessage: t.delete.success,
       }}
-      searchPlaceholder="Tìm kiếm theo mã ngạch, tên..."
-      emptyMessage="Không có ngạch lương nào"
+      searchPlaceholder={t.page.searchPlaceholder}
+      emptyMessage={t.page.emptyMessage}
       {...listPage}
     />
   );

@@ -7,6 +7,7 @@ import { Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Eye, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { employeeStrings as t } from "./strings";
 
 export interface EmployeeListRow {
   id: string;
@@ -25,12 +26,12 @@ export function getEmployeeColumns(
   return [
     {
       accessorKey: "staffCode",
-      header: "Mã NV",
+      header: t.columns.staffCode,
       cell: ({ row }) => row.original.staffCode ?? "—",
     },
     {
       accessorKey: "fullName",
-      header: "Họ tên",
+      header: t.columns.fullName,
       cell: ({ row }) => (
         <Link
           to="/employees/$employeeId"
@@ -43,7 +44,7 @@ export function getEmployeeColumns(
     },
     {
       accessorKey: "gender",
-      header: "Giới tính",
+      header: t.columns.gender,
       cell: ({ row }) => {
         const g = Gender[row.original.gender as keyof typeof Gender];
         return g?.label ?? row.original.gender ?? "—";
@@ -51,22 +52,22 @@ export function getEmployeeColumns(
     },
     {
       accessorKey: "phone",
-      header: "Điện thoại",
+      header: t.columns.phone,
       cell: ({ row }) => row.original.phone ?? "—",
     },
     {
       accessorKey: "email",
-      header: "Email",
+      header: t.columns.email,
       cell: ({ row }) => row.original.email ?? "—",
     },
     {
       accessorKey: "currentOrgUnitName",
-      header: "Đơn vị",
+      header: t.columns.orgUnit,
       cell: ({ row }) => row.original.currentOrgUnitName ?? "—",
     },
     {
       accessorKey: "workStatus",
-      header: "Trạng thái",
+      header: t.columns.workStatus,
       cell: ({ row }) => {
         const ws = WorkStatus[row.original.workStatus as keyof typeof WorkStatus];
         return (
@@ -93,13 +94,13 @@ export function getEmployeeColumns(
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
             }
-            title="Xóa nhân sự"
-            description={`Bạn có chắc muốn xóa nhân sự "${row.original.fullName}"?`}
-            confirmLabel="Xóa"
+            title={t.delete.title}
+            description={`${t.delete.confirmPrefix} "${row.original.fullName}"?`}
+            confirmLabel={t.delete.title.split(" ")[0]}
             variant="destructive"
             onConfirm={() =>
               deleteMutation.mutate(row.original.id, {
-                onSuccess: () => toast.success("Đã xóa nhân sự"),
+                onSuccess: () => toast.success(t.delete.success),
               })
             }
           />

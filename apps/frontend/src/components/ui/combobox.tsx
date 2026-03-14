@@ -1,14 +1,4 @@
-import { useState } from "react";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useDebounce } from "@/hooks/use-debounce";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -17,6 +7,12 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useDebounce } from "@/hooks/use-debounce";
+import { cn } from "@/lib/utils";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
+import { useState } from "react";
 
 export type DropdownOption = { value: string; label: string };
 
@@ -81,9 +77,7 @@ export function Combobox({
           onClick={() => setOpen(!open)}
           onBlur={onBlur}
         >
-          <span className="truncate">
-            {selectedLabel ?? (value ? value : placeholder)}
-          </span>
+          <span className="truncate">{selectedLabel ?? (value ? value : placeholder)}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

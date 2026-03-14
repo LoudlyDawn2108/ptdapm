@@ -12,19 +12,18 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/features/auth/hooks";
 import { canAccessRoute } from "@/lib/permissions";
+import { commonStrings } from "@/lib/strings";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Building2,
-  ChartColumn,
   CircleUserRound,
   ClipboardList,
-  GraduationCap,
   type LucideIcon,
   Settings,
-  User,
   UsersRound,
 } from "lucide-react";
 import tluLogo from "../../../assets/tlu-logo.png";
+import { sidebarStrings as t } from "./strings";
 
 interface NavItem {
   title: string;
@@ -39,82 +38,47 @@ interface NavGroupConfig {
 
 const navGroups: NavGroupConfig[] = [
   {
-    label: "Tài khoản",
+    label: t.groups.accounts,
     items: [
       {
-        title: "Danh sách tài khoản",
+        title: t.items.accountList,
         to: "/accounts",
         icon: CircleUserRound,
       },
     ],
   },
   {
-    label: "Hồ sơ nhân sự",
+    label: t.groups.personnel,
     items: [
       {
-        title: "Danh sách hồ sơ",
+        title: t.items.personnelList,
         to: "/employees",
         icon: UsersRound,
       },
       {
-        title: "Sơ đồ tổ chức",
+        title: t.items.orgChart,
         to: "/org-units",
         icon: Building2,
-      },
-      {
-        title: "Thống kê",
-        to: "/reports",
-        icon: ChartColumn,
       },
     ],
   },
   {
-    label: "Cơ cấu tổ chức",
+    label: t.groups.orgStructure,
     items: [
       {
-        title: "Hệ số lương",
-        to: "/config/salary-coefficients",
+        title: t.items.salaryGrades,
+        to: "/config/salary-grades",
         icon: Settings,
       },
       {
-        title: "Phụ cấp",
+        title: t.items.allowances,
         to: "/config/allowance-types",
         icon: Settings,
       },
       {
-        title: "Hợp đồng",
+        title: t.items.contracts,
         to: "/config/contract-types",
         icon: ClipboardList,
-      },
-    ],
-  },
-  {
-    label: "Đào tạo",
-    items: [
-      {
-        title: "Đào tạo",
-        to: "/training",
-        icon: GraduationCap,
-      },
-    ],
-  },
-  {
-    label: "Cá nhân",
-    items: [
-      {
-        title: "Hồ sơ cá nhân",
-        to: "/my/profile",
-        icon: User,
-      },
-      {
-        title: "Đơn vị công tác",
-        to: "/my/org",
-        icon: Building2,
-      },
-      {
-        title: "Đào tạo của tôi",
-        to: "/my/training",
-        icon: GraduationCap,
       },
     ],
   },
@@ -161,14 +125,14 @@ export function AppSidebar() {
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton size="lg" asChild tooltip="Quản lý nhân sự">
+              <SidebarMenuButton size="lg" asChild tooltip={commonStrings.app.name}>
                 <Link to="/">
                   <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
                     <img src={tluLogo} alt="TLU Logo" className="size-7 object-contain" />
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">Quản lý nhân sự</span>
-                    <span className="truncate text-xs">Trường Đại học Thủy Lợi</span>
+                    <span className="truncate font-semibold">{commonStrings.app.name}</span>
+                    <span className="truncate text-xs">{commonStrings.app.orgName}</span>
                   </div>
                 </Link>
               </SidebarMenuButton>

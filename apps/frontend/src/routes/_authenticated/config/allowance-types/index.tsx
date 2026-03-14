@@ -4,14 +4,16 @@ import {
   useDeleteAllowanceType,
 } from "@/features/config/allowance-types/api";
 import { allowanceTypeColumns } from "@/features/config/allowance-types/columns";
+import { allowanceTypeStrings as t } from "@/features/config/allowance-types/strings";
 import { useListPage } from "@/hooks/use-list-page";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { authorizeRoute } from "@/lib/permissions";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 
 const searchSchema = z.object({
   page: z.number().default(1),
-  pageSize: z.number().default(20),
+  pageSize: z.number().default(DEFAULT_PAGE_SIZE),
   search: z.string().optional(),
 });
 
@@ -32,9 +34,9 @@ function AllowanceTypesPage() {
 
   return (
     <CatalogListPage
-      title="Loại phụ cấp"
-      description="Quản lý danh mục loại phụ cấp"
-      addButtonLabel="Thêm loại phụ cấp"
+      title={t.page.title}
+      description={t.page.description}
+      addButtonLabel={t.page.addButton}
       columns={allowanceTypeColumns}
       queryOptions={allowanceTypeListOptions({
         page: search.page,
@@ -43,12 +45,12 @@ function AllowanceTypesPage() {
       })}
       deleteMutation={deleteMutation}
       deleteConfig={{
-        title: "Xóa loại phụ cấp",
+        title: t.delete.title,
         nameAccessor: "allowanceName",
-        successMessage: "Đã xóa loại phụ cấp",
+        successMessage: t.delete.success,
       }}
-      searchPlaceholder="Tìm kiếm theo tên..."
-      emptyMessage="Không có loại phụ cấp nào"
+      searchPlaceholder={t.page.searchPlaceholder}
+      emptyMessage={t.page.emptyMessage}
       {...listPage}
     />
   );

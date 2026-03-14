@@ -1,9 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/layout/page-header";
-import { statisticsOptions } from "@/features/dashboard/api";
+import { QueryError } from "@/components/shared/query-error";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Building2, GraduationCap, BarChart3 } from "lucide-react";
+import { statisticsOptions } from "@/features/dashboard/api";
+import { dashboardStrings as t } from "@/features/dashboard/strings";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { BarChart3, Building2, GraduationCap, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -37,36 +39,42 @@ function StatCard({
 }
 
 function DashboardPage() {
-  const { data, isLoading } = useQuery(statisticsOptions());
+  const { data, isLoading, isError, error, refetch } = useQuery(statisticsOptions());
   const stats = data?.data;
+
+  if (isError) {
+    return (
+      <div>
+        <PageHeader title={t.page.title} description={t.page.description} />
+        <QueryError error={error} onRetry={refetch} />
+      </div>
+    );
+  }
 
   return (
     <div>
-      <PageHeader
-        title="Bảng điều khiển"
-        description="Tổng quan Hệ thống Quản lý Nhân sự — Trường Đại học Thủy Lợi"
-      />
+      <PageHeader title={t.page.title} description={t.page.description} />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Tổng nhân sự"
+          title={t.stats.totalEmployees}
           value={stats?.totalEmployees ?? 0}
           icon={Users}
           loading={isLoading}
         />
         <StatCard
-          title="Đang công tác"
+          title={t.stats.activeEmployees}
           value={stats?.activeEmployees ?? 0}
           icon={BarChart3}
           loading={isLoading}
         />
         <StatCard
-          title="Đơn vị tổ chức"
+          title={t.stats.totalOrgUnits}
           value={stats?.totalOrgUnits ?? 0}
           icon={Building2}
           loading={isLoading}
         />
         <StatCard
-          title="Khóa đào tạo"
+          title={t.stats.totalTrainingCourses}
           value={stats?.totalTrainingCourses ?? 0}
           icon={GraduationCap}
           loading={isLoading}

@@ -4,7 +4,6 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { sessionOptions } from "@/features/auth/api";
 import { useLogout } from "@/features/auth/api";
 import { useIdleTimeout } from "@/hooks/use-idle-timeout";
-import { useAuthStore } from "@/stores/auth";
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 import type React from "react";
 import { useCallback } from "react";
@@ -14,9 +13,6 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ context }) => {
     try {
       const session = await context.queryClient.ensureQueryData(sessionOptions());
-      // Sync user to Zustand for convenient synchronous access
-      useAuthStore.getState().setUser(session.user);
-      // Pass user to all child routes via context
       return { user: session.user };
     } catch {
       throw redirect({ to: "/login" });

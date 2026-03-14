@@ -4,14 +4,16 @@ import {
   useDeleteContractType,
 } from "@/features/config/contract-types/api";
 import { contractTypeColumns } from "@/features/config/contract-types/columns";
+import { contractTypeStrings as t } from "@/features/config/contract-types/strings";
 import { useListPage } from "@/hooks/use-list-page";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { authorizeRoute } from "@/lib/permissions";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 
 const searchSchema = z.object({
   page: z.number().default(1),
-  pageSize: z.number().default(20),
+  pageSize: z.number().default(DEFAULT_PAGE_SIZE),
   search: z.string().optional(),
 });
 
@@ -32,9 +34,9 @@ function ContractTypesPage() {
 
   return (
     <CatalogListPage
-      title="Loại hợp đồng"
-      description="Quản lý danh mục loại hợp đồng lao động"
-      addButtonLabel="Thêm loại HĐ"
+      title={t.page.title}
+      description={t.page.description}
+      addButtonLabel={t.page.addButton}
       columns={contractTypeColumns}
       queryOptions={contractTypeListOptions({
         page: search.page,
@@ -43,12 +45,12 @@ function ContractTypesPage() {
       })}
       deleteMutation={deleteMutation}
       deleteConfig={{
-        title: "Xóa loại hợp đồng",
+        title: t.delete.title,
         nameAccessor: "contractTypeName",
-        successMessage: "Đã xóa loại hợp đồng",
+        successMessage: t.delete.success,
       }}
-      searchPlaceholder="Tìm kiếm theo tên..."
-      emptyMessage="Không có loại hợp đồng nào"
+      searchPlaceholder={t.page.searchPlaceholder}
+      emptyMessage={t.page.emptyMessage}
       {...listPage}
     />
   );

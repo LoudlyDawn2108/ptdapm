@@ -1,8 +1,10 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { QueryError } from "@/components/shared/query-error";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
+import { commonStrings as t } from "@/lib/strings";
 import type { UseMutationResult, UseQueryOptions } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import type { ColumnDef, OnChangeFn, PaginationState } from "@tanstack/react-table";
@@ -59,8 +61,17 @@ export function CatalogListPage<TData extends { id: string }>({
   onPaginationChange,
   headerActions,
 }: CatalogListPageProps<TData>) {
-  const { data, isLoading } = useQuery(qOpts);
+  const { data, isLoading, isError, error, refetch } = useQuery(qOpts);
   const result = (data as CatalogApiResult<TData> | undefined)?.data;
+
+  if (isError) {
+    return (
+      <div>
+        <PageHeader title={title} description={description} />
+        <QueryError error={error} onRetry={refetch} />
+      </div>
+    );
+  }
 
   const actionsColumn: ColumnDef<TData, unknown> = {
     id: "actions",
@@ -76,8 +87,8 @@ export function CatalogListPage<TData extends { id: string }>({
             </Button>
           }
           title={deleteConfig.title}
-          description={`Bạn có chắc muốn xóa "${name}"?`}
-          confirmLabel="Xóa"
+          description={`${t.deleteConfirmPrefix} "${name}"?`}
+          confirmLabel={t.actions.delete}
           variant="destructive"
           onConfirm={() =>
             deleteMutation.mutate(item.id, {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
@@ -13,10 +13,7 @@ export function useIdleTimeout(onTimeout: () => void) {
 
   const resetTimer = useCallback(() => {
     clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(
-      () => onTimeoutRef.current(),
-      IDLE_TIMEOUT_MS,
-    );
+    timeoutRef.current = setTimeout(() => onTimeoutRef.current(), IDLE_TIMEOUT_MS);
   }, []);
 
   useEffect(() => {
