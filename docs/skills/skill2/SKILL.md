@@ -35,6 +35,18 @@ You produce and evaluate RMP documents in **plain Markdown format**.
 
 **When evaluating:** Given an existing Markdown RMP document, assess it against the mandatory checklist and produce a structured evaluation report with a completeness score.
 
+### Reference Loading Rules
+
+**MANDATORY — Always load before any work:**
+- [references/KNOWLEDGE-BASE.md](references/KNOWLEDGE-BASE.md) — Contains attribute tables, value definitions, and traceability specs. You CANNOT produce correct attribute definitions or traceability constraints without this file. Load it at the start of EVERY generation or evaluation task.
+
+**MANDATORY — Load when generating:**
+- [references/OUTPUT-TEMPLATE.md](references/OUTPUT-TEMPLATE.md) — The exact Markdown template structure for RMP output. Load before Step 7 (assembly). Do NOT improvise a different document structure.
+
+**Do NOT load OUTPUT-TEMPLATE.md when:**
+- You are only evaluating an existing RMP (you need the checklist in this file, not the template)
+- The user is asking a clarification question about RMP concepts (answer from SKILL.md knowledge directly)
+
 ---
 
 ## 2. Core Knowledge Base
@@ -114,19 +126,14 @@ STRQ ──→ FEAT ──→ UC
 
 ### 2.5 FURPS+ Feature Type Classification
 
-When classifying features by type, use the FURPS+ taxonomy:
+When classifying FEAT requirements by type, use the **FURPS+** taxonomy. The base categories (Functional, Usability, Reliability, Performance, Supportability) follow standard definitions. The **"+" extensions** specific to this methodology are:
 
-| Category | Description |
-|----------|-------------|
-| **Functional** | Core feature capabilities and behaviors |
-| **Usability** | Human factors, aesthetics, consistency, documentation |
-| **Reliability** | Frequency/severity of failure, recoverability, predictability |
-| **Performance** | Speed, efficiency, resource consumption, throughput, response time |
-| **Supportability** | Testability, extensibility, adaptability, maintainability, compatibility |
-| **Design Constraint** | Mandated design decisions (e.g., required platform, architectural patterns) |
-| **Implementation Requirement** | Coding standards, languages, resource limits |
-| **Physical Requirement** | Hardware constraints (shape, size, weight) |
-| **Interface Requirement** | External system interfaces the product must support |
+- **Design Constraint** — Mandated design decisions (e.g., required platform, architectural patterns)
+- **Implementation Requirement** — Coding standards, languages, resource limits
+- **Physical Requirement** — Hardware constraints (shape, size, weight)
+- **Interface Requirement** — External system interfaces the product must support
+
+> The FURPS+ Type attribute is optional — apply it to FEAT when the project needs to categorize features beyond simple functional/nonfunctional splits. See KNOWLEDGE-BASE.md Section 4.2 for the full extended attributes table.
 
 ### 2.6 Key Attribute Definitions (Summary)
 
@@ -142,6 +149,27 @@ Each requirement type must define its attributes with explicit value sets. The m
 - **Reason**: Text explanation of the requirement's source or justification
 
 See [references/KNOWLEDGE-BASE.md](references/KNOWLEDGE-BASE.md) for the full attribute-to-requirement-type mapping and complete value definitions.
+
+### 2.7 Common RMP Failures — NEVER Do These
+
+These are the most frequent mistakes that produce unusable RMPs. Treat each as a hard constraint.
+
+**NEVER list:**
+
+1. **NEVER define an attribute without its allowed values and their meanings.** Writing `Priority: High / Medium / Low` without explaining what each level means in schedule terms renders the attribute useless — every stakeholder interprets it differently.
+2. **NEVER create a requirement type that appears in no document and no traceability path.** An orphan type wastes effort and confuses users. Every type must trace to or from at least one other type, and must be stored in at least one document.
+3. **NEVER omit the traceability coverage constraints.** Defining paths (STRQ→FEAT) without stating "every approved STRQ must trace to at least one FEAT or SUPL" makes traceability unenforceable. Paths without constraints are decoration.
+4. **NEVER mix problem-domain and solution-domain types in one document without explicit justification.** Putting STRQ and FEAT in the same Vision document conflates the user's language with the team's solution language. If you do this, state why and how you will keep them distinguishable.
+5. **NEVER use tool-specific jargon in a Markdown RMP.** References to "RequisitePro projects," "views," or "database schemas" are meaningless when the RMP is a plain document. Describe the logical concepts, not the tool mechanics.
+6. **NEVER skip the Reports section.** An RMP without defined reports and gap analyses has no verification mechanism. If you can't check coverage, you can't enforce traceability.
+7. **NEVER define traceability as unidirectional only.** Every forward trace (STRQ→FEAT) implies a back-trace (FEAT←STRQ). Omitting back-traces makes it impossible to answer "why does this feature exist?"
+8. **NEVER leave "Stability: Low" requirements unaddressed.** Low-stability items are volatile and must be flagged for additional elicitation. An RMP that defines Stability but doesn't prescribe what to do with Low-stability items is incomplete.
+
+**Anti-patterns in evaluation mode:**
+
+- Scoring a section as "Pass" when attribute values are listed but not defined → must be "Partial"
+- Scoring traceability as "Pass" when paths exist but constraints are missing → must be "Partial"
+- Ignoring internal consistency (e.g., a type referenced in traceability but not defined in the types section) → always flag as a Critical Gap
 
 ---
 
@@ -164,6 +192,8 @@ Ask the user for any missing critical information:
 
 If information is incomplete, proceed with reasonable defaults for a typical project and note assumptions explicitly in the generated RMP.
 
+> **Ask yourself before proceeding:** Do I have enough context to distinguish this project from a generic template? If every field would be a default, push back and ask the user for at least project scale and methodology — these two decisions cascade into every subsequent step.
+
 #### Step 2: Select Requirement Types
 
 Based on project scale and context:
@@ -175,6 +205,10 @@ Based on project scale and context:
 - Include **TC** if formal test tracking is needed
 - Include **TERM** if the domain has specialized vocabulary
 
+> **Ask yourself:** Am I including a type because the project needs it, or because "more is better"? Each type you add creates traceability obligations, attribute definitions, and report requirements. A small project with STRQ+FEAT+UC+SUPL+SCEN+TC is over-engineered. Justify each inclusion.
+
+**⛔ Verification gate:** Every type you selected must appear in at least one document (Step 3) and at least one traceability path (Step 4). If a type fails this check, remove it or justify why it's standalone.
+
 #### Step 3: Map Documents to Requirement Types
 
 For each selected requirement type, assign the corresponding document type using the standard mapping from Section 2.3. Decide for each type whether requirements live in documents, a tool/database, or both. Consider:
@@ -184,6 +218,8 @@ For each selected requirement type, assign the corresponding document type using
 - Supplementary requirements (SUPL) belong in the Supplementary Specification
 - Stakeholder requests (STRQ) may be in dedicated STR documents, in the Vision document, or tool-only
 
+> **Ask yourself:** For STRQ storage, which of the three approaches fits this project? (a) Dedicated STR documents — best for stakeholder review but more documents to maintain; (b) Tool/database only — fewer documents but harder to get stakeholder feedback; (c) In the Vision document — simpler but mixes problem-domain and solution-domain language. Pick one and state the rationale.
+
 #### Step 4: Define Traceability Structure
 
 Based on selected requirement types, define traceability paths following Section 2.4 rules:
@@ -192,6 +228,10 @@ Based on selected requirement types, define traceability paths following Section
 - Define trace-back paths (UC→FEAT, SUPL→FEAT)
 - State the relationship cardinality for each path
 - Define mandatory constraints (every approved STRQ must trace to at least one FEAT or SUPL; every approved FEAT must trace to at least one UC or SUPL)
+
+> **Ask yourself:** Have I defined both the path AND the constraint for every trace? A path without a constraint (e.g., "STRQ→FEAT" without "every approved STRQ must...") is unenforceable. Also check: is every selected requirement type reachable in the trace graph? An unreachable type is an orphan — remove it or add a trace path.
+
+**⛔ Verification gate:** Cross-check the traceability diagram against the types from Step 2. Every type must appear at least once. If SCEN or TC are selected, extend the chain: UC→SCEN→TC and SUPL→TC.
 
 #### Step 5: Define Attributes Per Requirement Type
 
@@ -203,6 +243,10 @@ Read [references/KNOWLEDGE-BASE.md](references/KNOWLEDGE-BASE.md) for the comple
 - **SUPL**: Status, Priority, Benefit, Effort, Risk, Stability, Target Release, Reason
 
 For each attribute, provide: (1) the allowed values, and (2) a clear description of what each value means in this project's context. Clarify vague terms explicitly.
+
+> **Ask yourself for EVERY enumeration attribute:** If I handed this value definition to two different project managers, would they assign the same value to the same requirement? If not, the definition is too vague. "High Priority" must mean something concrete like "must be implemented in the first Construction iteration," not just "very important."
+
+**⛔ Verification gate:** Scan every attribute table. If any enumeration attribute has values listed without descriptions, STOP — go back and add descriptions. This is the #1 cause of unusable RMPs (see NEVER rule #1).
 
 #### Step 6: Define Reports and Views
 
@@ -217,6 +261,14 @@ Specify the minimum set:
 
 Use the template in [references/OUTPUT-TEMPLATE.md](references/OUTPUT-TEMPLATE.md) to produce the final Markdown document. Populate every section. Mark assumptions clearly with `[ASSUMPTION]` tags.
 
+**⛔ Final verification gate — run these checks before delivering:**
+
+1. **No orphan types**: Every requirement type appears in at least one document AND at least one traceability path.
+2. **No undefined values**: Every enumeration attribute has value descriptions, not just value names.
+3. **No path without constraint**: Every traceability path has a mandatory coverage constraint stated.
+4. **No missing reports**: Every traceability path has a corresponding traceability matrix AND gap report.
+5. **Internal consistency**: Types referenced in traceability match types defined in the types section — no mismatches.
+
 ---
 
 ### Mode B: Evaluating an Existing RMP
@@ -229,7 +281,13 @@ Read the document and identify which standard sections are present and which are
 
 #### Step 2: Apply Evaluation Checklist
 
-Score each criterion as ✅ Pass, ⚠️ Partial, or ❌ Missing:
+Score each criterion as ✅ Pass, ⚠️ Partial, or ❌ Missing using these definitions:
+
+- **✅ Pass**: The criterion is fully satisfied — the information is present, complete, specific, and internally consistent.
+- **⚠️ Partial**: The criterion is addressed but incomplete or vague. Examples: attribute values listed without descriptions; traceability paths defined without coverage constraints; section exists but lacks detail.
+- **❌ Missing**: The criterion is entirely absent or so inadequate it provides no usable information.
+
+> **Ask yourself for each criterion:** Would a new team member joining this project be able to follow this section without asking clarifying questions? If yes → Pass. If they'd need to ask "what does this value mean?" or "is this traced?" → Partial. If the section doesn't exist → Missing.
 
 **Structural Completeness:**
 
@@ -303,6 +361,33 @@ Output a structured evaluation with:
 2. **Section-by-Section Assessment**: For each section, state Pass/Partial/Missing with specific findings
 3. **Critical Gaps**: The most important missing elements that must be addressed
 4. **Recommendations**: Specific, actionable suggestions to improve the RMP
+
+### Edge Cases and Practical Guidance
+
+**Edge case: User provides almost no project context.**
+Default to a "medium/typical" project (STRQ, FEAT, UC, SUPL) with iterative methodology. Tag every decision with `[ASSUMPTION]`. In the introduction, add: "This RMP is based on assumed project characteristics. Review and customize before use."
+
+**Edge case: User wants requirement types not in the standard set.**
+Custom types are allowed. For each custom type: (1) define it with an abbreviation, (2) assign it to a document, (3) place it in the traceability graph, (4) define its attributes. If it doesn't fit the trace graph, explain why it's standalone.
+
+**Edge case: User says "we don't need traceability."**
+Push back. Traceability is the core value of an RMP — without it, the document is just a glossary. Explain: "Traceability is what makes an RMP actionable. Without it, there's no way to verify that all stakeholder needs are addressed in the implementation. At minimum, define STRQ→FEAT traceability."
+
+**Edge case: Evaluating an RMP that uses completely different terminology.**
+Map the document's terms to standard types before evaluating. If the RMP says "Business Requirement" instead of STRQ, or "User Story" instead of UC, that's fine — evaluate the substance, not the labels. Note the mapping in your report.
+
+**Worked example — good vs. bad Priority definition:**
+
+❌ Bad: `Priority: High / Medium / Low` (no definitions — unusable)
+
+✅ Good:
+> | Value | Description |
+> |-------|-------------|
+> | High | Must be implemented in the first Construction iteration. Blocks other work if delayed. |
+> | Medium | Must be implemented by the end of Construction. Can be rescheduled within Construction. |
+> | Low | Implemented if time permits. May be deferred to next release without impact. |
+
+The difference: the good version ties priority to **schedule commitments**, not subjective importance.
 
 ---
 
