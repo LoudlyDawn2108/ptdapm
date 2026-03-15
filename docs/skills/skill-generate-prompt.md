@@ -19,7 +19,7 @@
 > **Reference Text to Extract From:**
 > skill1-reference.md"
 > 
-> You should generate the skill files right in this folder
+> You should generate the skill files right in this folder and you could ignore the parent folder name because i will move it to the correct folder after you generate it, just make sure the file name is correct and the content is correct as per the reference text.
 
 #### Skill 2: Requirements Management Plan (RMP) Designer & Judge
 
@@ -37,12 +37,12 @@
 > **3. Step-by-Step Methodology:** Detail exactly how the agent should process user input, draft content, or evaluate an existing Markdown document.
 > **4. Markdown Output Format:** Provide the exact structural template (headings, tables, etc.) the agent must use to generate its final output.
 >
-> You must follow all the best practices for writing skill from https://agentskills.io to ensure the resulting AI Agent is highly effective at its task but you dont need to evaluate the skill as we dont have the infrastructure to do that, just follow the best practice as they said and you see that its correct. 
+> You must follow all the best practices for writing skill from https://agentskills.io/skill-creation/best-practices.md and https://agentskills.io/skill-creation/optimizing-descriptions.md to ensure the resulting AI Agent is highly effective at its task but you dont need to evaluate the skill as we dont have the infrastructure to do that, just follow the best practice as they said and you see that its correct. 
 > 
 > **Reference Text to Extract From:**
 > skill2-reference.md"
 > 
-> You should generate the skill files right in this folder
+> You should generate the skill files right in this folder and you could ignore the parent folder name because i will move it to the correct folder after you generate it, just make sure the file name is correct and the content is correct as per the reference text.
 
 #### Skill 3: Stakeholder Requests (Needs) Document Designer & Judge
 
@@ -60,12 +60,12 @@
 > **3. Step-by-Step Methodology:** Detail exactly how the agent should process user input, draft content, or evaluate an existing Markdown document.
 > **4. Markdown Output Format:** Provide the exact structural template (headings, tables, etc.) the agent must use to generate its final output.
 >
-> You must follow all the best practices for writing skill from https://agentskills.io to ensure the resulting AI Agent is highly effective at its task but you dont need to evaluate the skill as we dont have the infrastructure to do that, just follow the best practice as they said and you see that its correct. 
+> You must follow all the best practices for writing skill from https://agentskills.io/skill-creation/best-practices.md and https://agentskills.io/skill-creation/optimizing-descriptions.md to ensure the resulting AI Agent is highly effective at its task but you dont need to evaluate the skill as we dont have the infrastructure to do that, just follow the best practice as they said and you see that its correct. 
 > 
 > **Reference Text to Extract From:**
 > skill3-reference.md"
 > 
-> You should generate the skill files right in this folder
+> You should generate the skill files right in this folder and you could ignore the parent folder name because i will move it to the correct folder after you generate it, just make sure the file name is correct and the content is correct as per the reference text.
 
 #### Skill 4: Vision Document (Features) Designer & Judge
 
@@ -83,12 +83,12 @@
 > **3. Step-by-Step Methodology:** Detail exactly how the agent should process user input, draft content, or evaluate an existing Markdown document.
 > **4. Markdown Output Format:** Provide the exact structural template (headings, tables, etc.) the agent must use to generate its final output.
 >
-> You must follow all the best practices for writing skill from https://agentskills.io to ensure the resulting AI Agent is highly effective at its task but you dont need to evaluate the skill as we dont have the infrastructure to do that, just follow the best practice as they said and you see that its correct. 
+> You must follow all the best practices for writing skill from https://agentskills.io/skill-creation/best-practices.md and https://agentskills.io/skill-creation/optimizing-descriptions.md to ensure the resulting AI Agent is highly effective at its task but you dont need to evaluate the skill as we dont have the infrastructure to do that, just follow the best practice as they said and you see that its correct. 
 > 
 > **Reference Text to Extract From:**
 > skill4-reference.md"
 > 
-> You should generate the skill files right in this folder
+> You should generate the skill files right in this folder and you could ignore the parent folder name because i will move it to the correct folder after you generate it, just make sure the file name is correct and the content is correct as per the reference text.
 
 #### Skill 5: Use Case Specification Designer & Judge
 
@@ -106,12 +106,12 @@
 > **3. Step-by-Step Methodology:** Detail exactly how the agent should process user input, draft content, or evaluate an existing Markdown document.
 > **4. Markdown Output Format:** Provide the exact structural template (headings, tables, etc.) the agent must use to generate its final output.
 >
-> You must follow all the best practices for writing skill from https://agentskills.io to ensure the resulting AI Agent is highly effective at its task but you dont need to evaluate the skill as we dont have the infrastructure to do that, just follow the best practice as they said and you see that its correct. 
+> You must follow all the best practices for writing skill from https://agentskills.io/skill-creation/best-practices.md and https://agentskills.io/skill-creation/optimizing-descriptions.md to ensure the resulting AI Agent is highly effective at its task but you dont need to evaluate the skill as we dont have the infrastructure to do that, just follow the best practice as they said and you see that its correct. 
 > 
 > **Reference Text to Extract From:**
 > skill5-reference.md"
 > 
-> You should generate the skill files right in this folder
+> You should generate the skill files right in this folder and you could ignore the parent folder name because i will move it to the correct folder after you generate it, just make sure the file name is correct and the content is correct as per the reference text.
 
 #### Skill 6: Supplementary Specification Designer & Judge
 
@@ -129,12 +129,12 @@
 > **3. Step-by-Step Methodology:** Detail exactly how the agent should process user input, draft content, or evaluate an existing Markdown document.
 > **4. Markdown Output Format:** Provide the exact structural template (headings, tables, etc.) the agent must use to generate its final output.
 >
-> You must follow all the best practices for writing skill from https://agentskills.io to ensure the resulting AI Agent is highly effective at its task but you dont need to evaluate the skill as we dont have the infrastructure to do that, just follow the best practice as they said and you see that its correct. 
+> You must follow all the best practices for writing skill from https://agentskills.io/skill-creation/best-practices.md and https://agentskills.io/skill-creation/optimizing-descriptions.md to ensure the resulting AI Agent is highly effective at its task but you dont need to evaluate the skill as we dont have the infrastructure to do that, just follow the best practice as they said and you see that its correct. 
 > 
 > **Reference Text to Extract From:**
 > skill6-reference.md"
 > 
-> You should generate the skill files right in this folder
+> You should generate the skill files right in this folder and you could ignore the parent folder name because i will move it to the correct folder after you generate it, just make sure the file name is correct and the content is correct as per the reference text.
 
 #### Skill 7: Test Case Designer & Judge
 
@@ -152,12 +152,12 @@
 > **3. Step-by-Step Methodology:** Detail exactly how the agent should process user input, draft content, or evaluate an existing Markdown document.
 > **4. Markdown Output Format:** Provide the exact structural template (headings, tables, etc.) the agent must use to generate its final output.
 >
-> You must follow all the best practices for writing skill from https://agentskills.io to ensure the resulting AI Agent is highly effective at its task but you dont need to evaluate the skill as we dont have the infrastructure to do that, just follow the best practice as they said and you see that its correct. 
+> You must follow all the best practices for writing skill from https://agentskills.io/skill-creation/best-practices.md and https://agentskills.io/skill-creation/optimizing-descriptions.md to ensure the resulting AI Agent is highly effective at its task but you dont need to evaluate the skill as we dont have the infrastructure to do that, just follow the best practice as they said and you see that its correct. 
 > 
 > **Reference Text to Extract From:**
 > skill7-reference.md"
 > 
-> You should generate the skill files right in this folder
+> You should generate the skill files right in this folder and you could ignore the parent folder name because i will move it to the correct folder after you generate it, just make sure the file name is correct and the content is correct as per the reference text.
 
 #### Skill 8: Object-Oriented Design (UML/Mermaid.js) Skill
 
@@ -175,9 +175,9 @@
 > **3. Step-by-Step Methodology:** Detail exactly how the agent should process user input, draft content, or evaluate an existing Markdown document.
 > **4. Markdown Output Format:** Provide the exact structural template (headings, lists, tables, etc.) the agent must use to generate its final output.
 > 
-> You must follow all the best practices for writing skill from https://agentskills.io to ensure the resulting AI Agent is highly effective at its task but you dont need to evaluate the skill as we dont have the infrastructure to do that, just follow the best practice as they said and you see that its correct. 
+> You must follow all the best practices for writing skill from https://agentskills.io/skill-creation/best-practices.md and https://agentskills.io/skill-creation/optimizing-descriptions.md to ensure the resulting AI Agent is highly effective at its task but you dont need to evaluate the skill as we dont have the infrastructure to do that, just follow the best practice as they said and you see that its correct. 
 > 
 > **Reference Text to Extract From:**
 > skill8-reference.md"
 > 
-> You should generate the skill files right in this folder
+> You should generate the skill files right in this folder and you could ignore the parent folder name because i will move it to the correct folder after you generate it, just make sure the file name is correct and the content is correct as per the reference text.
