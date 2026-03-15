@@ -4,7 +4,7 @@ import type {
   UpdateEmployeeBankAccountInput,
 } from "@hrms/shared";
 import { and, eq, ne } from "drizzle-orm";
-import { NotFoundError } from "../../common/utils/errors";
+import { BadRequestError, NotFoundError } from "../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
 import { db } from "../../db";
 import { type EmployeeBankAccount, employeeBankAccounts } from "../../db/schema";
@@ -54,7 +54,7 @@ export async function create(
         .values({ ...data, employeeId })
         .returning();
 
-      if (!created) throw new Error("Insert failed");
+      if (!created) throw new BadRequestError("Không thể tạo tài khoản ngân hàng");
       return created;
     });
   }
@@ -64,7 +64,7 @@ export async function create(
     .values({ ...data, employeeId })
     .returning();
 
-  if (!created) throw new Error("Insert failed");
+  if (!created) throw new BadRequestError("Không thể tạo tài khoản ngân hàng");
   return created;
 }
 
@@ -81,7 +81,7 @@ export async function update(
     .where(and(eq(employeeBankAccounts.id, id), eq(employeeBankAccounts.employeeId, employeeId)))
     .returning();
 
-  if (!updated) throw new Error("Update failed");
+  if (!updated) throw new BadRequestError("Không thể cập nhật tài khoản ngân hàng");
   return updated;
 }
 

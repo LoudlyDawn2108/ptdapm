@@ -4,7 +4,7 @@ import type {
   UpdateEmployeeDegreeInput,
 } from "@hrms/shared";
 import { eq } from "drizzle-orm";
-import { NotFoundError } from "../../common/utils/errors";
+import { BadRequestError, NotFoundError } from "../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
 import { db } from "../../db";
 import { type EmployeeDegree, employeeDegrees } from "../../db/schema";
@@ -45,7 +45,7 @@ export async function create(
     .values({ ...data, employeeId })
     .returning();
 
-  if (!created) throw new Error("Insert failed");
+  if (!created) throw new BadRequestError("Không thể tạo bằng cấp");
   return created;
 }
 
@@ -63,7 +63,7 @@ export async function update(
     .where(eq(employeeDegrees.id, id))
     .returning();
 
-  if (!updated) throw new Error("Update failed");
+  if (!updated) throw new BadRequestError("Không thể cập nhật bằng cấp");
   return updated;
 }
 

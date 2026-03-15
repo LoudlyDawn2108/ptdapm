@@ -50,10 +50,7 @@ export async function dropdown(search?: string, limit = 20) {
   if (search) {
     where = and(
       where,
-      or(
-        ilike(orgUnits.unitName, `%${search}%`),
-        ilike(orgUnits.unitCode, `%${search}%`),
-      ),
+      or(ilike(orgUnits.unitName, `%${search}%`), ilike(orgUnits.unitCode, `%${search}%`)),
     );
   }
 
@@ -116,7 +113,9 @@ export async function create(data: CreateOrgUnitInput, createdByUserId?: string)
       throw new BadRequestError("Không thể tạo đơn vị trực thuộc đơn vị đã giải thể/sáp nhập");
     }
     if (parent.isLeafConfirmed) {
-      throw new BadRequestError("Đơn vị cha đã được xác nhận là đơn vị nút, không thể thêm đơn vị con");
+      throw new BadRequestError(
+        "Đơn vị cha đã được xác nhận là đơn vị nút, không thể thêm đơn vị con",
+      );
     }
   }
 
@@ -133,7 +132,8 @@ export async function create(data: CreateOrgUnitInput, createdByUserId?: string)
 
   // Get default campus
   const [campus] = await db.select({ id: campuses.id }).from(campuses).limit(1);
-  if (!campus) throw new Error("No campus found — seed data missing");
+  if (!campus)
+    throw new BadRequestError("Không tìm thấy cơ sở — vui lòng kiểm tra dữ liệu hệ thống");
 
   const [created] = await db
     .insert(orgUnits)
@@ -144,7 +144,7 @@ export async function create(data: CreateOrgUnitInput, createdByUserId?: string)
     })
     .returning();
 
-  if (!created) throw new Error("Insert failed");
+  if (!created) throw new BadRequestError("Không thể tạo đơn vị tổ chức");
   return created;
 }
 
@@ -161,7 +161,7 @@ export async function update(id: string, data: UpdateOrgUnitInput) {
     .where(eq(orgUnits.id, id))
     .returning();
 
-  if (!updated) throw new Error("Update failed");
+  if (!updated) throw new BadRequestError("Không thể cập nhật đơn vị tổ chức");
   return updated;
 }
 
@@ -178,17 +178,11 @@ export async function dissolve(id: string, data: DissolveOrgUnitInput, userId?: 
   const managersInUnit = await db
     .select({ id: employeeAssignments.id, positionTitle: employeeAssignments.positionTitle })
     .from(employeeAssignments)
-    .where(
-      and(
-        eq(employeeAssignments.orgUnitId, id),
-        isNull(employeeAssignments.endedOn),
-      ),
-    );
+    .where(and(eq(employeeAssignments.orgUnitId, id), isNull(employeeAssignments.endedOn)));
 
   const hasManagers = managersInUnit.some(
     (a) =>
-      a.positionTitle &&
-      (a.positionTitle.includes("Trưởng") || a.positionTitle.includes("Phó")),
+      a.positionTitle && (a.positionTitle.includes("Trưởng") || a.positionTitle.includes("Phó")),
   );
 
   if (hasManagers) {
@@ -248,7 +242,7 @@ export async function dissolve(id: string, data: DissolveOrgUnitInput, userId?: 
     createdByUserId: userId,
   });
 
-  if (!updated) throw new Error("Update failed");
+  if (!updated) throw new BadRequestError("Không thể cập nhật trạng thái đơn vị");
   return updated;
 }
 
@@ -323,7 +317,7 @@ export async function merge(id: string, data: MergeOrgUnitInput, userId?: string
     createdByUserId: userId,
   });
 
-  if (!updated) throw new Error("Update failed");
+  if (!updated) throw new BadRequestError("Không thể cập nhật trạng thái đơn vị");
   return updated;
 }
 
@@ -344,10 +338,7 @@ async function handleEmployeesOnDissolve(orgUnitId: string) {
       .update(employmentContracts)
       .set({ status: "expired", updatedAt: new Date() })
       .where(
-        and(
-          eq(employmentContracts.employeeId, emp.id),
-          eq(employmentContracts.status, "valid"),
-        ),
+        and(eq(employmentContracts.employeeId, emp.id), eq(employmentContracts.status, "valid")),
       );
 
     // Update employee: clear org, set statuses

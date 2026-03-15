@@ -56,6 +56,14 @@ export const errorPlugin = new Elysia({ name: "error-handler" }).onError(
     if (code === "NOT_FOUND") {
       return toastError(404, "Không tìm thấy route");
     }
+    if (
+      error !== null &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code: string }).code === "23505"
+    ) {
+      return toastError(409, "Dữ liệu đã tồn tại");
+    }
     console.error("Unhandled error:", error);
     return toastError(500, "Lỗi hệ thống");
   },

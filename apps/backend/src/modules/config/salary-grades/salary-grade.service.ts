@@ -6,7 +6,7 @@ import type {
   UpdateSalaryGradeInput,
   UpdateSalaryGradeStepInput,
 } from "@hrms/shared";
-import { type SQL, and, eq, ilike } from "drizzle-orm";
+import { type SQL, and, eq, ilike, ne } from "drizzle-orm";
 import { queryDropdown } from "../../../common/utils/dropdown";
 import { BadRequestError, ConflictError, NotFoundError } from "../../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../../common/utils/pagination";
@@ -26,9 +26,7 @@ export async function list(
   pageSize: number,
   search?: string,
 ): Promise<PaginatedResponse<SalaryGrade>> {
-  const where: SQL | undefined = search
-    ? ilike(salaryGrades.gradeName, `%${search}%`)
-    : undefined;
+  const where: SQL | undefined = search ? ilike(salaryGrades.gradeName, `%${search}%`) : undefined;
 
   const [items, total] = await Promise.all([
     db
@@ -75,7 +73,7 @@ export async function create(data: CreateSalaryGradeInput): Promise<SalaryGrade>
   }
 
   const [created] = await db.insert(salaryGrades).values(data).returning();
-  if (!created) throw new Error("Insert failed");
+  if (!created) throw new BadRequestError("Không thể tạo ngạch lương");
   return created;
 }
 
@@ -86,7 +84,21 @@ export async function update(id: string, data: UpdateSalaryGradeInput): Promise<
   if (data.gradeCode || data.gradeName) {
     const isUsed = await isGradeUsedByEmployees(id);
     if (isUsed) {
-      throw new BadRequestError("Không thể chỉnh sửa ngạch lương đã được sử dụng trong hồ sơ nhân sự");
+      throw new BadRequestError(
+        "Không thể chỉnh sửa ngạch lương đã được sử dụng trong hồ sơ nhân sự",
+      );
+    }
+  }
+
+  if (data.gradeCode && data.gradeCode !== grade.gradeCode) {
+    const existing = await db
+      .select({ id: salaryGrades.id })
+      .from(salaryGrades)
+      .where(and(eq(salaryGrades.gradeCode, data.gradeCode), ne(salaryGrades.id, id)))
+      .limit(1);
+
+    if (existing.length > 0) {
+      throw new ConflictError("Mã ngạch lương đã tồn tại");
     }
   }
 
@@ -101,7 +113,7 @@ export async function update(id: string, data: UpdateSalaryGradeInput): Promise<
     .where(eq(salaryGrades.id, id))
     .returning();
 
-  if (!updated) throw new Error("Update failed");
+  if (!updated) throw new BadRequestError("Không thể cập nhật ngạch lương");
   return updated;
 }
 
@@ -161,10 +173,7 @@ export async function createStep(
     .select({ id: salaryGradeSteps.id })
     .from(salaryGradeSteps)
     .where(
-      and(
-        eq(salaryGradeSteps.salaryGradeId, gradeId),
-        eq(salaryGradeSteps.stepNo, data.stepNo),
-      ),
+      and(eq(salaryGradeSteps.salaryGradeId, gradeId), eq(salaryGradeSteps.stepNo, data.stepNo)),
     )
     .limit(1);
 
@@ -176,7 +185,7 @@ export async function createStep(
     .insert(salaryGradeSteps)
     .values({ ...data, salaryGradeId: gradeId })
     .returning();
-  if (!created) throw new Error("Insert failed");
+  if (!created) throw new BadRequestError("Không thể tạo bậc lương");
   return created;
 }
 
@@ -202,7 +211,9 @@ export async function updateStep(
       .where(eq(employees.salaryGradeStepId, stepId))
       .limit(1);
     if (emp) {
-      throw new BadRequestError("Không thể chỉnh sửa bậc lương đã được sử dụng trong hồ sơ nhân sự");
+      throw new BadRequestError(
+        "Không thể chỉnh sửa bậc lương đã được sử dụng trong hồ sơ nhân sự",
+      );
     }
   }
 
@@ -212,10 +223,7 @@ export async function updateStep(
       .select({ id: salaryGradeSteps.id })
       .from(salaryGradeSteps)
       .where(
-        and(
-          eq(salaryGradeSteps.salaryGradeId, gradeId),
-          eq(salaryGradeSteps.stepNo, data.stepNo),
-        ),
+        and(eq(salaryGradeSteps.salaryGradeId, gradeId), eq(salaryGradeSteps.stepNo, data.stepNo)),
       )
       .limit(1);
     if (dup.length > 0) {
@@ -229,7 +237,7 @@ export async function updateStep(
     .where(eq(salaryGradeSteps.id, stepId))
     .returning();
 
-  if (!updated) throw new Error("Update failed");
+  if (!updated) throw new BadRequestError("Không thể cập nhật bậc lương");
   return updated;
 }
 

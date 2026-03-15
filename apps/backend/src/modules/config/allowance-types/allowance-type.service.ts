@@ -4,7 +4,7 @@ import type {
   PaginatedResponse,
   UpdateAllowanceTypeInput,
 } from "@hrms/shared";
-import { type SQL, eq, ilike } from "drizzle-orm";
+import { type SQL, and, eq, ilike, ne } from "drizzle-orm";
 import { queryDropdown } from "../../../common/utils/dropdown";
 import { BadRequestError, ConflictError, NotFoundError } from "../../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../../common/utils/pagination";
@@ -66,7 +66,7 @@ export async function create(data: CreateAllowanceTypeInput): Promise<AllowanceT
   }
 
   const [created] = await db.insert(allowanceTypes).values(data).returning();
-  if (!created) throw new Error("Insert failed");
+  if (!created) throw new BadRequestError("Không thể tạo loại phụ cấp");
   return created;
 }
 
@@ -78,12 +78,24 @@ export async function update(id: string, data: UpdateAllowanceTypeInput): Promis
     throw new BadRequestError("Không thể chỉnh sửa danh mục đã ngừng sử dụng");
   }
 
+  if (data.allowanceName && data.allowanceName !== item.allowanceName) {
+    const existing = await db
+      .select({ id: allowanceTypes.id })
+      .from(allowanceTypes)
+      .where(and(eq(allowanceTypes.allowanceName, data.allowanceName), ne(allowanceTypes.id, id)))
+      .limit(1);
+
+    if (existing.length > 0) {
+      throw new ConflictError("Loại phụ cấp đã tồn tại");
+    }
+  }
+
   const [updated] = await db
     .update(allowanceTypes)
     .set({ ...data, updatedAt: new Date() })
     .where(eq(allowanceTypes.id, id))
     .returning();
 
-  if (!updated) throw new Error("Update failed");
+  if (!updated) throw new BadRequestError("Không thể cập nhật loại phụ cấp");
   return updated;
 }
