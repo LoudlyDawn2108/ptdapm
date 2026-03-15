@@ -275,7 +275,7 @@ export function useCreateDegree() {
     mutationFn: async ({
       employeeId,
       ...input
-    }: { employeeId: string; degreeName: string; school: string }) => {
+    }: { employeeId: string; degreeName: string; school: string; degreeFileId?: string }) => {
       const { data, error } = await api.api.employees({ employeeId }).degrees.post(input as any);
       if (error) throw handleApiError(error);
       return data;
@@ -291,10 +291,37 @@ export function useCreateCertification() {
     mutationFn: async ({
       employeeId,
       ...input
-    }: { employeeId: string; certName: string; issuedBy?: string }) => {
+    }: { employeeId: string; certName: string; issuedBy?: string; certFileId?: string }) => {
       const { data, error } = await api.api
         .employees({ employeeId })
         .certifications.post(input as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useCreateForeignWorkPermit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      ...input
+    }: {
+      employeeId: string;
+      visaNo?: string;
+      visaExpiresOn?: string;
+      passportNo?: string;
+      passportExpiresOn?: string;
+      workPermitNo?: string;
+      workPermitExpiresOn?: string;
+      workPermitFileId?: string;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["foreign-work-permits"].post(input as any);
       if (error) throw handleApiError(error);
       return data;
     },

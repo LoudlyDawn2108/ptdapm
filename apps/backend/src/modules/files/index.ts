@@ -11,8 +11,14 @@ import { db } from "../../db";
 import { files } from "../../db/schema";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-const ALLOWED_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif"]);
+const ALLOWED_FILE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "application/pdf",
+]);
+const ALLOWED_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif", ".pdf"]);
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(MODULE_DIR, "../../../../../");
 const UPLOADS_DIR = path.join(PROJECT_ROOT, "uploads");
@@ -40,6 +46,8 @@ function getFileExtension(file: File) {
       return ".webp";
     case "image/gif":
       return ".gif";
+    case "application/pdf":
+      return ".pdf";
     default:
       return "";
   }
@@ -65,12 +73,12 @@ export const fileRoutes = new Elysia({ prefix: "/api/files" })
 
       const file = body.file;
 
-      if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
-        throw new BadRequestError("Chỉ hỗ trợ ảnh JPEG, PNG, WEBP hoặc GIF");
+      if (!ALLOWED_FILE_TYPES.has(file.type)) {
+        throw new BadRequestError("Chỉ hỗ trợ ảnh JPEG, PNG, WEBP, GIF hoặc PDF");
       }
 
       if (file.size > MAX_FILE_SIZE) {
-        throw new BadRequestError("Ảnh quá lớn (tối đa 5MB)");
+        throw new BadRequestError("Tệp quá lớn (tối đa 5MB)");
       }
 
       await mkdir(UPLOADS_DIR, { recursive: true });

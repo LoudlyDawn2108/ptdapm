@@ -264,6 +264,22 @@ export const updateEmployeeCertificationSchema = createEmployeeCertificationSche
 
 export type UpdateEmployeeCertificationInput = z.infer<typeof updateEmployeeCertificationSchema>;
 
+export const createForeignWorkPermitSchema = z.object({
+  visaNo: optionalText(),
+  visaExpiresOn: optionalDate(),
+  passportNo: optionalText(),
+  passportExpiresOn: optionalDate(),
+  workPermitNo: optionalText(),
+  workPermitExpiresOn: optionalDate(),
+  workPermitFileId: optionalUuid("File giấy phép lao động không hợp lệ"),
+});
+
+export type CreateForeignWorkPermitInput = z.infer<typeof createForeignWorkPermitSchema>;
+
+export const updateForeignWorkPermitSchema = createForeignWorkPermitSchema.partial();
+
+export type UpdateForeignWorkPermitInput = z.infer<typeof updateForeignWorkPermitSchema>;
+
 export const importEmployeeRowSchema = z.object({
   fullName: z.string().min(1, "Họ tên không được để trống"),
   dob: z.string().refine((v) => /^\d{4}-\d{2}-\d{2}$/.test(v), "Ngày sinh không hợp lệ"),

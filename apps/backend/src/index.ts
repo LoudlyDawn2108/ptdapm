@@ -23,6 +23,7 @@ import { employeeRoutes } from "./modules/employees";
 import { employeeExportRoutes } from "./modules/employees-export";
 import { familyMemberRoutes } from "./modules/family-members";
 import { fileRoutes } from "./modules/files";
+import { foreignWorkPermitRoutes } from "./modules/foreign-work-permits";
 import { orgUnitRoutes } from "./modules/org-units";
 import { partyMembershipRoutes } from "./modules/party-memberships";
 import { previousJobRoutes } from "./modules/previous-jobs";
@@ -67,6 +68,7 @@ const app = new Elysia()
   .use(partyMembershipRoutes)
   .use(degreeRoutes)
   .use(certificationRoutes)
+  .use(foreignWorkPermitRoutes)
   .use(accountRoutes)
   .listen(env.PORT);
 

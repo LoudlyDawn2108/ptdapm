@@ -95,6 +95,7 @@ const formSchema = z.object({
       z.object({
         degreeName: z.string().min(1, "Bắt buộc"),
         school: z.string().min(1, "Bắt buộc"),
+        degreeFileId: z.string().optional(),
       }),
     )
     .default([]),
@@ -103,9 +104,11 @@ const formSchema = z.object({
       z.object({
         certName: z.string().min(1, "Bắt buộc"),
         issuedBy: z.string().optional(),
+        certFileId: z.string().optional(),
       }),
     )
     .default([]),
+  workPermitFileId: z.string().optional(),
   previousJobs: z
     .array(
       z.object({
@@ -149,14 +152,15 @@ function NewEmployeePage() {
       passportExpiry: "",
       workPermitNumber: "",
       workPermitExpiry: "",
+      workPermitFileId: "",
       educationLevel: "",
       academicRank: "",
       // Required sections — start with 1 empty row
       familyMembers: [{ relation: "", fullName: "" }],
       bankAccounts: [{ bankName: "", accountNo: "" }],
       partyMemberships: [{ organizationType: "", joinedOn: "", details: "" }],
-      degrees: [{ degreeName: "", school: "" }],
-      certificates: [{ certName: "", issuedBy: "" }],
+      degrees: [{ degreeName: "", school: "", degreeFileId: "" }],
+      certificates: [{ certName: "", issuedBy: "", certFileId: "" }],
       // Optional sections — start empty (hidden)
       previousJobs: [],
     },
@@ -246,6 +250,7 @@ function NewEmployeePage() {
             (api.api.employees({ employeeId }).degrees as any).post({
               degreeName: d.degreeName,
               school: d.school,
+              degreeFileId: d.degreeFileId || undefined,
             } as any),
           );
         }
@@ -257,8 +262,34 @@ function NewEmployeePage() {
             (api.api.employees({ employeeId }).certifications as any).post({
               certName: c.certName,
               issuedBy: c.issuedBy || undefined,
+              certFileId: c.certFileId || undefined,
             } as any),
           );
+        }
+
+        // foreign work permit
+        if (data.isForeigner) {
+          const hasWorkPermitData =
+            data.visaNumber ||
+            data.visaExpiry ||
+            data.passportNumber ||
+            data.passportExpiry ||
+            data.workPermitNumber ||
+            data.workPermitExpiry ||
+            data.workPermitFileId;
+          if (hasWorkPermitData) {
+            promises.push(
+              (api.api.employees({ employeeId })["foreign-work-permits"] as any).post({
+                visaNo: data.visaNumber || undefined,
+                visaExpiresOn: data.visaExpiry || undefined,
+                passportNo: data.passportNumber || undefined,
+                passportExpiresOn: data.passportExpiry || undefined,
+                workPermitNo: data.workPermitNumber || undefined,
+                workPermitExpiresOn: data.workPermitExpiry || undefined,
+                workPermitFileId: data.workPermitFileId || undefined,
+              } as any),
+            );
+          }
         }
 
         await Promise.all(promises);
@@ -407,6 +438,41 @@ function NewEmployeePage() {
                     label="Ngày hết hạn giấy phép lao động *"
                     type="date"
                   />
+                  <div className="col-span-2 flex items-center gap-3">
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      className="hidden"
+                      id="work-permit-pdf"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          const uploaded = await uploadFile(file);
+                          form.setValue("workPermitFileId", uploaded.id, {
+                            shouldDirty: true,
+                          });
+                          toast.success("Tải PDF giấy phép lao động thành công");
+                        } catch {
+                          toast.error("Tải PDF thất bại");
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      className={`h-8 rounded-md px-3 text-xs text-white ${
+                        form.watch("workPermitFileId")
+                          ? "bg-green-600 hover:bg-green-700"
+                          : "bg-[#3B5CCC] hover:bg-[#2F4FB8]"
+                      }`}
+                      onClick={() => document.getElementById("work-permit-pdf")?.click()}
+                    >
+                      <Upload className="mr-1 h-3.5 w-3.5" />
+                      {form.watch("workPermitFileId")
+                        ? "Đã tải PDF giấy phép"
+                        : "Tải PDF giấy phép lao động"}
+                    </Button>
+                  </div>
                 </div>
               )}
             </section>
@@ -575,19 +641,45 @@ function NewEmployeePage() {
             {/* ═══════ THÔNG TIN BẰNG CẤP ═══════ */}
             <DynamicSection
               title="THÔNG TIN BẰNG CẤP"
-              onAdd={() => degreeFields.append({ degreeName: "", school: "" })}
+              onAdd={() => degreeFields.append({ degreeName: "", school: "", degreeFileId: "" })}
             >
               {degreeFields.fields.map((field, index) => (
                 <div key={field.id} className="grid grid-cols-[1fr_1fr_auto_auto] items-end gap-3">
                   <FI form={form} name={`degrees.${index}.degreeName`} label="Tên bằng *" />
                   <FI form={form} name={`degrees.${index}.school`} label="Trường/Nơi cấp *" />
-                  <Button
-                    type="button"
-                    className="h-8 rounded-md bg-[#3B5CCC] px-3 text-xs text-white hover:bg-[#2F4FB8]"
-                  >
-                    <Upload className="mr-1 h-3.5 w-3.5" />
-                    Tải PDF
-                  </Button>
+                  <div>
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      className="hidden"
+                      id={`degree-pdf-${index}`}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          const uploaded = await uploadFile(file);
+                          form.setValue(`degrees.${index}.degreeFileId`, uploaded.id, {
+                            shouldDirty: true,
+                          });
+                          toast.success("Tải PDF bằng cấp thành công");
+                        } catch {
+                          toast.error("Tải PDF thất bại");
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      className={`h-8 rounded-md px-3 text-xs text-white ${
+                        form.watch(`degrees.${index}.degreeFileId`)
+                          ? "bg-green-600 hover:bg-green-700"
+                          : "bg-[#3B5CCC] hover:bg-[#2F4FB8]"
+                      }`}
+                      onClick={() => document.getElementById(`degree-pdf-${index}`)?.click()}
+                    >
+                      <Upload className="mr-1 h-3.5 w-3.5" />
+                      {form.watch(`degrees.${index}.degreeFileId`) ? "Đã tải" : "Tải PDF"}
+                    </Button>
+                  </div>
                   <RemoveBtn onClick={() => degreeFields.remove(index)} />
                 </div>
               ))}
@@ -596,19 +688,45 @@ function NewEmployeePage() {
             {/* ═══════ THÔNG TIN CHỨNG CHỈ ═══════ */}
             <DynamicSection
               title="THÔNG TIN CHỨNG CHỈ"
-              onAdd={() => certFields.append({ certName: "", issuedBy: "" })}
+              onAdd={() => certFields.append({ certName: "", issuedBy: "", certFileId: "" })}
             >
               {certFields.fields.map((field, index) => (
                 <div key={field.id} className="grid grid-cols-[1fr_1fr_auto_auto] items-end gap-3">
                   <FI form={form} name={`certificates.${index}.certName`} label="Tên chứng chỉ *" />
                   <FI form={form} name={`certificates.${index}.issuedBy`} label="Nơi cấp" />
-                  <Button
-                    type="button"
-                    className="h-8 rounded-md bg-[#3B5CCC] px-3 text-xs text-white hover:bg-[#2F4FB8]"
-                  >
-                    <Upload className="mr-1 h-3.5 w-3.5" />
-                    Tải PDF
-                  </Button>
+                  <div>
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      className="hidden"
+                      id={`cert-pdf-${index}`}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          const uploaded = await uploadFile(file);
+                          form.setValue(`certificates.${index}.certFileId`, uploaded.id, {
+                            shouldDirty: true,
+                          });
+                          toast.success("Tải PDF chứng chỉ thành công");
+                        } catch {
+                          toast.error("Tải PDF thất bại");
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      className={`h-8 rounded-md px-3 text-xs text-white ${
+                        form.watch(`certificates.${index}.certFileId`)
+                          ? "bg-green-600 hover:bg-green-700"
+                          : "bg-[#3B5CCC] hover:bg-[#2F4FB8]"
+                      }`}
+                      onClick={() => document.getElementById(`cert-pdf-${index}`)?.click()}
+                    >
+                      <Upload className="mr-1 h-3.5 w-3.5" />
+                      {form.watch(`certificates.${index}.certFileId`) ? "Đã tải" : "Tải PDF"}
+                    </Button>
+                  </div>
                   <RemoveBtn onClick={() => certFields.remove(index)} />
                 </div>
               ))}

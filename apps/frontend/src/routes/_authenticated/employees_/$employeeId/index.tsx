@@ -76,25 +76,34 @@ function GeneralInfoTab() {
 
       {/* ── Rows 5–6: Visa & Hộ chiếu ── */}
       <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-        <ReadOnlyField label="Số Visa" value={emp.visaNumber} />
-        <ReadOnlyField label="Ngày hết hạn Visa" value={formatDate(emp.visaExpiry)} />
-        <ReadOnlyField label="Số Hộ chiếu" value={emp.passportNumber} />
-        <ReadOnlyField label="Ngày hết hạn Hộ chiếu" value={formatDate(emp.passportExpiry)} />
+        <ReadOnlyField label="Số Visa" value={permit?.visaNo} />
+        <ReadOnlyField label="Ngày hết hạn Visa" value={formatDate(permit?.visaExpiresOn)} />
+        <ReadOnlyField label="Số Hộ chiếu" value={permit?.passportNo} />
+        <ReadOnlyField
+          label="Ngày hết hạn Hộ chiếu"
+          value={formatDate(permit?.passportExpiresOn)}
+        />
       </div>
 
       {/* ── Row 7: Giấy phép lao động + Xem PDF ── */}
       <div className="flex items-end gap-6">
         <ReadOnlyField
           label="Số giấy phép lao động"
-          value={permit?.permitNumber}
+          value={permit?.workPermitNo}
           className="flex-1"
         />
         <ReadOnlyField
           label="Ngày hết hạn giấy phép lao động"
-          value={formatDate(permit?.expiryDate)}
+          value={formatDate(permit?.workPermitExpiresOn)}
           className="flex-1"
         />
-        <Button className="gap-2 shrink-0">
+        <Button
+          className="gap-2 shrink-0"
+          disabled={!permit?.workPermitFileId}
+          onClick={() =>
+            permit?.workPermitFileId && window.open(getFileUrl(permit.workPermitFileId), "_blank")
+          }
+        >
           <Eye className="h-4 w-4" />
           Xem PDF
         </Button>

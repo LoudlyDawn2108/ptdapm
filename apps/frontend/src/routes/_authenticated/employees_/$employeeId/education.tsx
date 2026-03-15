@@ -1,7 +1,7 @@
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { ReadOnlyField, SectionTitle } from "@/components/shared/read-only-field";
 import { Button } from "@/components/ui/button";
-import { employeeDetailOptions } from "@/features/employees/api";
+import { employeeDetailOptions, getFileUrl } from "@/features/employees/api";
 import { AcademicRank, EducationLevel } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -46,7 +46,12 @@ function EducationTab() {
             >
               <ReadOnlyField label="Tên bằng" value={d.degreeName} />
               <ReadOnlyField label="Nơi cấp" value={d.school} />
-              <Button size="default" className="md:self-end">
+              <Button
+                size="default"
+                className="md:self-end"
+                disabled={!d.degreeFileId}
+                onClick={() => d.degreeFileId && window.open(getFileUrl(d.degreeFileId), "_blank")}
+              >
                 <Eye data-icon="inline-start" />
                 Xem PDF
               </Button>
@@ -66,9 +71,14 @@ function EducationTab() {
               key={c.id ?? i}
               className="grid grid-cols-1 items-end gap-4 md:grid-cols-[2fr_1fr_auto]"
             >
-              <ReadOnlyField label="Tên chứng chỉ" value={c.certificateName} />
+              <ReadOnlyField label="Tên chứng chỉ" value={c.certName} />
               <ReadOnlyField label="Nơi cấp" value={c.issuedBy} />
-              <Button size="default" className="md:self-end">
+              <Button
+                size="default"
+                className="md:self-end"
+                disabled={!c.certFileId}
+                onClick={() => c.certFileId && window.open(getFileUrl(c.certFileId), "_blank")}
+              >
                 <Eye data-icon="inline-start" />
                 Xem PDF
               </Button>

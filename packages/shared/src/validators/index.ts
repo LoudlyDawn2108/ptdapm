@@ -84,6 +84,10 @@ export {
   type CreateEmployeeCertificationInput,
   updateEmployeeCertificationSchema,
   type UpdateEmployeeCertificationInput,
+  createForeignWorkPermitSchema,
+  type CreateForeignWorkPermitInput,
+  updateForeignWorkPermitSchema,
+  type UpdateForeignWorkPermitInput,
   importEmployeeRowSchema,
   type ImportEmployeeRowInput,
 } from "./employees";
