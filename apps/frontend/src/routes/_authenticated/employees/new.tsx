@@ -17,8 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCreateEmployee } from "@/features/employees/api";
-import { applyFieldErrors } from "@/lib/error-handler";
+import { uploadFile, useCreateEmployee } from "@/features/employees/api";
+import { ApiResponseError, applyFieldErrors } from "@/lib/error-handler";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AcademicRank,
@@ -53,6 +53,7 @@ const formSchema = z.object({
   taxCode: z.string().optional(),
   socialInsuranceNo: z.string().optional(),
   healthInsuranceNo: z.string().optional(),
+  portraitFileId: z.string().optional(),
   isForeigner: z.boolean().default(false),
   visaNumber: z.string().optional(),
   visaExpiry: z.string().optional(),
@@ -116,7 +117,8 @@ const formSchema = z.object({
     .default([]),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type FormInput = z.input<typeof formSchema>;
+type FormValues = z.output<typeof formSchema>;
 
 function NewEmployeePage() {
   const navigate = useNavigate();
@@ -125,7 +127,7 @@ function NewEmployeePage() {
   const [showPreviousJobs, setShowPreviousJobs] = useState(false);
   const [portraitPreview, setPortraitPreview] = useState<string | null>(null);
 
-  const form = useForm<FormValues>({
+  const form = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       fullName: "",
@@ -139,6 +141,7 @@ function NewEmployeePage() {
       taxCode: "",
       socialInsuranceNo: "",
       healthInsuranceNo: "",
+      portraitFileId: "",
       isForeigner: false,
       visaNumber: "",
       visaExpiry: "",
@@ -181,6 +184,7 @@ function NewEmployeePage() {
         taxCode: data.taxCode || undefined,
         socialInsuranceNo: data.socialInsuranceNo || undefined,
         healthInsuranceNo: data.healthInsuranceNo || undefined,
+        portraitFileId: data.portraitFileId || undefined,
         isForeigner: data.isForeigner,
         educationLevel: data.educationLevel,
         academicRank: data.academicRank,
@@ -193,30 +197,30 @@ function NewEmployeePage() {
       if (employeeId) {
         const promises: Promise<unknown>[] = [];
 
-        for (const fm of data.familyMembers) {
+        for (const fm of data.familyMembers ?? []) {
           if (!fm.fullName || !fm.relation) continue;
           promises.push(
-            api.api.employees({ employeeId })["family-members"].post({
+            (api.api.employees({ employeeId })["family-members"] as any).post({
               relation: fm.relation as any,
               fullName: fm.fullName,
             } as any),
           );
         }
 
-        for (const ba of data.bankAccounts) {
+        for (const ba of data.bankAccounts ?? []) {
           if (!ba.accountNo || !ba.bankName) continue;
           promises.push(
-            api.api.employees({ employeeId })["bank-accounts"].post({
+            (api.api.employees({ employeeId })["bank-accounts"] as any).post({
               bankName: ba.bankName,
               accountNo: ba.accountNo,
             } as any),
           );
         }
 
-        for (const pm of data.partyMemberships) {
+        for (const pm of data.partyMemberships ?? []) {
           if (!pm.organizationType || !pm.joinedOn || !pm.details) continue;
           promises.push(
-            api.api.employees({ employeeId })["party-memberships"].post({
+            (api.api.employees({ employeeId })["party-memberships"] as any).post({
               organizationType: pm.organizationType as any,
               joinedOn: pm.joinedOn,
               details: pm.details,
@@ -224,10 +228,10 @@ function NewEmployeePage() {
           );
         }
 
-        for (const pj of data.previousJobs) {
+        for (const pj of data.previousJobs ?? []) {
           if (!pj.workplace || !pj.startedOn || !pj.endedOn) continue;
           promises.push(
-            api.api.employees({ employeeId })["previous-jobs"].post({
+            (api.api.employees({ employeeId })["previous-jobs"] as any).post({
               workplace: pj.workplace,
               startedOn: pj.startedOn,
               endedOn: pj.endedOn,
@@ -235,17 +239,37 @@ function NewEmployeePage() {
           );
         }
 
-        // degrees and certificates don't have backend CRUD routes yet, skip
+        // degrees
+        for (const d of data.degrees ?? []) {
+          if (!d.degreeName || !d.school) continue;
+          promises.push(
+            (api.api.employees({ employeeId }).degrees as any).post({
+              degreeName: d.degreeName,
+              school: d.school,
+            } as any),
+          );
+        }
+
+        // certificates
+        for (const c of data.certificates ?? []) {
+          if (!c.certName) continue;
+          promises.push(
+            (api.api.employees({ employeeId }).certifications as any).post({
+              certName: c.certName,
+              issuedBy: c.issuedBy || undefined,
+            } as any),
+          );
+        }
+
         await Promise.all(promises);
       }
 
       toast.success("Thêm nhân sự thành công");
       navigate({ to: "/employees" });
-    } catch (error: any) {
-      if (error?.type === "field" && error?.fields) {
-        applyFieldErrors(form, error.fields);
-      } else {
-        toast.error(error?.error || "Có lỗi xảy ra");
+    } catch (error: unknown) {
+      applyFieldErrors(form.setError, error);
+      if (!(error instanceof ApiResponseError)) {
+        toast.error("Có lỗi xảy ra");
       }
     }
   };
@@ -286,9 +310,30 @@ function NewEmployeePage() {
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
                       setPortraitPreview(file ? URL.createObjectURL(file) : null);
+
+                      if (!file) {
+                        form.setValue("portraitFileId", "", {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        });
+                        return;
+                      }
+
+                      try {
+                        const uploadedFile = await uploadFile(file);
+                        form.setValue("portraitFileId", uploadedFile.id, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        });
+                      } catch {
+                        form.setValue("portraitFileId", "", {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        });
+                      }
                     }}
                   />
                 </div>
@@ -568,8 +613,6 @@ function NewEmployeePage() {
                 </div>
               ))}
             </DynamicSection>
-
-            
 
             {/* ═══════ FOOTER ═══════ */}
             <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">

@@ -8,6 +8,59 @@ import type {
 } from "@hrms/shared";
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
+export type UploadedFile = {
+  id: string;
+  originalName: string;
+  mimeType: string | null;
+};
+
+const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+
+export function getFileUrl(fileId: string): string {
+  return `${apiBaseUrl}/api/files/${fileId}`;
+}
+
+function isUploadedFileResponse(value: unknown): value is { data: UploadedFile } {
+  if (!value || typeof value !== "object" || !("data" in value)) {
+    return false;
+  }
+
+  const payload = value.data;
+  return (
+    !!payload && typeof payload === "object" && "id" in payload && typeof payload.id === "string"
+  );
+}
+
+export async function uploadFile(file: File): Promise<UploadedFile> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl}/api/files`, {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+  } catch {
+    throw handleApiError({ error: "Không thể tải ảnh lên" });
+  }
+
+  const payload: unknown = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw handleApiError(
+      (payload ?? { error: "Tải ảnh lên thất bại" }) as Parameters<typeof handleApiError>[0],
+    );
+  }
+
+  if (!isUploadedFileResponse(payload)) {
+    throw handleApiError({ error: "Phản hồi tải ảnh không hợp lệ" });
+  }
+
+  return payload.data;
+}
+
 // ──────────────────────────────────────────
 // Keys
 // ──────────────────────────────────────────
@@ -208,6 +261,40 @@ export function useCreatePartyMembership() {
       const { data, error } = await api.api
         .employees({ employeeId })
         ["party-memberships"].post(input as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useCreateDegree() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      ...input
+    }: { employeeId: string; degreeName: string; school: string }) => {
+      const { data, error } = await api.api.employees({ employeeId }).degrees.post(input as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useCreateCertification() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      ...input
+    }: { employeeId: string; certName: string; issuedBy?: string }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        .certifications.post(input as any);
       if (error) throw handleApiError(error);
       return data;
     },

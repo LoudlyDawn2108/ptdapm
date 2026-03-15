@@ -1,7 +1,7 @@
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { ReadOnlyField } from "@/components/shared/read-only-field";
 import { Button } from "@/components/ui/button";
-import { employeeDetailOptions } from "@/features/employees/api";
+import { employeeDetailOptions, getFileUrl } from "@/features/employees/api";
 import { formatDate } from "@/lib/date-utils";
 import { Gender } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
@@ -35,9 +35,16 @@ function GeneralInfoTab() {
     <div className="rounded-xl border bg-white p-6 space-y-5">
       {/* ── Photo + Rows 1–2 ── */}
       <div className="flex gap-6">
-        {/* Photo placeholder */}
-        <div className="shrink-0 flex items-center justify-center w-[120px] h-[120px] rounded-lg bg-muted/60">
-          <Plus className="h-8 w-8 text-white" />
+        <div className="shrink-0 flex items-center justify-center w-[120px] h-[120px] rounded-lg bg-muted/60 overflow-hidden">
+          {emp.portraitFileId ? (
+            <img
+              src={getFileUrl(emp.portraitFileId)}
+              alt={emp.fullName}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <Plus className="h-8 w-8 text-white" />
+          )}
         </div>
 
         {/* Rows 1-2: 3-col grid beside photo */}

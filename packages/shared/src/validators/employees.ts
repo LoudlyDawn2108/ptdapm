@@ -234,6 +234,36 @@ export const updateEmployeeAllowanceSchema = createEmployeeAllowanceSchema.parti
 
 export type UpdateEmployeeAllowanceInput = z.infer<typeof updateEmployeeAllowanceSchema>;
 
+export const createEmployeeDegreeSchema = z.object({
+  degreeName: z
+    .string({ error: "Tên bằng không được để trống" })
+    .min(1, "Tên bằng không được để trống"),
+  school: z
+    .string({ error: "Trường/Nơi cấp không được để trống" })
+    .min(1, "Trường/Nơi cấp không được để trống"),
+  degreeFileId: optionalUuid("File bằng không hợp lệ"),
+});
+
+export type CreateEmployeeDegreeInput = z.infer<typeof createEmployeeDegreeSchema>;
+
+export const updateEmployeeDegreeSchema = createEmployeeDegreeSchema.partial();
+
+export type UpdateEmployeeDegreeInput = z.infer<typeof updateEmployeeDegreeSchema>;
+
+export const createEmployeeCertificationSchema = z.object({
+  certName: z
+    .string({ error: "Tên chứng chỉ không được để trống" })
+    .min(1, "Tên chứng chỉ không được để trống"),
+  issuedBy: optionalText(),
+  certFileId: optionalUuid("File chứng chỉ không hợp lệ"),
+});
+
+export type CreateEmployeeCertificationInput = z.infer<typeof createEmployeeCertificationSchema>;
+
+export const updateEmployeeCertificationSchema = createEmployeeCertificationSchema.partial();
+
+export type UpdateEmployeeCertificationInput = z.infer<typeof updateEmployeeCertificationSchema>;
+
 export const importEmployeeRowSchema = z.object({
   fullName: z.string().min(1, "Họ tên không được để trống"),
   dob: z.string().refine((v) => /^\d{4}-\d{2}-\d{2}$/.test(v), "Ngày sinh không hợp lệ"),

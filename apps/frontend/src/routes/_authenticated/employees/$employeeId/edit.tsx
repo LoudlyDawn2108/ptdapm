@@ -19,13 +19,17 @@ import {
 } from "@/components/ui/select";
 import {
   employeeDetailOptions,
+  getFileUrl,
+  uploadFile,
   useCreateBankAccount,
+  useCreateCertification,
+  useCreateDegree,
   useCreateFamilyMember,
   useCreatePartyMembership,
   useCreatePreviousJob,
   useUpdateEmployee,
 } from "@/features/employees/api";
-import { applyFieldErrors } from "@/lib/error-handler";
+import { ApiResponseError, applyFieldErrors } from "@/lib/error-handler";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AcademicRank,
@@ -38,8 +42,8 @@ import {
 } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Pencil, Plus, Save, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ChevronDown, Minus, Pencil, Plus, Save, Upload } from "lucide-react";
+import { useState } from "react";
 import { type SubmitHandler, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -151,165 +155,7 @@ export const Route = createFileRoute("/_authenticated/employees/$employeeId/edit
 function EditEmployeePage() {
   const { employeeId } = Route.useParams();
   const navigate = useNavigate();
-  const updateMutation = useUpdateEmployee();
-  const createFamilyMemberMutation = useCreateFamilyMember();
-  const createBankAccountMutation = useCreateBankAccount();
-  const createPreviousJobMutation = useCreatePreviousJob();
-  const createPartyMembershipMutation = useCreatePartyMembership();
-  const [portraitPreview, setPortraitPreview] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-
   const { data, isLoading } = useQuery(employeeDetailOptions(employeeId));
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(editFormSchema),
-    defaultValues: {
-      isForeigner: false,
-      familyMembers: [],
-      bankAccounts: [],
-      previousJobs: [],
-      partyMemberships: [],
-      degrees: [],
-      certificates: [],
-    },
-  });
-
-  const familyFields = useFieldArray({ control: form.control, name: "familyMembers" });
-  const bankFields = useFieldArray({ control: form.control, name: "bankAccounts" });
-  const jobFields = useFieldArray({ control: form.control, name: "previousJobs" });
-  const partyFields = useFieldArray({ control: form.control, name: "partyMemberships" });
-  const degreeFields = useFieldArray({ control: form.control, name: "degrees" });
-  const certFields = useFieldArray({ control: form.control, name: "certificates" });
-
-  /* ── Populate form with aggregate data ── */
-  useEffect(() => {
-    if (!data?.data) return;
-    const agg = data.data as any;
-    const emp = agg.employee ?? agg;
-    const familyMembers = agg.familyMembers ?? [];
-    const bankAccounts = agg.bankAccounts ?? [];
-    const previousJobs = agg.previousJobs ?? [];
-    const partyMemberships = agg.partyMemberships ?? [];
-    const degrees = agg.degrees ?? [];
-    const certifications = agg.certifications ?? [];
-
-    form.reset({
-      // Flat fields
-      fullName: emp.fullName ?? "",
-      dob: typeof emp.dob === "string" ? emp.dob.split("T")[0] : "",
-      gender: emp.gender ?? "",
-      nationalId: emp.nationalId ?? "",
-      hometown: emp.hometown ?? "",
-      address: emp.address ?? "",
-      taxCode: emp.taxCode ?? "",
-      socialInsuranceNo: emp.socialInsuranceNo ?? "",
-      healthInsuranceNo: emp.healthInsuranceNo ?? "",
-      email: emp.email ?? "",
-      phone: emp.phone ?? "",
-      isForeigner: emp.isForeigner ?? false,
-      educationLevel: emp.educationLevel ?? "",
-      academicRank: emp.academicRank ?? "",
-      portraitFileId: emp.portraitFileId ?? "",
-      // Sub-entity arrays
-      familyMembers: familyMembers.map((fm: any) => ({
-        id: fm.id,
-        relation: fm.relation ?? "",
-        fullName: fm.fullName ?? "",
-      })),
-      bankAccounts: bankAccounts.map((ba: any) => ({
-        id: ba.id,
-        bankName: ba.bankName ?? "",
-        accountNo: ba.accountNo ?? "",
-      })),
-      previousJobs: previousJobs.map((pj: any) => ({
-        id: pj.id,
-        workplace: pj.workplace ?? "",
-        startedOn: pj.startedOn ? String(pj.startedOn).split("T")[0] : "",
-        endedOn: pj.endedOn ? String(pj.endedOn).split("T")[0] : "",
-      })),
-      partyMemberships: partyMemberships.map((pm: any) => ({
-        id: pm.id,
-        organizationType: pm.organizationType ?? "",
-        joinedOn: pm.joinedOn ? String(pm.joinedOn).split("T")[0] : "",
-        details: pm.details ?? "",
-      })),
-      degrees: degrees.map((d: any) => ({
-        id: d.id,
-        degreeName: d.degreeName ?? "",
-        school: d.school ?? "",
-      })),
-      certificates: (certifications ?? []).map((c: any) => ({
-        id: c.id,
-        certName: c.certName ?? "",
-        issuedBy: c.issuedBy ?? "",
-      })),
-    });
-  }, [data, form]);
-
-  /* ── Submit: update employee + create new sub-entities ── */
-  const onSubmit: SubmitHandler<FormValues> = async (rawFormData) => {
-    try {
-      setIsSaving(true);
-
-      const formData = editFormSchema.parse(rawFormData);
-
-      // Phase 1: Update flat employee fields
-      const {
-        familyMembers,
-        bankAccounts,
-        previousJobs,
-        partyMemberships,
-        degrees,
-        certificates,
-        ...employeeData
-      } = formData;
-
-      const cleanedEmployeeData = Object.fromEntries(
-        Object.entries(employeeData).filter(([, value]) => value !== ""),
-      ) as UpdateEmployeeInput;
-
-      await updateMutation.mutateAsync({
-        id: employeeId,
-        ...cleanedEmployeeData,
-      });
-
-      // Phase 2: Create new sub-entities (those without id)
-      const promises: Promise<unknown>[] = [];
-
-      for (const fm of familyMembers.filter((x) => !x.id)) {
-        const { id: _id, ...body } = fm;
-        promises.push(createFamilyMemberMutation.mutateAsync({ employeeId, ...body }));
-      }
-      for (const ba of bankAccounts.filter((x) => !x.id)) {
-        const { id: _id, ...body } = ba;
-        promises.push(createBankAccountMutation.mutateAsync({ employeeId, ...body }));
-      }
-      for (const pj of previousJobs.filter((x) => !x.id)) {
-        const { id: _id, ...body } = pj;
-        promises.push(createPreviousJobMutation.mutateAsync({ employeeId, ...body }));
-      }
-      for (const pm of partyMemberships.filter((x) => !x.id)) {
-        const { id: _id, ...body } = pm;
-        promises.push(createPartyMembershipMutation.mutateAsync({ employeeId, ...body }));
-      }
-
-      await Promise.all(promises);
-
-      toast.success("Cập nhật hồ sơ thành công");
-      navigate({
-        to: "/employees/$employeeId",
-        params: { employeeId },
-      });
-    } catch (error: unknown) {
-      if (error instanceof Error && "fields" in error) {
-        applyFieldErrors(form.setError, error);
-      } else {
-        toast.error("Có lỗi xảy ra");
-      }
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -342,6 +188,181 @@ function EditEmployeePage() {
       </div>
     );
   }
+
+  return <EditEmployeeFormContent key={employeeId} employeeId={employeeId} aggregate={agg} />;
+}
+
+function EditEmployeeFormContent({
+  employeeId,
+  aggregate,
+}: {
+  employeeId: string;
+  aggregate: any;
+}) {
+  const navigate = useNavigate();
+  const updateMutation = useUpdateEmployee();
+  const createFamilyMemberMutation = useCreateFamilyMember();
+  const createBankAccountMutation = useCreateBankAccount();
+  const createPreviousJobMutation = useCreatePreviousJob();
+  const createPartyMembershipMutation = useCreatePartyMembership();
+  const createDegreeMutation = useCreateDegree();
+  const createCertificationMutation = useCreateCertification();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const emp = aggregate.employee ?? aggregate;
+
+  const [portraitPreview, setPortraitPreview] = useState<string | null>(
+    emp.portraitFileId ? getFileUrl(emp.portraitFileId) : null,
+  );
+
+  const familyMembersData = aggregate.familyMembers ?? [];
+  const bankAccountsData = aggregate.bankAccounts ?? [];
+  const previousJobsData = aggregate.previousJobs ?? [];
+  const partyMembershipsData = aggregate.partyMemberships ?? [];
+  const degreesData = aggregate.degrees ?? [];
+  const certificationsData = aggregate.certifications ?? [];
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(editFormSchema),
+    defaultValues: {
+      fullName: emp.fullName ?? "",
+      gender: emp.gender ?? "",
+      dob: typeof emp.dob === "string" ? emp.dob.split("T")[0] : "",
+      hometown: emp.hometown ?? "",
+      email: emp.email ?? "",
+      phone: emp.phone ?? "",
+      address: emp.address ?? "",
+      nationalId: emp.nationalId ?? "",
+      taxCode: emp.taxCode ?? "",
+      socialInsuranceNo: emp.socialInsuranceNo ?? "",
+      healthInsuranceNo: emp.healthInsuranceNo ?? "",
+      isForeigner: emp.isForeigner ?? false,
+      educationLevel: emp.educationLevel ?? "",
+      academicRank: emp.academicRank ?? "",
+      portraitFileId: emp.portraitFileId ?? "",
+      familyMembers: familyMembersData.map((fm: any) => ({
+        id: fm.id,
+        relation: fm.relation ?? "",
+        fullName: fm.fullName ?? "",
+      })),
+      bankAccounts: bankAccountsData.map((ba: any) => ({
+        id: ba.id,
+        bankName: ba.bankName ?? "",
+        accountNo: ba.accountNo ?? "",
+      })),
+      previousJobs: previousJobsData.map((pj: any) => ({
+        id: pj.id,
+        workplace: pj.workplace ?? "",
+        startedOn: pj.startedOn ? String(pj.startedOn).split("T")[0] : "",
+        endedOn: pj.endedOn ? String(pj.endedOn).split("T")[0] : "",
+      })),
+      partyMemberships: partyMembershipsData.map((pm: any) => ({
+        id: pm.id,
+        organizationType: pm.organizationType ?? "",
+        joinedOn: pm.joinedOn ? String(pm.joinedOn).split("T")[0] : "",
+        details: pm.details ?? "",
+      })),
+      degrees: degreesData.map((d: any) => ({
+        id: d.id,
+        degreeName: d.degreeName ?? "",
+        school: d.school ?? "",
+      })),
+      certificates: certificationsData.map((c: any) => ({
+        id: c.id,
+        certName: c.certName ?? "",
+        issuedBy: c.issuedBy ?? "",
+      })),
+    },
+  });
+
+  const familyFields = useFieldArray({ control: form.control, name: "familyMembers" });
+  const bankFields = useFieldArray({ control: form.control, name: "bankAccounts" });
+  const jobFields = useFieldArray({ control: form.control, name: "previousJobs" });
+  const partyFields = useFieldArray({ control: form.control, name: "partyMemberships" });
+  const degreeFields = useFieldArray({ control: form.control, name: "degrees" });
+  const certFields = useFieldArray({ control: form.control, name: "certificates" });
+
+  /* ── Submit: update employee + create new sub-entities ── */
+  const onSubmit: SubmitHandler<FormValues> = async (rawFormData) => {
+    try {
+      setIsSaving(true);
+
+      const formData = editFormSchema.parse(rawFormData);
+
+      // Phase 1: Update flat employee fields
+      const {
+        familyMembers,
+        bankAccounts,
+        previousJobs,
+        partyMemberships,
+        degrees,
+        certificates,
+        ...employeeData
+      } = formData;
+
+      // Only strip truly optional fields that are empty — keep required fields as-is
+      const optionalFields = new Set([
+        "taxCode",
+        "socialInsuranceNo",
+        "healthInsuranceNo",
+        "academicRank",
+        "portraitFileId",
+      ]);
+      const cleanedEmployeeData = Object.fromEntries(
+        Object.entries(employeeData).filter(
+          ([key, value]) => !(optionalFields.has(key) && value === ""),
+        ),
+      ) as UpdateEmployeeInput;
+
+      await updateMutation.mutateAsync({
+        id: employeeId,
+        ...cleanedEmployeeData,
+      });
+
+      // Phase 2: Create new sub-entities (those without id)
+      const promises: Promise<unknown>[] = [];
+
+      for (const fm of familyMembers.filter((x) => !x.id)) {
+        const { id: _id, ...body } = fm;
+        promises.push(createFamilyMemberMutation.mutateAsync({ employeeId, ...body }));
+      }
+      for (const ba of bankAccounts.filter((x) => !x.id)) {
+        const { id: _id, ...body } = ba;
+        promises.push(createBankAccountMutation.mutateAsync({ employeeId, ...body }));
+      }
+      for (const pj of previousJobs.filter((x) => !x.id)) {
+        const { id: _id, ...body } = pj;
+        promises.push(createPreviousJobMutation.mutateAsync({ employeeId, ...body }));
+      }
+      for (const pm of partyMemberships.filter((x) => !x.id)) {
+        const { id: _id, ...body } = pm;
+        promises.push(createPartyMembershipMutation.mutateAsync({ employeeId, ...body }));
+      }
+      for (const d of degrees.filter((x) => !x.id)) {
+        const { id: _id, ...body } = d;
+        promises.push(createDegreeMutation.mutateAsync({ employeeId, ...body }));
+      }
+      for (const c of certificates.filter((x) => !x.id)) {
+        const { id: _id, ...body } = c;
+        promises.push(createCertificationMutation.mutateAsync({ employeeId, ...body }));
+      }
+
+      await Promise.all(promises);
+
+      toast.success("Cập nhật hồ sơ thành công");
+      navigate({
+        to: "/employees/$employeeId",
+        params: { employeeId },
+      });
+    } catch (error: unknown) {
+      applyFieldErrors(form.setError, error);
+      if (!(error instanceof ApiResponseError)) {
+        toast.error("Có lỗi xảy ra");
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -379,9 +400,30 @@ function EditEmployeePage() {
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
                       setPortraitPreview(file ? URL.createObjectURL(file) : null);
+
+                      if (!file) {
+                        form.setValue("portraitFileId", "", {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        });
+                        return;
+                      }
+
+                      try {
+                        const uploadedFile = await uploadFile(file);
+                        form.setValue("portraitFileId", uploadedFile.id, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        });
+                      } catch {
+                        form.setValue("portraitFileId", "", {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        });
+                      }
                     }}
                   />
                 </div>
@@ -433,6 +475,138 @@ function EditEmployeePage() {
               </div>
             </section>
 
+            {/* ── THÔNG TIN GIA ĐÌNH ── */}
+            <DynamicSection
+              title="THÔNG TIN GIA ĐÌNH"
+              onAdd={() =>
+                familyFields.append({
+                  relation: "",
+                  fullName: "",
+                })
+              }
+            >
+              {familyFields.fields.map((field, index) => (
+                <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] items-end gap-3">
+                  <FormFieldSelect
+                    form={form}
+                    name={`familyMembers.${index}.relation`}
+                    label="Mối quan hệ *"
+                    items={enumToSortedList(FamilyRelation)}
+                  />
+                  <FI form={form} name={`familyMembers.${index}.fullName`} label="Họ tên *" />
+                  <RemoveBtn onClick={() => familyFields.remove(index)} />
+                </div>
+              ))}
+            </DynamicSection>
+
+            {/* ── LỊCH SỬ CÔNG TÁC ── */}
+            <section>
+              <div className="flex items-center justify-between">
+                <SectionHeader title="LỊCH SỬ CÔNG TÁC" compact />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 gap-1 rounded-full bg-[#E9EEFF] px-2 text-[11px] text-[#3B5CCC] hover:bg-[#DCE6FF]"
+                  onClick={() => {
+                    if (jobFields.fields.length === 0) {
+                      jobFields.append({ workplace: "", startedOn: "", endedOn: "" });
+                    }
+                  }}
+                >
+                  <ChevronDown
+                    className={`h-3 w-3 transition-transform ${jobFields.fields.length > 0 ? "rotate-180" : ""}`}
+                  />
+                  {jobFields.fields.length > 0 ? "Đang hiển thị" : "Mở rộng"}
+                </Button>
+              </div>
+              {jobFields.fields.length > 0 && (
+                <div className="mt-3 space-y-3">
+                  {jobFields.fields.map((field, index) => (
+                    <div
+                      key={field.id}
+                      className="grid grid-cols-[1fr_140px_140px_auto] items-end gap-3"
+                    >
+                      <FI
+                        form={form}
+                        name={`previousJobs.${index}.workplace`}
+                        label="Tên nơi công tác *"
+                      />
+                      <FI
+                        form={form}
+                        name={`previousJobs.${index}.startedOn`}
+                        label="Từ ngày *"
+                        type="date"
+                      />
+                      <FI
+                        form={form}
+                        name={`previousJobs.${index}.endedOn`}
+                        label="Đến ngày *"
+                        type="date"
+                      />
+                      <RemoveBtn onClick={() => jobFields.remove(index)} />
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1 rounded-md text-xs text-[#3B5CCC] hover:bg-[#E9EEFF]"
+                    onClick={() => jobFields.append({ workplace: "", startedOn: "", endedOn: "" })}
+                  >
+                    <Plus className="h-3 w-3" />
+                    Thêm dòng
+                  </Button>
+                </div>
+              )}
+            </section>
+
+            {/* ── THÔNG TIN NGÂN HÀNG ── */}
+            <DynamicSection
+              title="THÔNG TIN NGÂN HÀNG"
+              onAdd={() => bankFields.append({ bankName: "", accountNo: "" })}
+            >
+              {bankFields.fields.map((field, index) => (
+                <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] items-end gap-3">
+                  <FI form={form} name={`bankAccounts.${index}.bankName`} label="Tên ngân hàng *" />
+                  <FI form={form} name={`bankAccounts.${index}.accountNo`} label="Số tài khoản *" />
+                  <RemoveBtn onClick={() => bankFields.remove(index)} />
+                </div>
+              ))}
+            </DynamicSection>
+
+            {/* ── THÔNG TIN ĐOÀN/ĐẢNG ── */}
+            <DynamicSection
+              title="THÔNG TIN ĐOÀN/ĐẢNG"
+              onAdd={() => partyFields.append({ organizationType: "", joinedOn: "", details: "" })}
+            >
+              {partyFields.fields.map((field, index) => (
+                <div
+                  key={field.id}
+                  className="grid grid-cols-[160px_140px_1fr_auto] items-end gap-3"
+                >
+                  <FormFieldSelect
+                    form={form}
+                    name={`partyMemberships.${index}.organizationType`}
+                    label="Loại tổ chức *"
+                    items={enumToSortedList(PartyOrgType)}
+                  />
+                  <FI
+                    form={form}
+                    name={`partyMemberships.${index}.joinedOn`}
+                    label="Ngày gia nhập *"
+                    type="date"
+                  />
+                  <FI
+                    form={form}
+                    name={`partyMemberships.${index}.details`}
+                    label="Thông tin chi tiết *"
+                  />
+                  <RemoveBtn onClick={() => partyFields.remove(index)} />
+                </div>
+              ))}
+            </DynamicSection>
+
             {/* ── TRÌNH ĐỘ HỌC VẤN ── */}
             <section>
               <SectionHeader title="TRÌNH ĐỘ HỌC VẤN" />
@@ -452,295 +626,47 @@ function EditEmployeePage() {
               </div>
             </section>
 
-            {/* ══════════════════════════════════════════
-                SUB-ENTITY SECTIONS
-            ══════════════════════════════════════════ */}
-
-            {/* ── THÔNG TIN GIA ĐÌNH ── */}
-            <section>
-              <DynamicSectionHeader
-                title="THÔNG TIN GIA ĐÌNH"
-                onAdd={() =>
-                  familyFields.append({
-                    relation: "",
-                    fullName: "",
-                  })
-                }
-              />
-              {familyFields.fields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="mt-3 rounded-lg border border-slate-200 bg-slate-50/50 p-4"
-                >
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">
-                      Thành viên #{index + 1}
-                      {field.id && form.getValues(`familyMembers.${index}.id`) ? (
-                        <span className="ml-2 text-[10px] text-slate-400">(đã lưu)</span>
-                      ) : (
-                        <span className="ml-2 text-[10px] text-emerald-500">(mới)</span>
-                      )}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => familyFields.remove(index)}
-                      className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-500"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormFieldSelect
-                      form={form}
-                      name={`familyMembers.${index}.relation`}
-                      label="Quan hệ *"
-                      items={enumToSortedList(FamilyRelation)}
-                    />
-                    <FI form={form} name={`familyMembers.${index}.fullName`} label="Họ tên *" />
-                  </div>
-                </div>
-              ))}
-              {familyFields.fields.length === 0 && (
-                <p className="mt-3 text-xs text-slate-400 italic">Chưa có thông tin gia đình.</p>
-              )}
-            </section>
-
-            {/* ── THÔNG TIN NGÂN HÀNG ── */}
-            <section>
-              <DynamicSectionHeader
-                title="THÔNG TIN NGÂN HÀNG"
-                onAdd={() => bankFields.append({ bankName: "", accountNo: "" })}
-              />
-              {bankFields.fields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="mt-3 rounded-lg border border-slate-200 bg-slate-50/50 p-4"
-                >
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">
-                      Tài khoản #{index + 1}
-                      {form.getValues(`bankAccounts.${index}.id`) ? (
-                        <span className="ml-2 text-[10px] text-slate-400">(đã lưu)</span>
-                      ) : (
-                        <span className="ml-2 text-[10px] text-emerald-500">(mới)</span>
-                      )}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => bankFields.remove(index)}
-                      className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-500"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FI form={form} name={`bankAccounts.${index}.bankName`} label="Ngân hàng *" />
-                    <FI
-                      form={form}
-                      name={`bankAccounts.${index}.accountNo`}
-                      label="Số tài khoản *"
-                    />
-                  </div>
-                </div>
-              ))}
-              {bankFields.fields.length === 0 && (
-                <p className="mt-3 text-xs text-slate-400 italic">Chưa có thông tin ngân hàng.</p>
-              )}
-            </section>
-
-            {/* ── QUÁ TRÌNH CÔNG TÁC ── */}
-            <section>
-              <DynamicSectionHeader
-                title="QUÁ TRÌNH CÔNG TÁC"
-                onAdd={() => jobFields.append({ workplace: "", startedOn: "", endedOn: "" })}
-              />
-              {jobFields.fields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="mt-3 rounded-lg border border-slate-200 bg-slate-50/50 p-4"
-                >
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">
-                      Công tác #{index + 1}
-                      {form.getValues(`previousJobs.${index}.id`) ? (
-                        <span className="ml-2 text-[10px] text-slate-400">(đã lưu)</span>
-                      ) : (
-                        <span className="ml-2 text-[10px] text-emerald-500">(mới)</span>
-                      )}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => jobFields.remove(index)}
-                      className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-500"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FI
-                      form={form}
-                      name={`previousJobs.${index}.workplace`}
-                      label="Nơi công tác *"
-                    />
-                    <FI
-                      form={form}
-                      name={`previousJobs.${index}.startedOn`}
-                      label="Ngày bắt đầu *"
-                      type="date"
-                    />
-                    <FI
-                      form={form}
-                      name={`previousJobs.${index}.endedOn`}
-                      label="Ngày kết thúc *"
-                      type="date"
-                    />
-                  </div>
-                </div>
-              ))}
-              {jobFields.fields.length === 0 && (
-                <p className="mt-3 text-xs text-slate-400 italic">Chưa có quá trình công tác.</p>
-              )}
-            </section>
-
-            {/* ── THÔNG TIN ĐOÀN/ĐẢNG ── */}
-            <section>
-              <DynamicSectionHeader
-                title="THÔNG TIN ĐOÀN/ĐẢNG"
-                onAdd={() =>
-                  partyFields.append({ organizationType: "", joinedOn: "", details: "" })
-                }
-              />
-              {partyFields.fields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="mt-3 rounded-lg border border-slate-200 bg-slate-50/50 p-4"
-                >
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">
-                      Thông tin #{index + 1}
-                      {form.getValues(`partyMemberships.${index}.id`) ? (
-                        <span className="ml-2 text-[10px] text-slate-400">(đã lưu)</span>
-                      ) : (
-                        <span className="ml-2 text-[10px] text-emerald-500">(mới)</span>
-                      )}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => partyFields.remove(index)}
-                      className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-500"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormFieldSelect
-                      form={form}
-                      name={`partyMemberships.${index}.organizationType`}
-                      label="Loại tổ chức *"
-                      items={enumToSortedList(PartyOrgType)}
-                    />
-                    <FI
-                      form={form}
-                      name={`partyMemberships.${index}.joinedOn`}
-                      label="Ngày gia nhập *"
-                      type="date"
-                    />
-                    <div className="col-span-2">
-                      <FI
-                        form={form}
-                        name={`partyMemberships.${index}.details`}
-                        label="Chi tiết *"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {partyFields.fields.length === 0 && (
-                <p className="mt-3 text-xs text-slate-400 italic">Chưa có thông tin Đoàn/Đảng.</p>
-              )}
-            </section>
-
             {/* ── THÔNG TIN BẰNG CẤP ── */}
-            <section>
-              <DynamicSectionHeader
-                title="THÔNG TIN BẰNG CẤP"
-                onAdd={() => degreeFields.append({ degreeName: "", school: "" })}
-              />
+            <DynamicSection
+              title="THÔNG TIN BẰNG CẤP"
+              onAdd={() => degreeFields.append({ degreeName: "", school: "" })}
+            >
               {degreeFields.fields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="mt-3 rounded-lg border border-slate-200 bg-slate-50/50 p-4"
-                >
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">
-                      Bằng cấp #{index + 1}
-                      {form.getValues(`degrees.${index}.id`) ? (
-                        <span className="ml-2 text-[10px] text-slate-400">(đã lưu)</span>
-                      ) : (
-                        <span className="ml-2 text-[10px] text-emerald-500">(mới)</span>
-                      )}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => degreeFields.remove(index)}
-                      className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-500"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FI form={form} name={`degrees.${index}.degreeName`} label="Tên bằng *" />
-                    <FI form={form} name={`degrees.${index}.school`} label="Trường *" />
-                  </div>
+                <div key={field.id} className="grid grid-cols-[1fr_1fr_auto_auto] items-end gap-3">
+                  <FI form={form} name={`degrees.${index}.degreeName`} label="Tên bằng *" />
+                  <FI form={form} name={`degrees.${index}.school`} label="Trường/Nơi cấp *" />
+                  <Button
+                    type="button"
+                    className="h-8 rounded-md bg-[#3B5CCC] px-3 text-xs text-white hover:bg-[#2F4FB8]"
+                  >
+                    <Upload className="mr-1 h-3.5 w-3.5" />
+                    Tải PDF
+                  </Button>
+                  <RemoveBtn onClick={() => degreeFields.remove(index)} />
                 </div>
               ))}
-              {degreeFields.fields.length === 0 && (
-                <p className="mt-3 text-xs text-slate-400 italic">Chưa có thông tin bằng cấp.</p>
-              )}
-            </section>
+            </DynamicSection>
 
             {/* ── THÔNG TIN CHỨNG CHỈ ── */}
-            <section>
-              <DynamicSectionHeader
-                title="THÔNG TIN CHỨNG CHỈ"
-                onAdd={() => certFields.append({ certName: "", issuedBy: "" })}
-              />
+            <DynamicSection
+              title="THÔNG TIN CHỨNG CHỈ"
+              onAdd={() => certFields.append({ certName: "", issuedBy: "" })}
+            >
               {certFields.fields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="mt-3 rounded-lg border border-slate-200 bg-slate-50/50 p-4"
-                >
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">
-                      Chứng chỉ #{index + 1}
-                      {form.getValues(`certificates.${index}.id`) ? (
-                        <span className="ml-2 text-[10px] text-slate-400">(đã lưu)</span>
-                      ) : (
-                        <span className="ml-2 text-[10px] text-emerald-500">(mới)</span>
-                      )}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => certFields.remove(index)}
-                      className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-500"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FI
-                      form={form}
-                      name={`certificates.${index}.certName`}
-                      label="Tên chứng chỉ *"
-                    />
-                    <FI form={form} name={`certificates.${index}.issuedBy`} label="Cơ quan cấp" />
-                  </div>
+                <div key={field.id} className="grid grid-cols-[1fr_1fr_auto_auto] items-end gap-3">
+                  <FI form={form} name={`certificates.${index}.certName`} label="Tên chứng chỉ *" />
+                  <FI form={form} name={`certificates.${index}.issuedBy`} label="Nơi cấp" />
+                  <Button
+                    type="button"
+                    className="h-8 rounded-md bg-[#3B5CCC] px-3 text-xs text-white hover:bg-[#2F4FB8]"
+                  >
+                    <Upload className="mr-1 h-3.5 w-3.5" />
+                    Tải PDF
+                  </Button>
+                  <RemoveBtn onClick={() => certFields.remove(index)} />
                 </div>
               ))}
-              {certFields.fields.length === 0 && (
-                <p className="mt-3 text-xs text-slate-400 italic">Chưa có thông tin chứng chỉ.</p>
-              )}
-            </section>
+            </DynamicSection>
 
             {/* ── FOOTER ── */}
             <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
@@ -801,23 +727,45 @@ function SectionHeader({ title, compact = false }: { title: string; compact?: bo
   );
 }
 
-function DynamicSectionHeader({ title, onAdd }: { title: string; onAdd: () => void }) {
+function DynamicSection({
+  title,
+  onAdd,
+  children,
+}: {
+  title: string;
+  onAdd: () => void;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="mt-2">
-      <div className="flex items-center gap-3">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-          {title}
-        </span>
-        <div className="h-px flex-1 bg-slate-200" />
-        <button
+    <section>
+      <div className="flex items-center justify-between">
+        <SectionHeader title={title} compact />
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 rounded-full bg-[#E9EEFF] text-[#3B5CCC] hover:bg-[#DCE6FF]"
           onClick={onAdd}
-          className="flex h-6 w-6 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-500 transition hover:border-[#3B5CCC] hover:text-[#3B5CCC]"
         >
           <Plus className="h-3.5 w-3.5" />
-        </button>
+        </Button>
       </div>
-    </div>
+      <div className="mt-3 space-y-3">{children}</div>
+    </section>
+  );
+}
+
+function RemoveBtn({ onClick }: { onClick: () => void }) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8 shrink-0 rounded-full bg-red-50 text-red-500 hover:bg-red-100"
+      onClick={onClick}
+    >
+      <Minus className="h-4 w-4" />
+    </Button>
   );
 }
 

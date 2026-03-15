@@ -1,22 +1,19 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { z } from "zod";
-import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
-import { DataTable } from "@/components/ui/data-table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { StatusBadgeFromCode } from "@/components/shared/status-badge";
-import {
-  salaryGradeListOptions,
-  useDeleteSalaryGrade,
-} from "@/features/config/api";
-import { CatalogStatus, enumToSortedList } from "@hrms/shared";
+import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/ui/data-table";
+import { Input } from "@/components/ui/input";
+import { salaryGradeListOptions, useDeleteSalaryGrade } from "@/features/config/api";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { CatalogStatus, enumToSortedList } from "@hrms/shared";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
+import { Pencil, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { z } from "zod";
 
 const searchSchema = z.object({
   page: z.number().default(1),
@@ -24,15 +21,13 @@ const searchSchema = z.object({
   search: z.string().optional(),
 });
 
-export const Route = createFileRoute(
-  "/_authenticated/config/salary-grades/",
-)({
+export const Route = createFileRoute("/_authenticated/config/salary-grades/")({
   validateSearch: searchSchema,
   component: SalaryGradesPage,
 });
 
 function SalaryGradesPage() {
-  const navigate = useNavigate({ from: "/config/salary-grades" });
+  const navigate = useNavigate({ from: "/config/salary-grades/" });
   const search = Route.useSearch();
   const [searchText, setSearchText] = useState(search.search ?? "");
   const debouncedSearch = useDebounce(searchText);
@@ -56,10 +51,7 @@ function SalaryGradesPage() {
       cell: ({ row }) => {
         const s = CatalogStatus[row.original.status as keyof typeof CatalogStatus];
         return (
-          <StatusBadgeFromCode
-            code={row.original.status}
-            label={s?.label ?? row.original.status}
-          />
+          <StatusBadgeFromCode code={row.original.status} label={s?.label ?? row.original.status} />
         );
       },
     },
@@ -126,11 +118,11 @@ function SalaryGradesPage() {
                 })
               : updater;
           navigate({
-            search: (prev) => ({
-              ...prev,
+            search: {
+              ...search,
               page: next.pageIndex + 1,
               pageSize: next.pageSize,
-            }),
+            },
           });
         }}
         isLoading={isLoading}

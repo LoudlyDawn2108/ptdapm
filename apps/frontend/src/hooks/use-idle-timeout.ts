@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
@@ -7,16 +7,15 @@ const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
  * Resets timer on mouse, keyboard, scroll, and touch events.
  */
 export function useIdleTimeout(onTimeout: () => void) {
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onTimeoutRef = useRef(onTimeout);
   onTimeoutRef.current = onTimeout;
 
   const resetTimer = useCallback(() => {
-    clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(
-      () => onTimeoutRef.current(),
-      IDLE_TIMEOUT_MS,
-    );
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => onTimeoutRef.current(), IDLE_TIMEOUT_MS);
   }, []);
 
   useEffect(() => {
@@ -27,7 +26,9 @@ export function useIdleTimeout(onTimeout: () => void) {
     resetTimer(); // Start initial timer
 
     return () => {
-      clearTimeout(timeoutRef.current);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
       for (const e of events) {
         window.removeEventListener(e, resetTimer);
       }

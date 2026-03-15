@@ -45,7 +45,7 @@ function EducationTab() {
               className="grid grid-cols-1 items-end gap-4 md:grid-cols-[2fr_1fr_auto]"
             >
               <ReadOnlyField label="Tên bằng" value={d.degreeName} />
-              <ReadOnlyField label="Nơi cấp" value={d.institution} />
+              <ReadOnlyField label="Nơi cấp" value={d.school} />
               <Button size="default" className="md:self-end">
                 <Eye data-icon="inline-start" />
                 Xem PDF

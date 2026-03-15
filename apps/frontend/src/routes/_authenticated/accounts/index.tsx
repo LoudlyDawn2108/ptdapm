@@ -1,11 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { z } from "zod";
-import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
-import { DataTable } from "@/components/ui/data-table";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { StatusBadgeFromCode } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -14,16 +11,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { StatusBadgeFromCode } from "@/components/shared/status-badge";
-import { ConfirmDialog } from "@/components/shared/confirm-dialog";
-import {
-  accountListOptions,
-  useSetAccountStatus,
-} from "@/features/accounts/api";
-import { Role, AuthUserStatus, enumToSortedList } from "@hrms/shared";
+import { accountListOptions, useSetAccountStatus } from "@/features/accounts/api";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Plus, Lock, Unlock } from "lucide-react";
+import { AuthUserStatus, Role, enumToSortedList } from "@hrms/shared";
+import { useQuery } from "@tanstack/react-query";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
+import { Lock, Plus, Unlock } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { z } from "zod";
 
 const searchSchema = z.object({
   page: z.number().default(1),
@@ -39,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/accounts/")({
 });
 
 function AccountsPage() {
-  const navigate = useNavigate({ from: "/accounts" });
+  const navigate = useNavigate({ from: "/accounts/" });
   const search = Route.useSearch();
   const [searchText, setSearchText] = useState(search.search ?? "");
   const debouncedSearch = useDebounce(searchText);
@@ -83,8 +80,7 @@ function AccountsPage() {
       accessorKey: "status",
       header: "Trạng thái",
       cell: ({ row }) => {
-        const status =
-          AuthUserStatus[row.original.status as keyof typeof AuthUserStatus];
+        const status = AuthUserStatus[row.original.status as keyof typeof AuthUserStatus];
         return (
           <StatusBadgeFromCode
             code={row.original.status}
@@ -102,11 +98,7 @@ function AccountsPage() {
           <ConfirmDialog
             trigger={
               <Button variant="ghost" size="sm">
-                {isLocked ? (
-                  <Unlock className="h-4 w-4" />
-                ) : (
-                  <Lock className="h-4 w-4" />
-                )}
+                {isLocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
               </Button>
             }
             title={isLocked ? "Mở khóa tài khoản" : "Khóa tài khoản"}
@@ -121,11 +113,7 @@ function AccountsPage() {
                 },
                 {
                   onSuccess: () =>
-                    toast.success(
-                      isLocked
-                        ? "Đã mở khóa tài khoản"
-                        : "Đã khóa tài khoản",
-                    ),
+                    toast.success(isLocked ? "Đã mở khóa tài khoản" : "Đã khóa tài khoản"),
                 },
               )
             }
@@ -161,11 +149,11 @@ function AccountsPage() {
           value={search.role ?? "all"}
           onValueChange={(v) =>
             navigate({
-              search: (prev) => ({
-                ...prev,
+              search: {
+                ...search,
                 role: v === "all" ? undefined : v,
                 page: 1,
-              }),
+              },
             })
           }
         >
@@ -185,11 +173,11 @@ function AccountsPage() {
           value={search.status ?? "all"}
           onValueChange={(v) =>
             navigate({
-              search: (prev) => ({
-                ...prev,
+              search: {
+                ...search,
                 status: v === "all" ? undefined : v,
                 page: 1,
-              }),
+              },
             })
           }
         >
@@ -224,11 +212,11 @@ function AccountsPage() {
                 })
               : updater;
           navigate({
-            search: (prev) => ({
-              ...prev,
+            search: {
+              ...search,
               page: next.pageIndex + 1,
               pageSize: next.pageSize,
-            }),
+            },
           });
         }}
         isLoading={isLoading}
