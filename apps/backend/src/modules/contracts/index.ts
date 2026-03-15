@@ -41,15 +41,15 @@ export const contractRoutes = new Elysia({
     { auth: true, params: employeeIdParamSchema, query: contractListQuerySchema },
   )
   .get(
-    "/:id",
+    "/:contractId",
     async ({ params }) => {
-      const { employeeId, id } = params;
-      const data = await contractService.getByIdForEmployee(employeeId, id);
+      const { employeeId, contractId } = params;
+      const data = await contractService.getByIdForEmployee(employeeId, contractId);
       return { data };
     },
     {
       auth: true,
-      params: employeeIdParamSchema.merge(idParamSchema),
+      params: employeeIdParamSchema.merge(contractIdParamSchema),
     },
   )
   .post(
@@ -62,30 +62,30 @@ export const contractRoutes = new Elysia({
     { auth: true, params: employeeIdParamSchema, body: createEmployeeContractSchema },
   )
   .put(
-    "/:id",
+    "/:contractId",
     async ({ params, body, user }) => {
       requireRole(user.role, "ADMIN", "TCCB");
-      const { employeeId, id } = params;
-      const data = await contractService.update(employeeId, id, body);
+      const { employeeId, contractId } = params;
+      const data = await contractService.update(employeeId, contractId, body);
       return { data };
     },
     {
       auth: true,
-      params: employeeIdParamSchema.merge(idParamSchema),
+      params: employeeIdParamSchema.merge(contractIdParamSchema),
       body: updateEmployeeContractSchema,
     },
   )
   .delete(
-    "/:id",
+    "/:contractId",
     async ({ params, user }) => {
       requireRole(user.role, "ADMIN", "TCCB");
-      const { employeeId, id } = params;
-      const data = await contractService.remove(employeeId, id);
+      const { employeeId, contractId } = params;
+      const data = await contractService.remove(employeeId, contractId);
       return { data };
     },
     {
       auth: true,
-      params: employeeIdParamSchema.merge(idParamSchema),
+      params: employeeIdParamSchema.merge(contractIdParamSchema),
     },
   );
 
