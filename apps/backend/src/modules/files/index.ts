@@ -8,6 +8,8 @@ function asciiSafe(filename: string): string {
   return filename.replace(/[^\x20-\x7E]/g, "_");
 }
 
+const INLINE_MIME_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
+
 export const fileRoutes = new Elysia({ prefix: "/api/files" })
   .use(authPlugin)
   .post(
@@ -27,10 +29,12 @@ export const fileRoutes = new Elysia({ prefix: "/api/files" })
     async ({ params }) => {
       const { fileRecord, bunFile } = await fileService.getFileById(params.id);
       const encoded = encodeURIComponent(fileRecord.originalName);
+      const contentType = fileRecord.mimeType || "application/octet-stream";
+      const disposition = INLINE_MIME_TYPES.has(contentType) ? "inline" : "attachment";
       return new Response(bunFile.stream(), {
         headers: {
-          "Content-Type": fileRecord.mimeType || "application/octet-stream",
-          "Content-Disposition": `attachment; filename="${asciiSafe(fileRecord.originalName)}"; filename*=UTF-8''${encoded}`,
+          "Content-Type": contentType,
+          "Content-Disposition": `${disposition}; filename="${asciiSafe(fileRecord.originalName)}"; filename*=UTF-8''${encoded}`,
           "Content-Length": String(fileRecord.byteSize),
         },
       });

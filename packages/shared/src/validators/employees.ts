@@ -23,6 +23,7 @@ import {
 } from "../constants/enums";
 
 const normalizeOptionalTextInput = (value: unknown) => {
+  if (value === null || value === undefined) return undefined;
   if (typeof value !== "string") return value;
 
   const trimmedValue = value.trim();
@@ -127,15 +128,15 @@ export const createEmployeeSchema = z.object({
   phone: requiredText("Số điện thoại không được để trống"),
   isForeigner: z.boolean({ error: "Giá trị quốc tịch không hợp lệ" }).default(false),
   educationLevel: requiredEnum(educationLevelSchema, "Trình độ văn hóa không được để trống"),
-  trainingLevel: requiredEnum(trainingLevelSchema, "Trình độ đào tạo không được để trống"),
-  academicTitle: requiredEnum(academicTitleSchema, "Chức danh nghề nghiệp không được để trống"),
+  trainingLevel: optionalField(trainingLevelSchema),
+  academicTitle: optionalField(academicTitleSchema),
   academicRank: requiredEnum(academicRankSchema, "Học hàm không được để trống"),
-  workStatus: requiredEnum(workStatusSchema, "Trạng thái làm việc không được để trống"),
-  contractStatus: requiredEnum(contractStatusSchema, "Trạng thái hợp đồng không được để trống"),
+  workStatus: optionalField(workStatusSchema),
+  contractStatus: optionalField(contractStatusSchema),
   currentOrgUnitId: optionalUuid("Đơn vị công tác không hợp lệ"),
   currentPositionTitle: optionalText(),
-  salaryGradeStepId: requiredUuid("Bậc lương không được để trống"),
-  portraitFileId: requiredUuid("Ảnh chân dung không được để trống"),
+  salaryGradeStepId: optionalUuid("Bậc lương không hợp lệ"),
+  portraitFileId: optionalUuid("Ảnh chân dung không hợp lệ"),
   terminatedOn: optionalDate(),
   terminationReason: optionalText(),
 });

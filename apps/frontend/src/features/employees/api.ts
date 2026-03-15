@@ -492,6 +492,129 @@ export function useCreateForeignWorkPermit() {
   });
 }
 
+export function useUpdateForeignWorkPermit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      id,
+      ...input
+    }: {
+      employeeId: string;
+      id: string;
+      visaNo?: string;
+      visaExpiresOn?: string;
+      passportNo?: string;
+      passportExpiresOn?: string;
+      workPermitNo?: string;
+      workPermitExpiresOn?: string;
+      workPermitFileId?: string;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["foreign-work-permits"]({ id })
+        .put(input as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useDeleteFamilyMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, id }: { employeeId: string; id: string }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["family-members"]({ id })
+        .delete();
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useDeleteBankAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, id }: { employeeId: string; id: string }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["bank-accounts"]({ id })
+        .delete();
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useDeletePreviousJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, id }: { employeeId: string; id: string }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["previous-jobs"]({ id })
+        .delete();
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useDeletePartyMembership() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, id }: { employeeId: string; id: string }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["party-memberships"]({ id })
+        .delete();
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useDeleteDegree() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, id }: { employeeId: string; id: string }) => {
+      const { data, error } = await api.api.employees({ employeeId }).degrees({ id }).delete();
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useDeleteCertification() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, id }: { employeeId: string; id: string }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        .certifications({ id })
+        .delete();
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
 // Allowance mutations
 export function useCreateAllowance() {
   const qc = useQueryClient();

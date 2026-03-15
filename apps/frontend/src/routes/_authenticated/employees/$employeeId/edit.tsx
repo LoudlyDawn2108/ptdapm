@@ -1,7 +1,6 @@
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Combobox } from "@/components/ui/combobox";
 import {
   Form,
   FormControl,
@@ -29,35 +28,28 @@ import {
   useCreateForeignWorkPermit,
   useCreatePartyMembership,
   useCreatePreviousJob,
-  useUpdateBankAccount,
   useUpdateCertification,
   useUpdateDegree,
   useUpdateEmployee,
-  useUpdateFamilyMember,
-  useUpdatePartyMembership,
-  useUpdatePreviousJob,
+  useUpdateForeignWorkPermit,
 } from "@/features/employees/api";
-import { fetchOrgUnitDropdown, fetchSalaryGradeDropdown } from "@/lib/api/config-dropdowns";
+import { formatForInput } from "@/lib/date-utils";
 import { ApiResponseError, applyFieldErrors } from "@/lib/error-handler";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AcademicRank,
-  AcademicTitle,
-  ContractStatus,
   EducationLevel,
   FamilyRelation,
   Gender,
   PartyOrgType,
-  TrainingLevel,
   type UpdateEmployeeInput,
-  WorkStatus,
   enumToSortedList,
 } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ChevronDown, Minus, Pencil, Plus, Save, Upload } from "lucide-react";
 import { useState } from "react";
-import { Controller, type SubmitHandler, useFieldArray, useForm } from "react-hook-form";
+import { type SubmitHandler, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -85,14 +77,7 @@ const editFormSchema = z.object({
   workPermitExpiry: z.string().optional(),
   workPermitFileId: z.string().optional(),
   educationLevel: z.string().min(1, "Bắt buộc"),
-  trainingLevel: z.string().optional(),
-  academicTitle: z.string().optional(),
   academicRank: z.string().optional(),
-  workStatus: z.string().optional(),
-  contractStatus: z.string().optional(),
-  currentPositionTitle: z.string().optional(),
-  currentOrgUnitId: z.string().optional(),
-  salaryGradeStepId: z.string().optional(),
   portraitFileId: z.string().optional(),
   // --- Sub-entity arrays ---
   familyMembers: z
@@ -101,10 +86,6 @@ const editFormSchema = z.object({
         id: z.string().optional(),
         relation: z.string().min(1, "Bắt buộc"),
         fullName: z.string().min(1, "Bắt buộc"),
-        dob: z.string().optional(),
-        phone: z.string().optional(),
-        note: z.string().optional(),
-        isDependent: z.boolean().default(false),
       }),
     )
     .default([]),
@@ -114,7 +95,6 @@ const editFormSchema = z.object({
         id: z.string().optional(),
         bankName: z.string().min(1, "Bắt buộc"),
         accountNo: z.string().min(1, "Bắt buộc"),
-        isPrimary: z.boolean().default(true),
       }),
     )
     .default([]),
@@ -125,7 +105,6 @@ const editFormSchema = z.object({
         workplace: z.string().min(1, "Bắt buộc"),
         startedOn: z.string().min(1, "Bắt buộc"),
         endedOn: z.string().min(1, "Bắt buộc"),
-        note: z.string().optional(),
       }),
     )
     .default([]),
@@ -162,7 +141,26 @@ const editFormSchema = z.object({
 });
 
 type SubmitValues = z.output<typeof editFormSchema>;
-type FormValues = z.input<typeof editFormSchema>;
+type FormValues = Omit<
+  SubmitValues,
+  | "academicRank"
+  | "isForeigner"
+  | "familyMembers"
+  | "bankAccounts"
+  | "previousJobs"
+  | "partyMemberships"
+  | "degrees"
+  | "certificates"
+> & {
+  academicRank?: string;
+  isForeigner?: boolean;
+  familyMembers?: SubmitValues["familyMembers"];
+  bankAccounts?: SubmitValues["bankAccounts"];
+  previousJobs?: SubmitValues["previousJobs"];
+  partyMemberships?: SubmitValues["partyMemberships"];
+  degrees?: SubmitValues["degrees"];
+  certificates?: SubmitValues["certificates"];
+};
 
 export const Route = createFileRoute("/_authenticated/employees/$employeeId/edit")({
   component: EditEmployeePage,
@@ -218,18 +216,15 @@ function EditEmployeeFormContent({
   const navigate = useNavigate();
   const updateMutation = useUpdateEmployee();
   const createFamilyMemberMutation = useCreateFamilyMember();
-  const updateFamilyMemberMutation = useUpdateFamilyMember();
   const createBankAccountMutation = useCreateBankAccount();
-  const updateBankAccountMutation = useUpdateBankAccount();
   const createPreviousJobMutation = useCreatePreviousJob();
-  const updatePreviousJobMutation = useUpdatePreviousJob();
   const createPartyMembershipMutation = useCreatePartyMembership();
-  const updatePartyMembershipMutation = useUpdatePartyMembership();
   const createDegreeMutation = useCreateDegree();
   const updateDegreeMutation = useUpdateDegree();
   const createCertificationMutation = useCreateCertification();
   const updateCertificationMutation = useUpdateCertification();
   const createForeignWorkPermitMutation = useCreateForeignWorkPermit();
+  const updateForeignWorkPermitMutation = useUpdateForeignWorkPermit();
   const [isSaving, setIsSaving] = useState(false);
 
   const emp = aggregate.employee ?? aggregate;
@@ -252,7 +247,7 @@ function EditEmployeeFormContent({
     defaultValues: {
       fullName: emp.fullName ?? "",
       gender: emp.gender ?? "",
-      dob: typeof emp.dob === "string" ? emp.dob.split("T")[0] : "",
+      dob: formatForInput(emp.dob),
       hometown: emp.hometown ?? "",
       email: emp.email ?? "",
       phone: emp.phone ?? "",
@@ -263,54 +258,35 @@ function EditEmployeeFormContent({
       healthInsuranceNo: emp.healthInsuranceNo ?? "",
       isForeigner: emp.isForeigner ?? false,
       visaNumber: foreignWorkPermitsData[0]?.visaNo ?? "",
-      visaExpiry: foreignWorkPermitsData[0]?.visaExpiresOn
-        ? String(foreignWorkPermitsData[0].visaExpiresOn).split("T")[0]
-        : "",
+      visaExpiry: formatForInput(foreignWorkPermitsData[0]?.visaExpiresOn),
       passportNumber: foreignWorkPermitsData[0]?.passportNo ?? "",
-      passportExpiry: foreignWorkPermitsData[0]?.passportExpiresOn
-        ? String(foreignWorkPermitsData[0].passportExpiresOn).split("T")[0]
-        : "",
+      passportExpiry: formatForInput(foreignWorkPermitsData[0]?.passportExpiresOn),
       workPermitNumber: foreignWorkPermitsData[0]?.workPermitNo ?? "",
-      workPermitExpiry: foreignWorkPermitsData[0]?.workPermitExpiresOn
-        ? String(foreignWorkPermitsData[0].workPermitExpiresOn).split("T")[0]
-        : "",
+      workPermitExpiry: formatForInput(foreignWorkPermitsData[0]?.workPermitExpiresOn),
       workPermitFileId: foreignWorkPermitsData[0]?.workPermitFileId ?? "",
       educationLevel: emp.educationLevel ?? "",
-      trainingLevel: emp.trainingLevel ?? "",
-      academicTitle: emp.academicTitle ?? "",
       academicRank: emp.academicRank ?? "",
-      workStatus: emp.workStatus ?? "",
-      contractStatus: emp.contractStatus ?? "",
-      currentPositionTitle: emp.currentPositionTitle ?? "",
-      currentOrgUnitId: emp.currentOrgUnitId ?? "",
-      salaryGradeStepId: emp.salaryGradeStepId ?? "",
       portraitFileId: emp.portraitFileId ?? "",
       familyMembers: familyMembersData.map((fm: any) => ({
         id: fm.id,
         relation: fm.relation ?? "",
         fullName: fm.fullName ?? "",
-        dob: fm.dob ? String(fm.dob).split("T")[0] : "",
-        phone: fm.phone ?? "",
-        note: fm.note ?? "",
-        isDependent: fm.isDependent ?? false,
       })),
       bankAccounts: bankAccountsData.map((ba: any) => ({
         id: ba.id,
         bankName: ba.bankName ?? "",
         accountNo: ba.accountNo ?? "",
-        isPrimary: ba.isPrimary ?? true,
       })),
       previousJobs: previousJobsData.map((pj: any) => ({
         id: pj.id,
         workplace: pj.workplace ?? "",
-        startedOn: pj.startedOn ? String(pj.startedOn).split("T")[0] : "",
-        endedOn: pj.endedOn ? String(pj.endedOn).split("T")[0] : "",
-        note: pj.note ?? "",
+        startedOn: formatForInput(pj.startedOn),
+        endedOn: formatForInput(pj.endedOn),
       })),
       partyMemberships: partyMembershipsData.map((pm: any) => ({
         id: pm.id,
         organizationType: pm.organizationType ?? "",
-        joinedOn: pm.joinedOn ? String(pm.joinedOn).split("T")[0] : "",
+        joinedOn: formatForInput(pm.joinedOn),
         details: pm.details ?? "",
       })),
       degrees: degreesData.map((d: any) => ({
@@ -366,13 +342,6 @@ function EditEmployeeFormContent({
         "socialInsuranceNo",
         "healthInsuranceNo",
         "academicRank",
-        "trainingLevel",
-        "academicTitle",
-        "workStatus",
-        "contractStatus",
-        "currentPositionTitle",
-        "currentOrgUnitId",
-        "salaryGradeStepId",
         "portraitFileId",
       ]);
       const cleanedEmployeeData = Object.fromEntries(
@@ -386,72 +355,24 @@ function EditEmployeeFormContent({
         ...cleanedEmployeeData,
       });
 
-      // Phase 2: Create new sub-entities (those without id) + update existing ones
+      // Phase 2: Create new sub-entities (those without id)
       const promises: Promise<unknown>[] = [];
 
       for (const fm of familyMembers.filter((x) => !x.id)) {
         const { id: _id, ...body } = fm;
         promises.push(createFamilyMemberMutation.mutateAsync({ employeeId, ...body }));
       }
-      for (const fm of familyMembers.filter((x) => !!x.id)) {
-        promises.push(
-          updateFamilyMemberMutation.mutateAsync({
-            employeeId,
-            id: fm.id!,
-            relation: fm.relation,
-            fullName: fm.fullName,
-            dob: fm.dob || undefined,
-            phone: fm.phone || undefined,
-            note: fm.note || undefined,
-            isDependent: fm.isDependent,
-          }),
-        );
-      }
       for (const ba of bankAccounts.filter((x) => !x.id)) {
         const { id: _id, ...body } = ba;
         promises.push(createBankAccountMutation.mutateAsync({ employeeId, ...body }));
-      }
-      for (const ba of bankAccounts.filter((x) => !!x.id)) {
-        promises.push(
-          updateBankAccountMutation.mutateAsync({
-            employeeId,
-            id: ba.id!,
-            bankName: ba.bankName,
-            accountNo: ba.accountNo,
-            isPrimary: ba.isPrimary,
-          }),
-        );
       }
       for (const pj of previousJobs.filter((x) => !x.id)) {
         const { id: _id, ...body } = pj;
         promises.push(createPreviousJobMutation.mutateAsync({ employeeId, ...body }));
       }
-      for (const pj of previousJobs.filter((x) => !!x.id)) {
-        promises.push(
-          updatePreviousJobMutation.mutateAsync({
-            employeeId,
-            id: pj.id!,
-            workplace: pj.workplace,
-            startedOn: pj.startedOn,
-            endedOn: pj.endedOn,
-            note: pj.note || undefined,
-          }),
-        );
-      }
       for (const pm of partyMemberships.filter((x) => !x.id)) {
         const { id: _id, ...body } = pm;
         promises.push(createPartyMembershipMutation.mutateAsync({ employeeId, ...body }));
-      }
-      for (const pm of partyMemberships.filter((x) => !!x.id)) {
-        promises.push(
-          updatePartyMembershipMutation.mutateAsync({
-            employeeId,
-            id: pm.id!,
-            organizationType: pm.organizationType,
-            joinedOn: pm.joinedOn,
-            details: pm.details,
-          }),
-        );
       }
       for (const d of degrees.filter((x) => !x.id)) {
         const { id: _id, ...body } = d;
@@ -494,18 +415,26 @@ function EditEmployeeFormContent({
           formData.workPermitExpiry ||
           formData.workPermitFileId;
         if (hasWorkPermitData) {
-          promises.push(
-            createForeignWorkPermitMutation.mutateAsync({
-              employeeId,
-              visaNo: formData.visaNumber || undefined,
-              visaExpiresOn: formData.visaExpiry || undefined,
-              passportNo: formData.passportNumber || undefined,
-              passportExpiresOn: formData.passportExpiry || undefined,
-              workPermitNo: formData.workPermitNumber || undefined,
-              workPermitExpiresOn: formData.workPermitExpiry || undefined,
-              workPermitFileId: formData.workPermitFileId || undefined,
-            }),
-          );
+          const permitPayload = {
+            employeeId,
+            visaNo: formData.visaNumber || undefined,
+            visaExpiresOn: formData.visaExpiry || undefined,
+            passportNo: formData.passportNumber || undefined,
+            passportExpiresOn: formData.passportExpiry || undefined,
+            workPermitNo: formData.workPermitNumber || undefined,
+            workPermitExpiresOn: formData.workPermitExpiry || undefined,
+            workPermitFileId: formData.workPermitFileId || undefined,
+          };
+          if (foreignWorkPermitsData[0]?.id) {
+            promises.push(
+              updateForeignWorkPermitMutation.mutateAsync({
+                ...permitPayload,
+                id: foreignWorkPermitsData[0].id,
+              }),
+            );
+          } else {
+            promises.push(createForeignWorkPermitMutation.mutateAsync(permitPayload));
+          }
         }
       }
 
@@ -705,54 +634,19 @@ function EditEmployeeFormContent({
                 familyFields.append({
                   relation: "",
                   fullName: "",
-                  dob: "",
-                  phone: "",
-                  note: "",
-                  isDependent: false,
                 })
               }
             >
               {familyFields.fields.map((field, index) => (
-                <div key={field.id} className="space-y-3 rounded-lg border border-slate-100 p-3">
-                  <div className="grid grid-cols-[1fr_1fr_auto] items-end gap-3">
-                    <FormFieldSelect
-                      form={form}
-                      name={`familyMembers.${index}.relation`}
-                      label="Mối quan hệ *"
-                      items={enumToSortedList(FamilyRelation)}
-                    />
-                    <FI form={form} name={`familyMembers.${index}.fullName`} label="Họ tên *" />
-                    <RemoveBtn onClick={() => familyFields.remove(index)} />
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <FI
-                      form={form}
-                      name={`familyMembers.${index}.dob`}
-                      label="Ngày sinh"
-                      type="date"
-                    />
-                    <FI form={form} name={`familyMembers.${index}.phone`} label="Số điện thoại" />
-                    <FI form={form} name={`familyMembers.${index}.note`} label="Ghi chú" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <FormField
-                      control={form.control}
-                      name={`familyMembers.${index}.isDependent`}
-                      render={({ field: checkField }) => (
-                        <FormItem className="flex items-center gap-2">
-                          <FormControl>
-                            <Checkbox
-                              checked={checkField.value ?? false}
-                              onCheckedChange={checkField.onChange}
-                            />
-                          </FormControl>
-                          <FormLabel className="text-xs font-medium text-slate-600">
-                            Là người phụ thuộc
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] items-end gap-3">
+                  <FormFieldSelect
+                    form={form}
+                    name={`familyMembers.${index}.relation`}
+                    label="Mối quan hệ *"
+                    items={enumToSortedList(FamilyRelation)}
+                  />
+                  <FI form={form} name={`familyMembers.${index}.fullName`} label="Họ tên *" />
+                  <RemoveBtn onClick={() => familyFields.remove(index)} />
                 </div>
               ))}
             </DynamicSection>
@@ -768,7 +662,7 @@ function EditEmployeeFormContent({
                   className="h-6 gap-1 rounded-full bg-[#E9EEFF] px-2 text-[11px] text-[#3B5CCC] hover:bg-[#DCE6FF]"
                   onClick={() => {
                     if (jobFields.fields.length === 0) {
-                      jobFields.append({ workplace: "", startedOn: "", endedOn: "", note: "" });
+                      jobFields.append({ workplace: "", startedOn: "", endedOn: "" });
                     }
                   }}
                 >
@@ -783,31 +677,26 @@ function EditEmployeeFormContent({
                   {jobFields.fields.map((field, index) => (
                     <div
                       key={field.id}
-                      className="space-y-3 rounded-lg border border-slate-100 p-3"
+                      className="grid grid-cols-[1fr_140px_140px_auto] items-end gap-3"
                     >
-                      <div className="grid grid-cols-[1fr_140px_140px_auto] items-end gap-3">
-                        <FI
-                          form={form}
-                          name={`previousJobs.${index}.workplace`}
-                          label="Tên nơi công tác *"
-                        />
-                        <FI
-                          form={form}
-                          name={`previousJobs.${index}.startedOn`}
-                          label="Từ ngày *"
-                          type="date"
-                        />
-                        <FI
-                          form={form}
-                          name={`previousJobs.${index}.endedOn`}
-                          label="Đến ngày *"
-                          type="date"
-                        />
-                        <RemoveBtn onClick={() => jobFields.remove(index)} />
-                      </div>
-                      <div className="grid grid-cols-1 gap-3">
-                        <FI form={form} name={`previousJobs.${index}.note`} label="Ghi chú" />
-                      </div>
+                      <FI
+                        form={form}
+                        name={`previousJobs.${index}.workplace`}
+                        label="Tên nơi công tác *"
+                      />
+                      <FI
+                        form={form}
+                        name={`previousJobs.${index}.startedOn`}
+                        label="Từ ngày *"
+                        type="date"
+                      />
+                      <FI
+                        form={form}
+                        name={`previousJobs.${index}.endedOn`}
+                        label="Đến ngày *"
+                        type="date"
+                      />
+                      <RemoveBtn onClick={() => jobFields.remove(index)} />
                     </div>
                   ))}
                   <Button
@@ -815,9 +704,7 @@ function EditEmployeeFormContent({
                     variant="ghost"
                     size="sm"
                     className="h-7 gap-1 rounded-md text-xs text-[#3B5CCC] hover:bg-[#E9EEFF]"
-                    onClick={() =>
-                      jobFields.append({ workplace: "", startedOn: "", endedOn: "", note: "" })
-                    }
+                    onClick={() => jobFields.append({ workplace: "", startedOn: "", endedOn: "" })}
                   >
                     <Plus className="h-3 w-3" />
                     Thêm dòng
@@ -829,42 +716,13 @@ function EditEmployeeFormContent({
             {/* ── THÔNG TIN NGÂN HÀNG ── */}
             <DynamicSection
               title="THÔNG TIN NGÂN HÀNG"
-              onAdd={() => bankFields.append({ bankName: "", accountNo: "", isPrimary: true })}
+              onAdd={() => bankFields.append({ bankName: "", accountNo: "" })}
             >
               {bankFields.fields.map((field, index) => (
-                <div key={field.id} className="space-y-3 rounded-lg border border-slate-100 p-3">
-                  <div className="grid grid-cols-[1fr_1fr_auto] items-end gap-3">
-                    <FI
-                      form={form}
-                      name={`bankAccounts.${index}.bankName`}
-                      label="Tên ngân hàng *"
-                    />
-                    <FI
-                      form={form}
-                      name={`bankAccounts.${index}.accountNo`}
-                      label="Số tài khoản *"
-                    />
-                    <RemoveBtn onClick={() => bankFields.remove(index)} />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <FormField
-                      control={form.control}
-                      name={`bankAccounts.${index}.isPrimary`}
-                      render={({ field: checkField }) => (
-                        <FormItem className="flex items-center gap-2">
-                          <FormControl>
-                            <Checkbox
-                              checked={checkField.value ?? false}
-                              onCheckedChange={checkField.onChange}
-                            />
-                          </FormControl>
-                          <FormLabel className="text-xs font-medium text-slate-600">
-                            Tài khoản chính
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] items-end gap-3">
+                  <FI form={form} name={`bankAccounts.${index}.bankName`} label="Tên ngân hàng *" />
+                  <FI form={form} name={`bankAccounts.${index}.accountNo`} label="Số tài khoản *" />
+                  <RemoveBtn onClick={() => bankFields.remove(index)} />
                 </div>
               ))}
             </DynamicSection>
@@ -901,64 +759,6 @@ function EditEmployeeFormContent({
               ))}
             </DynamicSection>
 
-            {/* ── THÔNG TIN NGHỀ NGHIỆP ── */}
-            <section>
-              <SectionHeader title="THÔNG TIN NGHỀ NGHIỆP" />
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <FI form={form} name="currentPositionTitle" label="Chức danh hiện tại" />
-                <div>
-                  <FormLabel>
-                    <RequiredLabel label="Đơn vị công tác" />
-                  </FormLabel>
-                  <Controller
-                    name="currentOrgUnitId"
-                    control={form.control}
-                    render={({ field }) => (
-                      <Combobox
-                        queryKey={["org-units", "dropdown"]}
-                        fetchOptions={fetchOrgUnitDropdown}
-                        value={field.value as string}
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                        placeholder="Chọn đơn vị công tác..."
-                      />
-                    )}
-                  />
-                </div>
-                <div>
-                  <FormLabel>
-                    <RequiredLabel label="Bậc lương" />
-                  </FormLabel>
-                  <Controller
-                    name="salaryGradeStepId"
-                    control={form.control}
-                    render={({ field }) => (
-                      <Combobox
-                        queryKey={["salary-grades", "dropdown"]}
-                        fetchOptions={fetchSalaryGradeDropdown}
-                        value={field.value as string}
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                        placeholder="Chọn bậc lương..."
-                      />
-                    )}
-                  />
-                </div>
-                <FormFieldSelect
-                  form={form}
-                  name="workStatus"
-                  label="Trạng thái làm việc"
-                  items={enumToSortedList(WorkStatus)}
-                />
-                <FormFieldSelect
-                  form={form}
-                  name="contractStatus"
-                  label="Trạng thái hợp đồng"
-                  items={enumToSortedList(ContractStatus)}
-                />
-              </div>
-            </section>
-
             {/* ── TRÌNH ĐỘ HỌC VẤN ── */}
             <section>
               <SectionHeader title="TRÌNH ĐỘ HỌC VẤN" />
@@ -971,20 +771,8 @@ function EditEmployeeFormContent({
                 />
                 <FormFieldSelect
                   form={form}
-                  name="trainingLevel"
-                  label="Trình độ đào tạo"
-                  items={enumToSortedList(TrainingLevel)}
-                />
-                <FormFieldSelect
-                  form={form}
-                  name="academicTitle"
-                  label="Chức danh nghề nghiệp"
-                  items={enumToSortedList(AcademicTitle)}
-                />
-                <FormFieldSelect
-                  form={form}
                   name="academicRank"
-                  label="Học hàm"
+                  label="Học hàm/Học vị"
                   items={enumToSortedList(AcademicRank)}
                 />
               </div>

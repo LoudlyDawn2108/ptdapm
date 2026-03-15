@@ -43,10 +43,20 @@ export async function create(
   data: CreateEmployeeBankAccountInput,
 ): Promise<EmployeeBankAccount> {
   if (data.isPrimary) {
-    await db
-      .update(employeeBankAccounts)
-      .set({ isPrimary: false, updatedAt: new Date() })
-      .where(eq(employeeBankAccounts.employeeId, employeeId));
+    return db.transaction(async (tx) => {
+      await tx
+        .update(employeeBankAccounts)
+        .set({ isPrimary: false, updatedAt: new Date() })
+        .where(eq(employeeBankAccounts.employeeId, employeeId));
+
+      const [created] = await tx
+        .insert(employeeBankAccounts)
+        .values({ ...data, employeeId })
+        .returning();
+
+      if (!created) throw new Error("Insert failed");
+      return created;
+    });
   }
 
   const [created] = await db
