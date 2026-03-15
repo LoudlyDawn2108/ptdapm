@@ -197,8 +197,13 @@ function NewEmployeePage() {
       const result = await createMutation.mutateAsync(employeePayload as any);
       const employeeId = (result as any).data?.id ?? (result as any).id;
 
+      if (!employeeId) {
+        toast.error("Không thể tạo nhân sự. Vui lòng thử lại.");
+        return;
+      }
+
       // Phase 2: Create sub-entities
-      if (employeeId) {
+      {
         const promises: Promise<unknown>[] = [];
 
         for (const fm of data.familyMembers ?? []) {

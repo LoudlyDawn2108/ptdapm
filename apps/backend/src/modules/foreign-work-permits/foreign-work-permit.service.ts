@@ -4,7 +4,7 @@ import type {
   UpdateForeignWorkPermitInput,
 } from "@hrms/shared";
 import { eq } from "drizzle-orm";
-import { NotFoundError } from "../../common/utils/errors";
+import { BadRequestError, NotFoundError } from "../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
 import { db } from "../../db";
 import { type EmployeeForeignWorkPermit, employeeForeignWorkPermits } from "../../db/schema";
@@ -48,7 +48,7 @@ export async function create(
     .values({ ...data, employeeId })
     .returning();
 
-  if (!created) throw new Error("Insert failed");
+  if (!created) throw new BadRequestError("Không thể tạo giấy phép lao động");
   return created;
 }
 
@@ -67,7 +67,7 @@ export async function update(
     .where(eq(employeeForeignWorkPermits.id, id))
     .returning();
 
-  if (!updated) throw new Error("Update failed");
+  if (!updated) throw new BadRequestError("Không thể cập nhật giấy phép lao động");
   return updated;
 }
 

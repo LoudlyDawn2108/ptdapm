@@ -28,10 +28,20 @@ import {
   useCreateForeignWorkPermit,
   useCreatePartyMembership,
   useCreatePreviousJob,
+  useDeleteBankAccount,
+  useDeleteCertification,
+  useDeleteDegree,
+  useDeleteFamilyMember,
+  useDeletePartyMembership,
+  useDeletePreviousJob,
+  useUpdateBankAccount,
   useUpdateCertification,
   useUpdateDegree,
   useUpdateEmployee,
+  useUpdateFamilyMember,
   useUpdateForeignWorkPermit,
+  useUpdatePartyMembership,
+  useUpdatePreviousJob,
 } from "@/features/employees/api";
 import { formatForInput } from "@/lib/date-utils";
 import { ApiResponseError, applyFieldErrors } from "@/lib/error-handler";
@@ -48,7 +58,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ChevronDown, Minus, Pencil, Plus, Save, Upload } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { type SubmitHandler, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -216,13 +226,23 @@ function EditEmployeeFormContent({
   const navigate = useNavigate();
   const updateMutation = useUpdateEmployee();
   const createFamilyMemberMutation = useCreateFamilyMember();
+  const updateFamilyMemberMutation = useUpdateFamilyMember();
+  const deleteFamilyMemberMutation = useDeleteFamilyMember();
   const createBankAccountMutation = useCreateBankAccount();
+  const updateBankAccountMutation = useUpdateBankAccount();
+  const deleteBankAccountMutation = useDeleteBankAccount();
   const createPreviousJobMutation = useCreatePreviousJob();
+  const updatePreviousJobMutation = useUpdatePreviousJob();
+  const deletePreviousJobMutation = useDeletePreviousJob();
   const createPartyMembershipMutation = useCreatePartyMembership();
+  const updatePartyMembershipMutation = useUpdatePartyMembership();
+  const deletePartyMembershipMutation = useDeletePartyMembership();
   const createDegreeMutation = useCreateDegree();
   const updateDegreeMutation = useUpdateDegree();
+  const deleteDegreeMutation = useDeleteDegree();
   const createCertificationMutation = useCreateCertification();
   const updateCertificationMutation = useUpdateCertification();
+  const deleteCertificationMutation = useDeleteCertification();
   const createForeignWorkPermitMutation = useCreateForeignWorkPermit();
   const updateForeignWorkPermitMutation = useUpdateForeignWorkPermit();
   const [isSaving, setIsSaving] = useState(false);
@@ -241,6 +261,20 @@ function EditEmployeeFormContent({
   const degreesData = aggregate.degrees ?? [];
   const certificationsData = aggregate.certifications ?? [];
   const foreignWorkPermitsData = aggregate.foreignWorkPermits ?? [];
+
+  // Track initial IDs to detect deletions on submit
+  const initialIds = useMemo(
+    () => ({
+      familyMembers: new Set(familyMembersData.map((x: any) => x.id as string)),
+      bankAccounts: new Set(bankAccountsData.map((x: any) => x.id as string)),
+      previousJobs: new Set(previousJobsData.map((x: any) => x.id as string)),
+      partyMemberships: new Set(partyMembershipsData.map((x: any) => x.id as string)),
+      degrees: new Set(degreesData.map((x: any) => x.id as string)),
+      certifications: new Set(certificationsData.map((x: any) => x.id as string)),
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   const form = useForm<FormValues>({
     resolver: zodResolver(editFormSchema),
@@ -311,7 +345,7 @@ function EditEmployeeFormContent({
   const degreeFields = useFieldArray({ control: form.control, name: "degrees" });
   const certFields = useFieldArray({ control: form.control, name: "certificates" });
 
-  /* ── Submit: update employee + create new sub-entities ── */
+  /* ── Submit: update employee + create/update/delete sub-entities ── */
   const onSubmit: SubmitHandler<FormValues> = async (rawFormData) => {
     try {
       setIsSaving(true);
@@ -336,7 +370,6 @@ function EditEmployeeFormContent({
         ...employeeData
       } = formData;
 
-      // Only strip truly optional fields that are empty — keep required fields as-is
       const optionalFields = new Set([
         "taxCode",
         "socialInsuranceNo",
@@ -355,56 +388,122 @@ function EditEmployeeFormContent({
         ...cleanedEmployeeData,
       });
 
-      // Phase 2: Create new sub-entities (those without id)
+      // Phase 2: Create / Update / Delete sub-entities
       const promises: Promise<unknown>[] = [];
 
-      for (const fm of familyMembers.filter((x) => !x.id)) {
-        const { id: _id, ...body } = fm;
-        promises.push(createFamilyMemberMutation.mutateAsync({ employeeId, ...body }));
+      // --- Family Members ---
+      const currentFmIds = new Set(familyMembers.filter((x) => x.id).map((x) => x.id!));
+      for (const id of initialIds.familyMembers) {
+        if (!currentFmIds.has(id)) {
+          promises.push(deleteFamilyMemberMutation.mutateAsync({ employeeId, id }));
+        }
       }
-      for (const ba of bankAccounts.filter((x) => !x.id)) {
-        const { id: _id, ...body } = ba;
-        promises.push(createBankAccountMutation.mutateAsync({ employeeId, ...body }));
-      }
-      for (const pj of previousJobs.filter((x) => !x.id)) {
-        const { id: _id, ...body } = pj;
-        promises.push(createPreviousJobMutation.mutateAsync({ employeeId, ...body }));
-      }
-      for (const pm of partyMemberships.filter((x) => !x.id)) {
-        const { id: _id, ...body } = pm;
-        promises.push(createPartyMembershipMutation.mutateAsync({ employeeId, ...body }));
-      }
-      for (const d of degrees.filter((x) => !x.id)) {
-        const { id: _id, ...body } = d;
-        promises.push(createDegreeMutation.mutateAsync({ employeeId, ...body }));
-      }
-      for (const d of degrees.filter((x) => !!x.id)) {
-        promises.push(
-          updateDegreeMutation.mutateAsync({
-            employeeId,
-            id: d.id!,
-            degreeName: d.degreeName,
-            school: d.school,
-            degreeFileId: d.degreeFileId || undefined,
-          }),
-        );
-      }
-      for (const c of certificates.filter((x) => !x.id)) {
-        const { id: _id, ...body } = c;
-        promises.push(createCertificationMutation.mutateAsync({ employeeId, ...body }));
-      }
-      for (const c of certificates.filter((x) => !!x.id)) {
-        promises.push(
-          updateCertificationMutation.mutateAsync({
-            employeeId,
-            id: c.id!,
-            certName: c.certName,
-            issuedBy: c.issuedBy || undefined,
-            certFileId: c.certFileId || undefined,
-          }),
-        );
+      for (const fm of familyMembers) {
+        const { id, ...body } = fm;
+        if (id) {
+          promises.push(updateFamilyMemberMutation.mutateAsync({ employeeId, id, ...body }));
+        } else {
+          promises.push(createFamilyMemberMutation.mutateAsync({ employeeId, ...body }));
+        }
       }
 
+      // --- Bank Accounts ---
+      const currentBaIds = new Set(bankAccounts.filter((x) => x.id).map((x) => x.id!));
+      for (const id of initialIds.bankAccounts) {
+        if (!currentBaIds.has(id)) {
+          promises.push(deleteBankAccountMutation.mutateAsync({ employeeId, id }));
+        }
+      }
+      for (const ba of bankAccounts) {
+        const { id, ...body } = ba;
+        if (id) {
+          promises.push(updateBankAccountMutation.mutateAsync({ employeeId, id, ...body }));
+        } else {
+          promises.push(createBankAccountMutation.mutateAsync({ employeeId, ...body }));
+        }
+      }
+
+      // --- Previous Jobs ---
+      const currentPjIds = new Set(previousJobs.filter((x) => x.id).map((x) => x.id!));
+      for (const id of initialIds.previousJobs) {
+        if (!currentPjIds.has(id)) {
+          promises.push(deletePreviousJobMutation.mutateAsync({ employeeId, id }));
+        }
+      }
+      for (const pj of previousJobs) {
+        const { id, ...body } = pj;
+        if (id) {
+          promises.push(updatePreviousJobMutation.mutateAsync({ employeeId, id, ...body }));
+        } else {
+          promises.push(createPreviousJobMutation.mutateAsync({ employeeId, ...body }));
+        }
+      }
+
+      // --- Party Memberships ---
+      const currentPmIds = new Set(partyMemberships.filter((x) => x.id).map((x) => x.id!));
+      for (const id of initialIds.partyMemberships) {
+        if (!currentPmIds.has(id)) {
+          promises.push(deletePartyMembershipMutation.mutateAsync({ employeeId, id }));
+        }
+      }
+      for (const pm of partyMemberships) {
+        const { id, ...body } = pm;
+        if (id) {
+          promises.push(updatePartyMembershipMutation.mutateAsync({ employeeId, id, ...body }));
+        } else {
+          promises.push(createPartyMembershipMutation.mutateAsync({ employeeId, ...body }));
+        }
+      }
+
+      // --- Degrees ---
+      const currentDegreeIds = new Set(degrees.filter((x) => x.id).map((x) => x.id!));
+      for (const id of initialIds.degrees) {
+        if (!currentDegreeIds.has(id)) {
+          promises.push(deleteDegreeMutation.mutateAsync({ employeeId, id }));
+        }
+      }
+      for (const d of degrees) {
+        if (d.id) {
+          promises.push(
+            updateDegreeMutation.mutateAsync({
+              employeeId,
+              id: d.id,
+              degreeName: d.degreeName,
+              school: d.school,
+              degreeFileId: d.degreeFileId || undefined,
+            }),
+          );
+        } else {
+          const { id: _id, ...body } = d;
+          promises.push(createDegreeMutation.mutateAsync({ employeeId, ...body }));
+        }
+      }
+
+      // --- Certifications ---
+      const currentCertIds = new Set(certificates.filter((x) => x.id).map((x) => x.id!));
+      for (const id of initialIds.certifications) {
+        if (!currentCertIds.has(id)) {
+          promises.push(deleteCertificationMutation.mutateAsync({ employeeId, id }));
+        }
+      }
+      for (const c of certificates) {
+        if (c.id) {
+          promises.push(
+            updateCertificationMutation.mutateAsync({
+              employeeId,
+              id: c.id,
+              certName: c.certName,
+              issuedBy: c.issuedBy || undefined,
+              certFileId: c.certFileId || undefined,
+            }),
+          );
+        } else {
+          const { id: _id, ...body } = c;
+          promises.push(createCertificationMutation.mutateAsync({ employeeId, ...body }));
+        }
+      }
+
+      // --- Foreign Work Permits ---
       if (formData.isForeigner) {
         const hasWorkPermitData =
           formData.visaNumber ||

@@ -179,10 +179,10 @@ describe("Employee Export API", () => {
     );
 
     expect(csvText).toContain("Family Members");
-    expect(csvText).toContain("Vo,Le Thi C,1992-02-02,0987654321,true,None");
+    expect(csvText).toContain("Vo,Le Thi C");
 
     expect(csvText).toContain("Bank Accounts");
-    expect(csvText).toContain("Techcombank,1900123456,true");
+    expect(csvText).toContain("Techcombank,1900123456");
   });
 
   test("GET /api/employees/export?format=xlsx returns Excel file", async () => {

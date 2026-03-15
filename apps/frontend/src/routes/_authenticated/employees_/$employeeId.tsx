@@ -25,6 +25,7 @@ const TAB_ITEMS = [
   { value: "family", label: "Thông tin gia đình", path: "/family" },
   { value: "work-history", label: "Lịch sử công tác", path: "/work-history" },
   { value: "education", label: "Trình độ học vấn", path: "/education" },
+  { value: "party", label: "Đảng/Đoàn", path: "/party" },
   { value: "salary", label: "Lương và phụ cấp", path: "/salary" },
   { value: "contracts", label: "Hợp đồng", path: "/contracts" },
   { value: "rewards", label: "Khen thưởng/Kỷ luật", path: "/rewards" },

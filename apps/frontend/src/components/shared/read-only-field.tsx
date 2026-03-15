@@ -14,7 +14,7 @@ export function ReadOnlyField({
     <div className={cn("space-y-1.5", className)}>
       <label className="text-sm font-medium text-muted-foreground">{label}</label>
       <div className="rounded-lg border bg-background px-3 py-2 text-sm min-h-[38px] flex items-center">
-        {value || "—"}
+        {value ?? "—"}
       </div>
     </div>
   );

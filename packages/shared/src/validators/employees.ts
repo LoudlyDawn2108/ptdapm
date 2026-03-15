@@ -171,7 +171,7 @@ export const createEmployeeBankAccountSchema = z.object({
   accountNo: z
     .string({ error: "Số tài khoản không được để trống" })
     .min(1, "Số tài khoản không được để trống"),
-  isPrimary: z.boolean({ error: "Giá trị tài khoản chính không hợp lệ" }).default(true),
+  isPrimary: z.boolean({ error: "Giá trị tài khoản chính không hợp lệ" }).default(false),
 });
 
 export type CreateEmployeeBankAccountInput = z.infer<typeof createEmployeeBankAccountSchema>;

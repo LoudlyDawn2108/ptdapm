@@ -36,7 +36,7 @@ import {
   useUpdateAllowance,
   useUpdateEmployee,
 } from "@/features/employees/api";
-import { applyFieldErrors } from "@/lib/error-handler";
+import { ApiResponseError, applyFieldErrors } from "@/lib/error-handler";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   type CreateEmployeeAllowanceFormInput,
@@ -229,7 +229,7 @@ function SalaryTab() {
       toast.success("Cập nhật hệ số lương thành công");
       closeSalaryDialog();
     } catch (error) {
-      if (!(error instanceof Error)) {
+      if (!(error instanceof ApiResponseError)) {
         toast.error("Có lỗi xảy ra");
       }
     }
@@ -253,7 +253,7 @@ function SalaryTab() {
     } catch (error) {
       applyFieldErrors(allowanceForm.setError, error);
 
-      if (!(error instanceof Error)) {
+      if (!(error instanceof ApiResponseError)) {
         toast.error("Có lỗi xảy ra");
       }
     }

@@ -75,6 +75,28 @@ export async function update(
 ): Promise<EmployeeBankAccount> {
   await getByIdForEmployee(employeeId, id);
 
+  if (data.isPrimary) {
+    return db.transaction(async (tx) => {
+      await tx
+        .update(employeeBankAccounts)
+        .set({ isPrimary: false, updatedAt: new Date() })
+        .where(
+          and(eq(employeeBankAccounts.employeeId, employeeId), ne(employeeBankAccounts.id, id)),
+        );
+
+      const [updated] = await tx
+        .update(employeeBankAccounts)
+        .set({ ...data, updatedAt: new Date() })
+        .where(
+          and(eq(employeeBankAccounts.id, id), eq(employeeBankAccounts.employeeId, employeeId)),
+        )
+        .returning();
+
+      if (!updated) throw new BadRequestError("Không thể cập nhật tài khoản ngân hàng");
+      return updated;
+    });
+  }
+
   const [updated] = await db
     .update(employeeBankAccounts)
     .set({ ...data, updatedAt: new Date() })
