@@ -19,6 +19,7 @@ import { dashboardRoutes } from "./modules/dashboard";
 import { employeeRoutes } from "./modules/employees";
 import { employeeExportRoutes } from "./modules/employees-export";
 import { familyMemberRoutes } from "./modules/family-members";
+import { fileRoutes } from "./modules/files";
 import { orgUnitRoutes } from "./modules/org-units";
 import { partyMembershipRoutes } from "./modules/party-memberships";
 import { previousJobRoutes } from "./modules/previous-jobs";
@@ -49,6 +50,7 @@ const app = new Elysia()
   .use(allowanceRoutes)
   .use(employeeExportRoutes)
   .use(employeeRoutes)
+  .use(fileRoutes)
   .use(familyMemberRoutes)
   .use(bankAccountRoutes)
   .use(contractTypeRoutes)
