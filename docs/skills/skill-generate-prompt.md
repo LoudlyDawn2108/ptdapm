@@ -183,5 +183,5 @@
 > skill8-reference.md"
 > 
 > You should generate the skill files right in this folder and you could ignore the parent folder name because i will move it to the correct folder after you generate it, just make sure the file name is correct and the content is correct as per the reference text.
-> Only read the skill7-reference.md on my file system do not read other file in the file system without my consent
+> Only read the skill8-reference.md on my file system do not read other file in the file system without my consent
 > After you generate all the files for the skill, you should then dispatch a deep category subagent to judge your skill base on this document https://raw.githubusercontent.com/softaworks/agent-toolkit/main/skills/skill-judge/SKILL.md, tell it you dont need to run the tests, just do what you think would yield the best result and fix the skill for you
