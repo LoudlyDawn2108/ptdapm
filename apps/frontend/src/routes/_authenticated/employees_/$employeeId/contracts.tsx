@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { contractTypeListOptions } from "@/features/config/api";
+import { contractTypeListOptions } from "@/features/config/contract-types/api";
 import {
   employeeDetailOptions,
   useCreateContract,

@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/config/salary-grades/")({
 });
 
 function SalaryGradesPage() {
-  const navigate = useNavigate({ from: "/config/salary-grades" });
+  const navigate = useNavigate({ from: "/config/salary-grades/" });
   const search = Route.useSearch();
   const listPage = useListPage({
     search,

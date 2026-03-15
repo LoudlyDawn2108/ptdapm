@@ -28,7 +28,7 @@ import {
   enumToSortedList,
 } from "@hrms/shared";
 import { Loader2, Save } from "lucide-react";
-import { Controller, type Path, useForm } from "react-hook-form";
+import { Controller, type Path, type Resolver, useForm } from "react-hook-form";
 
 type FormValues = CreateEmployeeFormInput;
 
@@ -48,7 +48,7 @@ export function EmployeeForm({
   pendingLabel = "Đang lưu...",
 }: EmployeeFormProps) {
   const form = useForm<FormValues>({
-    resolver: zodResolver(createEmployeeSchema),
+    resolver: zodResolver(createEmployeeSchema) as unknown as Resolver<FormValues>,
     defaultValues: {
       fullName: "",
       dob: "",

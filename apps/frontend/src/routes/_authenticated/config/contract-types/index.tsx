@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/config/contract-types/")({
 });
 
 function ContractTypesPage() {
-  const navigate = useNavigate({ from: "/config/contract-types" });
+  const navigate = useNavigate({ from: "/config/contract-types/" });
   const search = Route.useSearch();
   const listPage = useListPage({
     search,

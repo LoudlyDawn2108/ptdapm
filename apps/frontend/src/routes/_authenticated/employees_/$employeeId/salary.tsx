@@ -25,11 +25,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { allowanceTypeListOptions } from "@/features/config/allowance-types/api";
 import {
-  allowanceTypeListOptions,
   salaryGradeDropdownOptions,
   salaryGradeStepsOptions,
-} from "@/features/config/api";
+} from "@/features/config/salary-grades/api";
 import {
   employeeDetailOptions,
   useCreateAllowance,
