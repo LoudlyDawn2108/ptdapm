@@ -28,6 +28,8 @@ import {
   useCreateForeignWorkPermit,
   useCreatePartyMembership,
   useCreatePreviousJob,
+  useUpdateCertification,
+  useUpdateDegree,
   useUpdateEmployee,
 } from "@/features/employees/api";
 import { ApiResponseError, applyFieldErrors } from "@/lib/error-handler";
@@ -216,7 +218,9 @@ function EditEmployeeFormContent({
   const createPreviousJobMutation = useCreatePreviousJob();
   const createPartyMembershipMutation = useCreatePartyMembership();
   const createDegreeMutation = useCreateDegree();
+  const updateDegreeMutation = useUpdateDegree();
   const createCertificationMutation = useCreateCertification();
+  const updateCertificationMutation = useUpdateCertification();
   const createForeignWorkPermitMutation = useCreateForeignWorkPermit();
   const [isSaving, setIsSaving] = useState(false);
 
@@ -377,9 +381,31 @@ function EditEmployeeFormContent({
         const { id: _id, ...body } = d;
         promises.push(createDegreeMutation.mutateAsync({ employeeId, ...body }));
       }
+      for (const d of degrees.filter((x) => !!x.id)) {
+        promises.push(
+          updateDegreeMutation.mutateAsync({
+            employeeId,
+            id: d.id!,
+            degreeName: d.degreeName,
+            school: d.school,
+            degreeFileId: d.degreeFileId || undefined,
+          }),
+        );
+      }
       for (const c of certificates.filter((x) => !x.id)) {
         const { id: _id, ...body } = c;
         promises.push(createCertificationMutation.mutateAsync({ employeeId, ...body }));
+      }
+      for (const c of certificates.filter((x) => !!x.id)) {
+        promises.push(
+          updateCertificationMutation.mutateAsync({
+            employeeId,
+            id: c.id!,
+            certName: c.certName,
+            issuedBy: c.issuedBy || undefined,
+            certFileId: c.certFileId || undefined,
+          }),
+        );
       }
 
       if (formData.isForeigner) {

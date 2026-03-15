@@ -285,6 +285,32 @@ export function useCreateDegree() {
   });
 }
 
+export function useUpdateDegree() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      id,
+      ...input
+    }: {
+      employeeId: string;
+      id: string;
+      degreeName?: string;
+      school?: string;
+      degreeFileId?: string;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        .degrees({ id })
+        .put(input as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
 export function useCreateCertification() {
   const qc = useQueryClient();
   return useMutation({
@@ -295,6 +321,32 @@ export function useCreateCertification() {
       const { data, error } = await api.api
         .employees({ employeeId })
         .certifications.post(input as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useUpdateCertification() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      id,
+      ...input
+    }: {
+      employeeId: string;
+      id: string;
+      certName?: string;
+      issuedBy?: string;
+      certFileId?: string;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        .certifications({ id })
+        .put(input as any);
       if (error) throw handleApiError(error);
       return data;
     },
