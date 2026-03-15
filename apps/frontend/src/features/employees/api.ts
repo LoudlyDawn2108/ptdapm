@@ -37,7 +37,7 @@ export async function uploadFile(file: File): Promise<UploadedFile> {
 
   let response: Response;
   try {
-    response = await fetch(`${apiBaseUrl}/api/files`, {
+    response = await fetch(`${apiBaseUrl}/api/files/upload`, {
       method: "POST",
       body: formData,
       credentials: "include",
@@ -263,6 +263,114 @@ export function useCreatePartyMembership() {
       const { data, error } = await api.api
         .employees({ employeeId })
         ["party-memberships"].post(input as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useUpdateFamilyMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      id,
+      ...input
+    }: {
+      employeeId: string;
+      id: string;
+      relation?: string;
+      fullName?: string;
+      dob?: string;
+      phone?: string;
+      note?: string;
+      isDependent?: boolean;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["family-members"]({ id })
+        .put(input as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useUpdateBankAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      id,
+      ...input
+    }: {
+      employeeId: string;
+      id: string;
+      bankName?: string;
+      accountNo?: string;
+      isPrimary?: boolean;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["bank-accounts"]({ id })
+        .put(input as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useUpdatePreviousJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      id,
+      ...input
+    }: {
+      employeeId: string;
+      id: string;
+      workplace?: string;
+      startedOn?: string;
+      endedOn?: string;
+      note?: string;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["previous-jobs"]({ id })
+        .put(input as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useUpdatePartyMembership() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      id,
+      ...input
+    }: {
+      employeeId: string;
+      id: string;
+      organizationType?: string;
+      joinedOn?: string;
+      details?: string;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["party-memberships"]({ id })
+        .put(input as any);
       if (error) throw handleApiError(error);
       return data;
     },

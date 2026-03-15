@@ -41,6 +41,6 @@ cookies*.txt
 session-ses_*.md
 
 zdocx/
-ui/
+/ui/
 ztestapi/
 uploads/
