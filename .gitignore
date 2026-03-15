@@ -41,3 +41,6 @@ cookies*.txt
 session-ses_*.md
 
 zdocx/
+
+# Uploaded files
+uploads/
