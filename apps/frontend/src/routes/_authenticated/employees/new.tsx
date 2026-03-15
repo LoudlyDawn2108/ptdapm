@@ -366,25 +366,6 @@ function NewEmployeePage() {
               )}
             </section>
 
-            {/* ═══════ TRÌNH ĐỘ HỌC VẤN ═══════ */}
-            <section>
-              <SectionHeader title="TRÌNH ĐỘ HỌC VẤN" />
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <FormFieldSelect
-                  form={form}
-                  name="educationLevel"
-                  label="Trình độ văn hóa *"
-                  items={enumToSortedList(EducationLevel)}
-                />
-                <FormFieldSelect
-                  form={form}
-                  name="academicRank"
-                  label="Học hàm/Học vị *"
-                  items={enumToSortedList(AcademicRank)}
-                />
-              </div>
-            </section>
-
             {/* ═══════ THÔNG TIN GIA ĐÌNH ═══════ */}
             <DynamicSection
               title="THÔNG TIN GIA ĐÌNH"
@@ -409,103 +390,10 @@ function NewEmployeePage() {
               ))}
             </DynamicSection>
 
-            {/* ═══════ THÔNG TIN NGÂN HÀNG ═══════ */}
-            <DynamicSection
-              title="THÔNG TIN NGÂN HÀNG"
-              onAdd={() =>
-                bankFields.append({
-                  bankName: "",
-                  accountNo: "",
-                })
-              }
-            >
-              {bankFields.fields.map((field, index) => (
-                <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] items-end gap-3">
-                  <FI form={form} name={`bankAccounts.${index}.bankName`} label="Tên ngân hàng *" />
-                  <FI form={form} name={`bankAccounts.${index}.accountNo`} label="Số tài khoản *" />
-                  <RemoveBtn onClick={() => bankFields.remove(index)} />
-                </div>
-              ))}
-            </DynamicSection>
-
-            {/* ═══════ THÔNG TIN ĐOÀN/ĐẢNG ═══════ */}
-            <DynamicSection
-              title="THÔNG TIN ĐOÀN/ĐẢNG"
-              onAdd={() => partyFields.append({ organizationType: "", joinedOn: "", details: "" })}
-            >
-              {partyFields.fields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="grid grid-cols-[160px_140px_1fr_auto] items-end gap-3"
-                >
-                  <FormFieldSelect
-                    form={form}
-                    name={`partyMemberships.${index}.organizationType`}
-                    label="Loại tổ chức *"
-                    items={enumToSortedList(PartyOrgType)}
-                  />
-                  <FI
-                    form={form}
-                    name={`partyMemberships.${index}.joinedOn`}
-                    label="Ngày gia nhập *"
-                    type="date"
-                  />
-                  <FI
-                    form={form}
-                    name={`partyMemberships.${index}.details`}
-                    label="Thông tin chi tiết *"
-                  />
-                  <RemoveBtn onClick={() => partyFields.remove(index)} />
-                </div>
-              ))}
-            </DynamicSection>
-
-            {/* ═══════ THÔNG TIN BẰNG CẤP ═══════ */}
-            <DynamicSection
-              title="THÔNG TIN BẰNG CẤP"
-              onAdd={() => degreeFields.append({ degreeName: "", school: "" })}
-            >
-              {degreeFields.fields.map((field, index) => (
-                <div key={field.id} className="grid grid-cols-[1fr_1fr_auto_auto] items-end gap-3">
-                  <FI form={form} name={`degrees.${index}.degreeName`} label="Tên bằng *" />
-                  <FI form={form} name={`degrees.${index}.school`} label="Trường/Nơi cấp *" />
-                  <Button
-                    type="button"
-                    className="h-8 rounded-md bg-[#3B5CCC] px-3 text-xs text-white hover:bg-[#2F4FB8]"
-                  >
-                    <Upload className="mr-1 h-3.5 w-3.5" />
-                    Tải PDF
-                  </Button>
-                  <RemoveBtn onClick={() => degreeFields.remove(index)} />
-                </div>
-              ))}
-            </DynamicSection>
-
-            {/* ═══════ THÔNG TIN CHỨNG CHỈ ═══════ */}
-            <DynamicSection
-              title="THÔNG TIN CHỨNG CHỈ"
-              onAdd={() => certFields.append({ certName: "", issuedBy: "" })}
-            >
-              {certFields.fields.map((field, index) => (
-                <div key={field.id} className="grid grid-cols-[1fr_1fr_auto_auto] items-end gap-3">
-                  <FI form={form} name={`certificates.${index}.certName`} label="Tên chứng chỉ *" />
-                  <FI form={form} name={`certificates.${index}.issuedBy`} label="Nơi cấp" />
-                  <Button
-                    type="button"
-                    className="h-8 rounded-md bg-[#3B5CCC] px-3 text-xs text-white hover:bg-[#2F4FB8]"
-                  >
-                    <Upload className="mr-1 h-3.5 w-3.5" />
-                    Tải PDF
-                  </Button>
-                  <RemoveBtn onClick={() => certFields.remove(index)} />
-                </div>
-              ))}
-            </DynamicSection>
-
-            {/* ═══════ QUÁ TRÌNH CÔNG TÁC (optional — hidden by default) ═══════ */}
+            {/* ═══════ LỊCH SỬ CÔNG TÁC (optional — hidden by default) ═══════ */}
             <section>
               <div className="flex items-center justify-between">
-                <SectionHeader title="QUÁ TRÌNH CÔNG TÁC" compact />
+                <SectionHeader title="LỊCH SỬ CÔNG TÁC" compact />
                 <Button
                   type="button"
                   variant="ghost"
@@ -568,6 +456,120 @@ function NewEmployeePage() {
                 </div>
               )}
             </section>
+
+            {/* ═══════ THÔNG TIN NGÂN HÀNG ═══════ */}
+            <DynamicSection
+              title="THÔNG TIN NGÂN HÀNG"
+              onAdd={() =>
+                bankFields.append({
+                  bankName: "",
+                  accountNo: "",
+                })
+              }
+            >
+              {bankFields.fields.map((field, index) => (
+                <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] items-end gap-3">
+                  <FI form={form} name={`bankAccounts.${index}.bankName`} label="Tên ngân hàng *" />
+                  <FI form={form} name={`bankAccounts.${index}.accountNo`} label="Số tài khoản *" />
+                  <RemoveBtn onClick={() => bankFields.remove(index)} />
+                </div>
+              ))}
+            </DynamicSection>
+
+            {/* ═══════ THÔNG TIN ĐOÀN/ĐẢNG ═══════ */}
+            <DynamicSection
+              title="THÔNG TIN ĐOÀN/ĐẢNG"
+              onAdd={() => partyFields.append({ organizationType: "", joinedOn: "", details: "" })}
+            >
+              {partyFields.fields.map((field, index) => (
+                <div
+                  key={field.id}
+                  className="grid grid-cols-[160px_140px_1fr_auto] items-end gap-3"
+                >
+                  <FormFieldSelect
+                    form={form}
+                    name={`partyMemberships.${index}.organizationType`}
+                    label="Loại tổ chức *"
+                    items={enumToSortedList(PartyOrgType)}
+                  />
+                  <FI
+                    form={form}
+                    name={`partyMemberships.${index}.joinedOn`}
+                    label="Ngày gia nhập *"
+                    type="date"
+                  />
+                  <FI
+                    form={form}
+                    name={`partyMemberships.${index}.details`}
+                    label="Thông tin chi tiết *"
+                  />
+                  <RemoveBtn onClick={() => partyFields.remove(index)} />
+                </div>
+              ))}
+            </DynamicSection>
+
+            {/* ═══════ TRÌNH ĐỘ HỌC VẤN ═══════ */}
+            <section>
+              <SectionHeader title="TRÌNH ĐỘ HỌC VẤN" />
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                <FormFieldSelect
+                  form={form}
+                  name="educationLevel"
+                  label="Trình độ văn hóa *"
+                  items={enumToSortedList(EducationLevel)}
+                />
+                <FormFieldSelect
+                  form={form}
+                  name="academicRank"
+                  label="Học hàm/Học vị *"
+                  items={enumToSortedList(AcademicRank)}
+                />
+              </div>
+            </section>
+
+            {/* ═══════ THÔNG TIN BẰNG CẤP ═══════ */}
+            <DynamicSection
+              title="THÔNG TIN BẰNG CẤP"
+              onAdd={() => degreeFields.append({ degreeName: "", school: "" })}
+            >
+              {degreeFields.fields.map((field, index) => (
+                <div key={field.id} className="grid grid-cols-[1fr_1fr_auto_auto] items-end gap-3">
+                  <FI form={form} name={`degrees.${index}.degreeName`} label="Tên bằng *" />
+                  <FI form={form} name={`degrees.${index}.school`} label="Trường/Nơi cấp *" />
+                  <Button
+                    type="button"
+                    className="h-8 rounded-md bg-[#3B5CCC] px-3 text-xs text-white hover:bg-[#2F4FB8]"
+                  >
+                    <Upload className="mr-1 h-3.5 w-3.5" />
+                    Tải PDF
+                  </Button>
+                  <RemoveBtn onClick={() => degreeFields.remove(index)} />
+                </div>
+              ))}
+            </DynamicSection>
+
+            {/* ═══════ THÔNG TIN CHỨNG CHỈ ═══════ */}
+            <DynamicSection
+              title="THÔNG TIN CHỨNG CHỈ"
+              onAdd={() => certFields.append({ certName: "", issuedBy: "" })}
+            >
+              {certFields.fields.map((field, index) => (
+                <div key={field.id} className="grid grid-cols-[1fr_1fr_auto_auto] items-end gap-3">
+                  <FI form={form} name={`certificates.${index}.certName`} label="Tên chứng chỉ *" />
+                  <FI form={form} name={`certificates.${index}.issuedBy`} label="Nơi cấp" />
+                  <Button
+                    type="button"
+                    className="h-8 rounded-md bg-[#3B5CCC] px-3 text-xs text-white hover:bg-[#2F4FB8]"
+                  >
+                    <Upload className="mr-1 h-3.5 w-3.5" />
+                    Tải PDF
+                  </Button>
+                  <RemoveBtn onClick={() => certFields.remove(index)} />
+                </div>
+              ))}
+            </DynamicSection>
+
+            
 
             {/* ═══════ FOOTER ═══════ */}
             <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">

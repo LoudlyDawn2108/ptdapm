@@ -1,5 +1,5 @@
 
-### 4.23. Use Case: Tìm kiếm hồ sơ nhân sự (Nguyễn Hải Ninh)
+### 4.23. Use Case: Tìm kiếm hồ sơ nhân sự 
 
 |  |  |
 | --- | --- |

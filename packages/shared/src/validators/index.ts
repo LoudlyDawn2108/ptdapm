@@ -42,6 +42,12 @@ export {
   type ListAccountsQuery,
 } from "./accounts";
 export {
+  createEmploymentContractSchema,
+  type CreateEmploymentContractInput,
+  updateEmploymentContractSchema,
+  type UpdateEmploymentContractInput,
+} from "./contracts";
+export {
   createEmployeeSchema,
   type CreateEmployeeInput,
   type CreateEmployeeFormInput,

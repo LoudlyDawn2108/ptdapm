@@ -1,4 +1,3 @@
-import { api } from "@/api/client";
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,7 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { employeeDetailOptions, useUpdateEmployee } from "@/features/employees/api";
+import {
+  employeeDetailOptions,
+  useCreateBankAccount,
+  useCreateFamilyMember,
+  useCreatePartyMembership,
+  useCreatePreviousJob,
+  useUpdateEmployee,
+} from "@/features/employees/api";
 import { applyFieldErrors } from "@/lib/error-handler";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -27,13 +33,14 @@ import {
   FamilyRelation,
   Gender,
   PartyOrgType,
+  type UpdateEmployeeInput,
   enumToSortedList,
 } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Pencil, Plus, Save, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
+import { type SubmitHandler, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -54,7 +61,7 @@ const editFormSchema = z.object({
   healthInsuranceNo: z.string().optional(),
   isForeigner: z.boolean().default(false),
   educationLevel: z.string().min(1, "Bắt buộc"),
-  academicRank: z.string().min(1, "Bắt buộc"),
+  academicRank: z.string().optional(),
   portraitFileId: z.string().optional(),
   // --- Sub-entity arrays ---
   familyMembers: z
@@ -115,7 +122,27 @@ const editFormSchema = z.object({
     .default([]),
 });
 
-type FormValues = z.infer<typeof editFormSchema>;
+type SubmitValues = z.output<typeof editFormSchema>;
+type FormValues = Omit<
+  SubmitValues,
+  | "academicRank"
+  | "isForeigner"
+  | "familyMembers"
+  | "bankAccounts"
+  | "previousJobs"
+  | "partyMemberships"
+  | "degrees"
+  | "certificates"
+> & {
+  academicRank?: string;
+  isForeigner?: boolean;
+  familyMembers?: SubmitValues["familyMembers"];
+  bankAccounts?: SubmitValues["bankAccounts"];
+  previousJobs?: SubmitValues["previousJobs"];
+  partyMemberships?: SubmitValues["partyMemberships"];
+  degrees?: SubmitValues["degrees"];
+  certificates?: SubmitValues["certificates"];
+};
 
 export const Route = createFileRoute("/_authenticated/employees/$employeeId/edit")({
   component: EditEmployeePage,
@@ -125,6 +152,10 @@ function EditEmployeePage() {
   const { employeeId } = Route.useParams();
   const navigate = useNavigate();
   const updateMutation = useUpdateEmployee();
+  const createFamilyMemberMutation = useCreateFamilyMember();
+  const createBankAccountMutation = useCreateBankAccount();
+  const createPreviousJobMutation = useCreatePreviousJob();
+  const createPartyMembershipMutation = useCreatePartyMembership();
   const [portraitPreview, setPortraitPreview] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -133,6 +164,7 @@ function EditEmployeePage() {
   const form = useForm<FormValues>({
     resolver: zodResolver(editFormSchema),
     defaultValues: {
+      isForeigner: false,
       familyMembers: [],
       bankAccounts: [],
       previousJobs: [],
@@ -215,9 +247,11 @@ function EditEmployeePage() {
   }, [data, form]);
 
   /* ── Submit: update employee + create new sub-entities ── */
-  const onSubmit = async (formData: FormValues) => {
+  const onSubmit: SubmitHandler<FormValues> = async (rawFormData) => {
     try {
       setIsSaving(true);
+
+      const formData = editFormSchema.parse(rawFormData);
 
       // Phase 1: Update flat employee fields
       const {
@@ -230,26 +264,33 @@ function EditEmployeePage() {
         ...employeeData
       } = formData;
 
-      await updateMutation.mutateAsync({ id: employeeId, ...employeeData } as any);
+      const cleanedEmployeeData = Object.fromEntries(
+        Object.entries(employeeData).filter(([, value]) => value !== ""),
+      ) as UpdateEmployeeInput;
+
+      await updateMutation.mutateAsync({
+        id: employeeId,
+        ...cleanedEmployeeData,
+      });
 
       // Phase 2: Create new sub-entities (those without id)
       const promises: Promise<unknown>[] = [];
 
       for (const fm of familyMembers.filter((x) => !x.id)) {
         const { id: _id, ...body } = fm;
-        promises.push(api.api.employees({ employeeId })["family-members"].post(body as any));
+        promises.push(createFamilyMemberMutation.mutateAsync({ employeeId, ...body }));
       }
       for (const ba of bankAccounts.filter((x) => !x.id)) {
         const { id: _id, ...body } = ba;
-        promises.push(api.api.employees({ employeeId })["bank-accounts"].post(body as any));
+        promises.push(createBankAccountMutation.mutateAsync({ employeeId, ...body }));
       }
       for (const pj of previousJobs.filter((x) => !x.id)) {
         const { id: _id, ...body } = pj;
-        promises.push(api.api.employees({ employeeId })["previous-jobs"].post(body as any));
+        promises.push(createPreviousJobMutation.mutateAsync({ employeeId, ...body }));
       }
       for (const pm of partyMemberships.filter((x) => !x.id)) {
         const { id: _id, ...body } = pm;
-        promises.push(api.api.employees({ employeeId })["party-memberships"].post(body as any));
+        promises.push(createPartyMembershipMutation.mutateAsync({ employeeId, ...body }));
       }
 
       await Promise.all(promises);
@@ -259,11 +300,11 @@ function EditEmployeePage() {
         to: "/employees/$employeeId",
         params: { employeeId },
       });
-    } catch (error: any) {
-      if (error?.type === "field" && error?.fields) {
-        applyFieldErrors(form, error.fields);
+    } catch (error: unknown) {
+      if (error instanceof Error && "fields" in error) {
+        applyFieldErrors(form.setError, error);
       } else {
-        toast.error(error?.error || "Có lỗi xảy ra");
+        toast.error("Có lỗi xảy ra");
       }
     } finally {
       setIsSaving(false);
@@ -388,7 +429,7 @@ function EditEmployeePage() {
                 <FormFieldSelect
                   form={form}
                   name="academicRank"
-                  label="Học hàm/Học vị *"
+                  label="Học hàm/Học vị"
                   items={enumToSortedList(AcademicRank)}
                 />
               </div>

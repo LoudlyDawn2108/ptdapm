@@ -1,12 +1,24 @@
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/features/auth/hooks";
-import { employeeDetailOptions } from "@/features/employees/api";
+import { employeeDetailOptions, useMarkResigned } from "@/features/employees/api";
+import { ApiResponseError } from "@/lib/error-handler";
 import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useRouterState } from "@tanstack/react-router";
 import { Pencil, UserX } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 const TAB_ITEMS = [
   { value: "", label: "Thông tin chung", path: "" },
@@ -28,6 +40,9 @@ function EmployeeDetailLayout() {
   const { user } = useAuth();
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
+  const [showResignDialog, setShowResignDialog] = useState(false);
+  const [resignReason, setResignReason] = useState("");
+  const markResigned = useMarkResigned();
 
   const { data, isLoading } = useQuery(employeeDetailOptions(employeeId));
   const aggregate = data?.data as any;
@@ -55,6 +70,27 @@ function EmployeeDetailLayout() {
     );
   }
 
+  const handleCloseResignDialog = () => {
+    setShowResignDialog(false);
+    setResignReason("");
+  };
+
+  const handleConfirmResigned = async () => {
+    try {
+      await markResigned.mutateAsync({
+        id: employeeId,
+        reason: resignReason || undefined,
+      });
+      toast.success("Đã đánh dấu thôi việc thành công");
+      handleCloseResignDialog();
+    } catch (err: unknown) {
+      if (!(err instanceof ApiResponseError)) {
+        const message = err instanceof Error ? err.message : "Có lỗi xảy ra";
+        toast.error(message);
+      }
+    }
+  };
+
   return (
     <div>
       {/* ── Action Buttons ───────────────── */}
@@ -68,7 +104,7 @@ function EmployeeDetailLayout() {
           </Button>
         )}
         {canEdit && emp.workStatus !== "terminated" && (
-          <Button variant="destructive">
+          <Button variant="destructive" onClick={() => setShowResignDialog(true)}>
             <UserX className="mr-2 h-4 w-4" />
             Đánh dấu thôi việc
           </Button>
@@ -100,6 +136,50 @@ function EmployeeDetailLayout() {
 
       {/* ── Tab Content (child routes) ──── */}
       <Outlet />
+
+      <Dialog
+        open={showResignDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseResignDialog();
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận đánh dấu thôi việc</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn đánh dấu <strong>{emp.fullName}</strong> thôi việc? Hành động
+              này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="resign-reason">
+              Lý do thôi việc
+            </label>
+            <Input
+              id="resign-reason"
+              value={resignReason}
+              onChange={(e) => setResignReason(e.target.value)}
+              placeholder="Nhập lý do..."
+            />
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseResignDialog}>
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={markResigned.isPending}
+              onClick={handleConfirmResigned}
+            >
+              {markResigned.isPending ? "Đang xử lý..." : "Xác nhận"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

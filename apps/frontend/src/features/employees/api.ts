@@ -1,6 +1,11 @@
 import { api } from "@/api/client";
 import { handleApiError } from "@/lib/error-handler";
-import type { CreateEmployeeInput, UpdateEmployeeInput } from "@hrms/shared";
+import type {
+  CreateEmployeeInput,
+  CreateEmploymentContractInput,
+  UpdateEmployeeInput,
+  UpdateEmploymentContractInput,
+} from "@hrms/shared";
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // ──────────────────────────────────────────
@@ -203,6 +208,116 @@ export function useCreatePartyMembership() {
       const { data, error } = await api.api
         .employees({ employeeId })
         ["party-memberships"].post(input as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+// Allowance mutations
+export function useCreateAllowance() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      ...input
+    }: {
+      employeeId: string;
+      allowanceTypeId: string;
+      amount?: number | null;
+      note?: string | null;
+    }) => {
+      const { data, error } = await api.api.employees({ employeeId }).allowances.post(input as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useUpdateAllowance() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      id,
+      ...input
+    }: {
+      employeeId: string;
+      id: string;
+      allowanceTypeId?: string;
+      amount?: number | null;
+      note?: string | null;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        .allowances({ id })
+        .put(input as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useDeleteAllowance() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, id }: { employeeId: string; id: string }) => {
+      const { data, error } = await api.api.employees({ employeeId }).allowances({ id }).delete();
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useCreateContract() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      ...input
+    }: { employeeId: string } & CreateEmploymentContractInput) => {
+      const { data, error } = await api.api.employees({ employeeId }).contracts.post(input as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useUpdateContract() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      id,
+      ...input
+    }: { employeeId: string; id: string } & UpdateEmploymentContractInput) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        .contracts({ id })
+        .put(input as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useDeleteContract() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, id }: { employeeId: string; id: string }) => {
+      const { data, error } = await api.api.employees({ employeeId }).contracts({ id }).delete();
       if (error) throw handleApiError(error);
       return data;
     },
