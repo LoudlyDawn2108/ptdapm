@@ -1,0 +1,4 @@
+This captures all non-functional requirements (like performance, security, and usability) and generic functional requirements not tied to a single Use Case.
+*   **Reference Material:** **Chapter 8 ("Supplementary Specification"), specifically Sections 8.2 and 8.4**.
+*   **What the AI should extract:** The **FURPS+ classification system** (Functionality, Usability, Reliability, Performance, Supportability, Design constraints, Implementation, Interface, Physical, Documentation, Licensing/Legal). It should also extract evaluation metrics like "Importance" (Mandatory, Desirable, Nice to have) and "Satisfaction Shape" (Sharp, Medium, Linear) to judge the feasibility and priority of the requirements.
+*   **Skill Purpose:** To evaluate your non-functional requirements to ensure they are testable (e.g., rejecting "The system shall be fast" and requiring "Average system response time should be less than two seconds").

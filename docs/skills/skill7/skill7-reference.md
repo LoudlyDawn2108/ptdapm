@@ -1,0 +1,4 @@
+Test cases are derived from both Use Cases and Supplementary Requirements to ensure coverage.
+*   **Reference Material:** **Chapter 9 ("Creating Test Cases from Use Cases"), Section 9.1** and **Chapter 10 ("Creating Test Cases from Supplementary Requirements")**.
+*   **What the AI should extract:** The 4-step method for generating functional test cases: 1. Identify variables for each use case step, 2. Identify significantly different options for each variable (border conditions, invalid inputs, business rules), 3. Combine options into test cases (using a Test Case Allocation Matrix), 4. Assign values to variables. For non-functional testing, extract the 8 methods for testing supplementary requirements (executing in different environments, white-box testing, automated testing, checklists, etc.).
+*   **Skill Purpose:** To auto-generate test case tables in Markdown based on your Use Case alternative flows, ensuring negative testing and border conditions are covered.
