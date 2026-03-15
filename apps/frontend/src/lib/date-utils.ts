@@ -15,9 +15,7 @@ export function formatDate(date: string | Date | null | undefined): string {
  * Format a date string or Date to "dd/MM/yyyy HH:mm".
  * Returns empty string for null/undefined.
  */
-export function formatDateTime(
-  date: string | Date | null | undefined,
-): string {
+export function formatDateTime(date: string | Date | null | undefined): string {
   if (!date) return "";
   const d = typeof date === "string" ? parseISO(date) : date;
   return format(d, "dd/MM/yyyy HH:mm");
@@ -27,9 +25,7 @@ export function formatDateTime(
  * Format a date as relative time in Vietnamese (e.g., "3 ngày trước").
  * Returns empty string for null/undefined.
  */
-export function formatRelative(
-  date: string | Date | null | undefined,
-): string {
+export function formatRelative(date: string | Date | null | undefined): string {
   if (!date) return "";
   const d = typeof date === "string" ? parseISO(date) : date;
   return formatDistanceToNow(d, { addSuffix: true, locale: vi });
@@ -38,9 +34,7 @@ export function formatRelative(
 /**
  * Format a date for form inputs (yyyy-MM-dd).
  */
-export function formatForInput(
-  date: string | Date | null | undefined,
-): string {
+export function formatForInput(date: string | Date | null | undefined): string {
   if (!date) return "";
   const d = typeof date === "string" ? parseISO(date) : date;
   return format(d, "yyyy-MM-dd");

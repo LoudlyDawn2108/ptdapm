@@ -16,7 +16,7 @@ import { certificationRoutes } from "./modules/certifications";
 import { allowanceTypeRoutes } from "./modules/config/allowance-types";
 import { contractTypeRoutes } from "./modules/config/contract-types";
 import { salaryGradeRoutes } from "./modules/config/salary-grades";
-import { contractRoutes } from "./modules/contracts";
+import { contractAppendixRoutes, contractRoutes } from "./modules/contracts";
 import { dashboardRoutes } from "./modules/dashboard";
 import { degreeRoutes } from "./modules/degrees";
 import { employeeRoutes } from "./modules/employees";
@@ -70,6 +70,7 @@ const app = new Elysia()
   .use(certificationRoutes)
   .use(foreignWorkPermitRoutes)
   .use(accountRoutes)
+  .use(contractAppendixRoutes)
   .listen(env.PORT);
 
 console.log(`🦊 Server running at http://localhost:${app.server?.port}`);

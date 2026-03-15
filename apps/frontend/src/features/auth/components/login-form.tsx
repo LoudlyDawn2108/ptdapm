@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useNavigate } from "@tanstack/react-router";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useLogin } from "../api";
 import { applyFieldErrors } from "@/lib/error-handler";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
 import logoImg from "../../../../assets/tlu-logo.png";
+import { useLogin } from "../api";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Vui lòng nhập tên đăng nhập"),
@@ -63,17 +63,12 @@ export function LoginForm() {
       </div>
 
       {/* Title */}
-      <h1 className="mb-8 text-center text-2xl font-bold text-foreground">
-        Đăng nhập
-      </h1>
+      <h1 className="mb-8 text-center text-2xl font-bold text-foreground">Đăng nhập</h1>
 
       <form onSubmit={onSubmit} className="space-y-6">
         {/* Username */}
         <div className="space-y-2">
-          <label
-            htmlFor="login-username"
-            className="block text-sm font-medium text-foreground"
-          >
+          <label htmlFor="login-username" className="block text-sm font-medium text-foreground">
             Tên đăng nhập
           </label>
           <Input
@@ -84,18 +79,13 @@ export function LoginForm() {
             {...form.register("username")}
           />
           {form.formState.errors.username && (
-            <p className="text-sm text-destructive">
-              {form.formState.errors.username.message}
-            </p>
+            <p className="text-sm text-destructive">{form.formState.errors.username.message}</p>
           )}
         </div>
 
         {/* Password */}
         <div className="space-y-2">
-          <label
-            htmlFor="login-password"
-            className="block text-sm font-medium text-foreground"
-          >
+          <label htmlFor="login-password" className="block text-sm font-medium text-foreground">
             Mật khẩu
           </label>
           <div className="relative">
@@ -113,25 +103,17 @@ export function LoginForm() {
               onClick={() => setShowPassword(!showPassword)}
               tabIndex={-1}
             >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
           {form.formState.errors.password && (
-            <p className="text-sm text-destructive">
-              {form.formState.errors.password.message}
-            </p>
+            <p className="text-sm text-destructive">{form.formState.errors.password.message}</p>
           )}
         </div>
 
         {/* Root error message */}
         {rootError && (
-          <p className="text-center text-sm font-medium text-destructive">
-            {rootError}
-          </p>
+          <p className="text-center text-sm font-medium text-destructive">{rootError}</p>
         )}
 
         {/* Submit */}

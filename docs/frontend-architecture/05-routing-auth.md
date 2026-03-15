@@ -209,66 +209,170 @@ function LoginPage() {
 
 ---
 
-## Role-Based Route Protection
+## Role-Based Route Protection (Centralized Permission System)
 
-### Option A: Pathless Layout Routes (recommended for route groups)
+All route-level permissions are managed from a **single source of truth**: `src/lib/permissions.ts`. This file defines which roles can access which routes, and provides utilities used by both the router (enforcement) and the sidebar (visibility).
 
-```typescript
-// routes/_authenticated/_admin.tsx
-// All routes under _authenticated/_admin/ require ADMIN role
-import { createFileRoute, redirect } from "@tanstack/react-router";
+### Architecture Overview
 
-export const Route = createFileRoute("/_authenticated/_admin")({
-  beforeLoad: ({ context }) => {
-    if (context.user.role !== "ADMIN") {
-      throw redirect({ to: "/" });
-    }
-  },
-  component: ({ children }) => <>{children}</>,
-});
-
-// Then: routes/_authenticated/_admin/accounts/index.tsx
-// Automatically protected by _admin layout
+```
+lib/permissions.ts          ← Single source of truth (ROUTE_PERMISSIONS map)
+  ├── authorizeRoute()      ← Used in route files (beforeLoad guard)
+  ├── canAccessRoute()      ← Used in sidebar (filter visible nav items)
+  └── getRouteRoles()       ← General-purpose lookup
 ```
 
-### Option B: Inline Guard (for individual routes)
+### The Permissions Map
 
 ```typescript
-// routes/_authenticated/audit-logs/index.tsx
-export const Route = createFileRoute("/_authenticated/audit-logs/")({
-  beforeLoad: ({ context }) => {
-    if (context.user.role !== "ADMIN") {
-      throw redirect({ to: "/" });
-    }
-  },
-  component: AuditLogsPage,
+// src/lib/permissions.ts
+import type { RoleCode } from "@hrms/shared";
+
+// Routes NOT listed here are accessible to ALL authenticated users.
+export const ROUTE_PERMISSIONS: Record<string, RoleCode[]> = {
+  "/accounts":                ["ADMIN"],
+  "/employees":               ["ADMIN", "TCCB", "TCKT"],
+  "/employees/new":           ["ADMIN", "TCCB"],
+  "/org-units":               ["ADMIN", "TCCB"],
+  "/reports":                 ["ADMIN", "TCCB", "TCKT"],
+  "/config/salary-grades":    ["ADMIN", "TCCB"],
+  "/config/salary-coefficients": ["ADMIN", "TCCB"],
+  "/config/allowance-types":  ["ADMIN", "TCCB"],
+  "/config/contract-types":   ["ADMIN", "TCCB"],
+  "/training":                ["ADMIN", "TCCB"],
+  "/my/training":             ["EMPLOYEE"],
+};
+```
+
+### How to Add a New Protected Route
+
+**2 steps — no other files to touch:**
+
+```typescript
+// 1. Add route path + allowed roles to ROUTE_PERMISSIONS in lib/permissions.ts:
+export const ROUTE_PERMISSIONS: Record<string, RoleCode[]> = {
+  // ...existing routes...
+  "/your-new-route": ["ADMIN", "TCCB"],    // ← add this
+};
+
+// 2. In your route file, add beforeLoad:
+import { authorizeRoute } from "@/lib/permissions";
+
+export const Route = createFileRoute("/_authenticated/your-new-route/")({
+  beforeLoad: authorizeRoute("/your-new-route"),  // ← add this
+  component: YourNewPage,
 });
 ```
 
-### Option C: Component-Level Guard (for conditional UI)
+That's it. The sidebar automatically reads from `ROUTE_PERMISSIONS` via `canAccessRoute()` — no need to add inline `roles` arrays to sidebar config.
+
+### Route Guard: `authorizeRoute()`
+
+Used in route files as a `beforeLoad` guard. Checks the user's role against the permission map and redirects to `/forbidden` if unauthorized.
 
 ```typescript
-// components/shared/role-guard.tsx
-import { useRouteContext } from "@tanstack/react-router";
-import type { AuthUser } from "@hrms/shared";
-
-interface RoleGuardProps {
-  roles: string[];
-  children: React.ReactNode;
-  fallback?: React.ReactNode;
+// How it works internally:
+export function authorizeRoute(routePath: string) {
+  return ({ context }: { context: { user: { role: RoleCode } } }) => {
+    const allowedRoles = ROUTE_PERMISSIONS[routePath];
+    if (!allowedRoles) return; // Not in map → accessible to all authenticated users
+    if (!allowedRoles.includes(context.user.role)) {
+      throw redirect({ to: "/forbidden" });
+    }
+  };
 }
+```
 
-export function RoleGuard({ roles, children, fallback = null }: RoleGuardProps) {
-  const { user } = useRouteContext({ from: "/_authenticated" });
-  if (!roles.includes(user.role)) return <>{fallback}</>;
-  return <>{children}</>;
-}
+### Nested Route Inheritance
+
+Child routes automatically inherit parent permissions via `canAccessRoute()`:
+
+```typescript
+// If "/employees" is restricted to ["ADMIN", "TCCB", "TCKT"],
+// then "/employees/some-child" inherits those same permissions
+// (unless it has its own entry in ROUTE_PERMISSIONS with different roles).
+
+canAccessRoute("EMPLOYEE", "/employees/123");  // → false (inherits /employees rules)
+canAccessRoute("TCCB", "/employees/123");      // → true
+```
+
+To override a child route with different (stricter) permissions, add it explicitly:
+
+```typescript
+export const ROUTE_PERMISSIONS = {
+  "/employees":     ["ADMIN", "TCCB", "TCKT"],  // list: read access
+  "/employees/new": ["ADMIN", "TCCB"],           // create: write access only
+};
+```
+
+### Sidebar Integration
+
+The sidebar uses `canAccessRoute()` to filter navigation items. No inline `roles` arrays needed:
+
+```typescript
+// components/layout/app-sidebar.tsx
+import { canAccessRoute } from "@/lib/permissions";
+
+const visibleItems = items.filter(
+  (item) => user && canAccessRoute(user.role, item.to),
+);
+```
+
+### Component-Level Guard: `<RoleGuard>`
+
+For conditional rendering within a page (e.g., hiding an "Edit" button for read-only roles):
+
+```typescript
+import { RoleGuard } from "@/components/shared/role-guard";
 
 // Usage:
-// <RoleGuard roles={["ADMIN", "TCCB"]}>
-//   <Button>Edit Employee</Button>
-// </RoleGuard>
+<RoleGuard roles={["ADMIN", "TCCB"]}>
+  <Button>Edit Employee</Button>
+</RoleGuard>
+
+// With fallback:
+<RoleGuard roles={["ADMIN"]} fallback={<span>Read-only</span>}>
+  <Button>Delete</Button>
+</RoleGuard>
 ```
+
+> **Note**: `RoleGuard` accepts `RoleCode[]` (type-safe), not `string[]`.
+
+### `useAuth()` Hook
+
+For programmatic role checks in component logic:
+
+```typescript
+import { useAuth } from "@/features/auth/hooks";
+
+function SomePage() {
+  const { user, isAdmin, isTCCB, hasRole } = useAuth();
+
+  // Shorthand booleans:
+  if (isAdmin) { /* ... */ }
+
+  // Multi-role check:
+  if (hasRole("ADMIN", "TCCB")) { /* ... */ }
+}
+```
+
+> **Note**: `hasRole()` accepts `RoleCode` values (type-safe).
+
+### Forbidden Page (`/forbidden`)
+
+When `authorizeRoute()` denies access, the user is redirected to `/forbidden` — a dedicated 403 page that explains the restriction and provides a "Back to home" link.
+
+Located at: `src/routes/_authenticated/forbidden.tsx`
+
+### Summary: Where Each Tool Is Used
+
+| Tool | Where | Purpose |
+|------|-------|---------|
+| `ROUTE_PERMISSIONS` | `lib/permissions.ts` | Single source of truth for route → role mapping |
+| `authorizeRoute()` | Route files (`beforeLoad`) | Block unauthorized navigation |
+| `canAccessRoute()` | Sidebar, programmatic checks | Filter visible UI based on role |
+| `<RoleGuard>` | Inside page components | Conditionally render UI elements |
+| `useAuth().hasRole()` | Inside page components | Programmatic role checks in logic |
 
 ---
 
@@ -363,7 +467,9 @@ export function useIdleTimeout(onTimeout: () => void) {
 ## Key Rules
 
 1. **`beforeLoad` for auth/role checks** — runs before component renders, no flash.
-2. **Context flows down** — `_authenticated` puts `user` in context; all child routes access it.
-3. **Search params are the source of truth for filters** — bookmarkable, shareable, survives refresh.
-4. **Session is cached in TanStack Query** — `staleTime: 5min`, no redundant fetches.
-5. **Logout clears everything** — `queryClient.clear()` + hard redirect.
+2. **`ROUTE_PERMISSIONS` is the single source of truth** — add route permissions there, both router guards and sidebar read from it.
+3. **Context flows down** — `_authenticated` puts `user` in context; all child routes access it.
+4. **Search params are the source of truth for filters** — bookmarkable, shareable, survives refresh.
+5. **Session is cached in TanStack Query** — `staleTime: 5min`, no redundant fetches.
+6. **Logout clears everything** — `queryClient.clear()` + hard redirect.
+7. **All role types are `RoleCode`** — never use `string` for role parameters. Import `RoleCode` from `@hrms/shared`.

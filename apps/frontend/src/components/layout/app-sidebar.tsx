@@ -11,16 +11,14 @@ import {
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/features/auth/hooks";
+import { canAccessRoute } from "@/lib/permissions";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Building2,
-  ChartColumn,
   CircleUserRound,
   ClipboardList,
-  GraduationCap,
   type LucideIcon,
   Settings,
-  User,
   UsersRound,
 } from "lucide-react";
 import tluLogo from "../../../assets/tlu-logo.png";
@@ -29,7 +27,6 @@ interface NavItem {
   title: string;
   to: string;
   icon: LucideIcon;
-  roles?: string[];
 }
 
 interface NavGroupConfig {
@@ -45,7 +42,6 @@ const navGroups: NavGroupConfig[] = [
         title: "Danh sách tài khoản",
         to: "/accounts",
         icon: CircleUserRound,
-        roles: ["ADMIN"],
       },
     ],
   },
@@ -56,19 +52,11 @@ const navGroups: NavGroupConfig[] = [
         title: "Danh sách hồ sơ",
         to: "/employees",
         icon: UsersRound,
-        roles: ["TCCB", "TCKT"],
       },
       {
         title: "Sơ đồ tổ chức",
         to: "/org-units",
         icon: Building2,
-        roles: ["ADMIN", "TCCB"],
-      },
-      {
-        title: "Thống kê",
-        to: "/reports",
-        icon: ChartColumn,
-        roles: ["TCCB", "TCKT"],
       },
     ],
   },
@@ -76,54 +64,19 @@ const navGroups: NavGroupConfig[] = [
     label: "Cơ cấu tổ chức",
     items: [
       {
-        title: "Hệ số lương",
-        to: "/config/salary-coefficients",
+        title: "Ngạch lương",
+        to: "/config/salary-grades",
         icon: Settings,
-        roles: ["TCCB"],
       },
       {
         title: "Phụ cấp",
         to: "/config/allowance-types",
         icon: Settings,
-        roles: ["TCCB"],
       },
       {
         title: "Hợp đồng",
         to: "/config/contract-types",
         icon: ClipboardList,
-        roles: ["TCCB"],
-      },
-    ],
-  },
-  {
-    label: "Đào tạo",
-    items: [
-      {
-        title: "Đào tạo",
-        to: "/training",
-        icon: GraduationCap,
-        roles: ["TCCB"],
-      },
-    ],
-  },
-  {
-    label: "Cá nhân",
-    items: [
-      {
-        title: "Hồ sơ cá nhân",
-        to: "/my/profile",
-        icon: User,
-      },
-      {
-        title: "Đơn vị công tác",
-        to: "/my/org",
-        icon: Building2,
-      },
-      {
-        title: "Đào tạo của tôi",
-        to: "/my/training",
-        icon: GraduationCap,
-        roles: ["EMPLOYEE"],
       },
     ],
   },
@@ -134,9 +87,7 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
 
-  const visibleItems = items.filter(
-    (item) => !item.roles || (user && item.roles.includes(user.role)),
-  );
+  const visibleItems = items.filter((item) => user && canAccessRoute(user.role, item.to));
 
   if (visibleItems.length === 0) return null;
 

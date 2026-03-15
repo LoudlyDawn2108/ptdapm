@@ -1,23 +1,19 @@
 import type {
-  CreateEmploymentContractInput,
+  CreateEmployeeContractInput,
   PaginatedResponse,
-  UpdateEmploymentContractInput,
+  UpdateEmployeeContractInput,
 } from "@hrms/shared";
-import { and, eq } from "drizzle-orm";
-import { NotFoundError } from "../../common/utils/errors";
+import type { ContractDocStatusCode } from "@hrms/shared";
+import { type SQL, and, eq } from "drizzle-orm";
+import { ConflictError, NotFoundError } from "../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
 import { db } from "../../db";
 import {
   type EmploymentContract,
   contractTypes,
   employmentContracts,
-  orgUnits,
-} from "../../db/schema";
-
-type EmploymentContractListItem = EmploymentContract & {
-  contractTypeName: string;
-  orgUnitName: string;
-};
+} from "../../db/schema/contracts";
+import { orgUnits } from "../../db/schema/organization";
 
 async function ensureContractTypeExists(contractTypeId: string): Promise<void> {
   const [item] = await db
@@ -36,15 +32,17 @@ async function ensureOrgUnitExists(orgUnitId: string): Promise<void> {
     .where(eq(orgUnits.id, orgUnitId))
     .limit(1);
 
-  if (!item) throw new NotFoundError("Không tìm thấy đơn vị công tác");
+  if (!item) throw new NotFoundError("Không tìm thấy đơn vị");
 }
 
-async function getByIdForEmployee(employeeId: string, id: string): Promise<EmploymentContract> {
+export async function getByIdForEmployee(
+  employeeId: string,
+  id: string,
+): Promise<EmploymentContract> {
   const [item] = await db
     .select()
     .from(employmentContracts)
-    .where(and(eq(employmentContracts.id, id), eq(employmentContracts.employeeId, employeeId)))
-    .limit(1);
+    .where(and(eq(employmentContracts.id, id), eq(employmentContracts.employeeId, employeeId)));
 
   if (!item) throw new NotFoundError("Không tìm thấy hợp đồng");
   return item;
@@ -54,32 +52,18 @@ export async function listByEmployee(
   employeeId: string,
   page: number,
   pageSize: number,
-): Promise<PaginatedResponse<EmploymentContractListItem>> {
-  const where = eq(employmentContracts.employeeId, employeeId);
+  status?: ContractDocStatusCode,
+): Promise<PaginatedResponse<EmploymentContract>> {
+  const conditions: SQL[] = [eq(employmentContracts.employeeId, employeeId)];
+  if (status) {
+    conditions.push(eq(employmentContracts.status, status));
+  }
+  const where = and(...conditions);
 
-  const [items, total]: [EmploymentContractListItem[], number] = await Promise.all([
+  const [items, total]: [EmploymentContract[], number] = await Promise.all([
     db
-      .select({
-        id: employmentContracts.id,
-        employeeId: employmentContracts.employeeId,
-        contractTypeId: employmentContracts.contractTypeId,
-        contractNo: employmentContracts.contractNo,
-        signedOn: employmentContracts.signedOn,
-        effectiveFrom: employmentContracts.effectiveFrom,
-        effectiveTo: employmentContracts.effectiveTo,
-        orgUnitId: employmentContracts.orgUnitId,
-        status: employmentContracts.status,
-        contentHtml: employmentContracts.contentHtml,
-        contractFileId: employmentContracts.contractFileId,
-        createdByUserId: employmentContracts.createdByUserId,
-        createdAt: employmentContracts.createdAt,
-        updatedAt: employmentContracts.updatedAt,
-        contractTypeName: contractTypes.contractTypeName,
-        orgUnitName: orgUnits.unitName,
-      })
+      .select()
       .from(employmentContracts)
-      .innerJoin(contractTypes, eq(employmentContracts.contractTypeId, contractTypes.id))
-      .innerJoin(orgUnits, eq(employmentContracts.orgUnitId, orgUnits.id))
       .where(where)
       .limit(pageSize)
       .offset((page - 1) * pageSize)
@@ -92,17 +76,25 @@ export async function listByEmployee(
 
 export async function create(
   employeeId: string,
-  data: CreateEmploymentContractInput,
-  userId?: string,
+  data: CreateEmployeeContractInput,
+  createdByUserId: string,
 ): Promise<EmploymentContract> {
-  await Promise.all([
-    ensureContractTypeExists(data.contractTypeId),
-    ensureOrgUnitExists(data.orgUnitId),
-  ]);
+  await ensureContractTypeExists(data.contractTypeId);
+  await ensureOrgUnitExists(data.orgUnitId);
+
+  const existing = await db
+    .select({ id: employmentContracts.id })
+    .from(employmentContracts)
+    .where(eq(employmentContracts.contractNo, data.contractNo))
+    .limit(1);
+
+  if (existing.length > 0) {
+    throw new ConflictError("Số hợp đồng đã tồn tại");
+  }
 
   const [created] = await db
     .insert(employmentContracts)
-    .values({ ...data, employeeId, createdByUserId: userId })
+    .values({ ...data, employeeId, createdByUserId })
     .returning();
 
   if (!created) throw new Error("Insert failed");
@@ -112,7 +104,7 @@ export async function create(
 export async function update(
   employeeId: string,
   id: string,
-  data: UpdateEmploymentContractInput,
+  data: UpdateEmployeeContractInput,
 ): Promise<EmploymentContract> {
   await getByIdForEmployee(employeeId, id);
 
@@ -122,6 +114,18 @@ export async function update(
 
   if (data.orgUnitId) {
     await ensureOrgUnitExists(data.orgUnitId);
+  }
+
+  if (data.contractNo) {
+    const existing = await db
+      .select({ id: employmentContracts.id })
+      .from(employmentContracts)
+      .where(and(eq(employmentContracts.contractNo, data.contractNo)))
+      .limit(1);
+
+    if (existing.length > 0 && existing[0]?.id !== id) {
+      throw new ConflictError("Số hợp đồng đã tồn tại");
+    }
   }
 
   const [updated] = await db
@@ -136,10 +140,8 @@ export async function update(
 
 export async function remove(employeeId: string, id: string): Promise<{ id: string }> {
   await getByIdForEmployee(employeeId, id);
-
   await db
     .delete(employmentContracts)
     .where(and(eq(employmentContracts.id, id), eq(employmentContracts.employeeId, employeeId)));
-
   return { id };
 }

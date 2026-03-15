@@ -24,14 +24,15 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="flex flex-col items-center justify-center p-8">
             <h2 className="text-lg font-semibold">Đã xảy ra lỗi</h2>
             <p className="text-muted-foreground mt-2">
-              {this.state.error?.message ?? "Vui lòng thử lại sau"}
+              {this.state.error?.message ??
+                "Đã có lỗi xảy ra trong ứng dụng. Vui lòng thử tải lại trang hoặc liên hệ quản trị viên."}
             </p>
             <button
               type="button"
               className="mt-4 underline"
               onClick={() => window.location.reload()}
             >
-              Tải lại trang
+              Thử lại
             </button>
           </div>
         )

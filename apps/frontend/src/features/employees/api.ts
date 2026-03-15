@@ -126,7 +126,7 @@ export function useCreateEmployee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateEmployeeInput) => {
-      const { data, error } = await api.api.employees.post(input as any);
+      const { data, error } = await api.api.employees.post(input as Record<string, unknown>);
       if (error) throw handleApiError(error);
       return data;
     },
@@ -138,7 +138,9 @@ export function useUpdateEmployee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: UpdateEmployeeInput & { id: string }) => {
-      const { data, error } = await api.api.employees({ employeeId: id }).put(input as any);
+      const { data, error } = await api.api
+        .employees({ employeeId: id })
+        .put(input as Record<string, unknown>);
       if (error) throw handleApiError(error);
       return data;
     },

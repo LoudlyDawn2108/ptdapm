@@ -1,8 +1,12 @@
 import { z } from "zod";
 import {
   ACADEMIC_RANK_CODES,
+  ACADEMIC_TITLE_CODES,
   type AcademicRankCode,
+  type AcademicTitleCode,
+  CONTRACT_DOC_STATUS_CODES,
   CONTRACT_STATUS_CODES,
+  type ContractDocStatusCode,
   type ContractStatusCode,
   EDUCATION_LEVEL_CODES,
   type EducationLevelCode,
@@ -12,6 +16,8 @@ import {
   type GenderCode,
   PARTY_ORG_TYPE_CODES,
   type PartyOrgTypeCode,
+  TRAINING_LEVEL_CODES,
+  type TrainingLevelCode,
   WORK_STATUS_CODES,
   type WorkStatusCode,
 } from "../constants/enums";
@@ -87,6 +93,12 @@ const contractStatusSchema = z.enum(
 const educationLevelSchema = z.enum(
   EDUCATION_LEVEL_CODES as [EducationLevelCode, ...EducationLevelCode[]],
 );
+const trainingLevelSchema = z.enum(
+  TRAINING_LEVEL_CODES as [TrainingLevelCode, ...TrainingLevelCode[]],
+);
+const academicTitleSchema = z.enum(
+  ACADEMIC_TITLE_CODES as [AcademicTitleCode, ...AcademicTitleCode[]],
+);
 const academicRankSchema = z.enum(ACADEMIC_RANK_CODES as [AcademicRankCode, ...AcademicRankCode[]]);
 const familyRelationSchema = z.enum(
   FAMILY_RELATION_CODES as [FamilyRelationCode, ...FamilyRelationCode[]],
@@ -115,13 +127,15 @@ export const createEmployeeSchema = z.object({
   phone: requiredText("Số điện thoại không được để trống"),
   isForeigner: z.boolean({ error: "Giá trị quốc tịch không hợp lệ" }).default(false),
   educationLevel: requiredEnum(educationLevelSchema, "Trình độ văn hóa không được để trống"),
+  trainingLevel: requiredEnum(trainingLevelSchema, "Trình độ đào tạo không được để trống"),
+  academicTitle: requiredEnum(academicTitleSchema, "Chức danh nghề nghiệp không được để trống"),
   academicRank: requiredEnum(academicRankSchema, "Học hàm không được để trống"),
-  workStatus: optionalField(workStatusSchema),
-  contractStatus: optionalField(contractStatusSchema),
+  workStatus: requiredEnum(workStatusSchema, "Trạng thái làm việc không được để trống"),
+  contractStatus: requiredEnum(contractStatusSchema, "Trạng thái hợp đồng không được để trống"),
   currentOrgUnitId: optionalUuid("Đơn vị công tác không hợp lệ"),
   currentPositionTitle: optionalText(),
-  salaryGradeStepId: optionalUuid("Bậc lương không hợp lệ"),
-  portraitFileId: optionalUuid("Ảnh chân dung không hợp lệ"),
+  salaryGradeStepId: requiredUuid("Bậc lương không được để trống"),
+  portraitFileId: requiredUuid("Ảnh chân dung không được để trống"),
   terminatedOn: optionalDate(),
   terminationReason: optionalText(),
 });
@@ -136,7 +150,10 @@ export type UpdateEmployeeInput = z.infer<typeof updateEmployeeSchema>;
 export const createEmployeeFamilyMemberSchema = z.object({
   relation: familyRelationSchema,
   fullName: z.string({ error: "Họ tên không được để trống" }).min(1, "Họ tên không được để trống"),
-  isDependent: z.boolean().default(false),
+  dob: optionalDate(),
+  phone: z.string().nullish(),
+  note: z.string().nullish(),
+  isDependent: z.boolean({ error: "Giá trị người phụ thuộc không hợp lệ" }).default(false),
 });
 
 export type CreateEmployeeFamilyMemberInput = z.infer<typeof createEmployeeFamilyMemberSchema>;
@@ -153,7 +170,7 @@ export const createEmployeeBankAccountSchema = z.object({
   accountNo: z
     .string({ error: "Số tài khoản không được để trống" })
     .min(1, "Số tài khoản không được để trống"),
-  isPrimary: z.boolean().default(false),
+  isPrimary: z.boolean({ error: "Giá trị tài khoản chính không hợp lệ" }).default(true),
 });
 
 export type CreateEmployeeBankAccountInput = z.infer<typeof createEmployeeBankAccountSchema>;
@@ -169,6 +186,7 @@ const employeePreviousJobFieldsSchema = z.object({
     .min(1, "Nơi làm việc không được để trống"),
   startedOn: requiredDate("Ngày bắt đầu không được để trống"),
   endedOn: requiredDate("Ngày kết thúc không được để trống"),
+  note: z.string().nullish(),
 });
 
 export const createEmployeePreviousJobSchema = employeePreviousJobFieldsSchema.superRefine(
@@ -234,6 +252,88 @@ export const updateEmployeeAllowanceSchema = createEmployeeAllowanceSchema.parti
 
 export type UpdateEmployeeAllowanceInput = z.infer<typeof updateEmployeeAllowanceSchema>;
 
+const contractFieldsSchema = z.object({
+  contractTypeId: z.uuid({ error: "Loại hợp đồng không được để trống" }),
+  contractNo: z
+    .string({ error: "Số hợp đồng không được để trống" })
+    .min(1, "Số hợp đồng không được để trống"),
+  signedOn: requiredDate("Ngày ký không được để trống"),
+  effectiveFrom: requiredDate("Ngày hiệu lực không được để trống"),
+  effectiveTo: requiredDate("Ngày hết hạn không được để trống"),
+  orgUnitId: z.uuid({ error: "Đơn vị không được để trống" }),
+  status: z
+    .enum(CONTRACT_DOC_STATUS_CODES as [ContractDocStatusCode, ...ContractDocStatusCode[]])
+    .optional(),
+  contentHtml: z.string().nullish(),
+  contractFileId: z.string().uuid().nullish(),
+});
+
+export const createEmployeeContractSchema = contractFieldsSchema.superRefine((data, ctx) => {
+  const from = new Date(data.effectiveFrom);
+  const to = new Date(data.effectiveTo);
+  if (!Number.isNaN(from.getTime()) && !Number.isNaN(to.getTime()) && to <= from) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Ngày hết hạn phải sau ngày hiệu lực",
+      path: ["effectiveTo"],
+    });
+  }
+  const signed = new Date(data.signedOn);
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  if (!Number.isNaN(signed.getTime()) && signed > today) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Ngày ký không được trong tương lai",
+      path: ["signedOn"],
+    });
+  }
+});
+export type CreateEmployeeContractInput = z.infer<typeof createEmployeeContractSchema>;
+
+export const updateEmployeeContractSchema = contractFieldsSchema
+  .partial()
+  .superRefine((data, ctx) => {
+    if (data.effectiveFrom != null && data.effectiveTo != null) {
+      const from = new Date(data.effectiveFrom);
+      const to = new Date(data.effectiveTo);
+      if (!Number.isNaN(from.getTime()) && !Number.isNaN(to.getTime()) && to <= from) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Ngày hết hạn phải sau ngày hiệu lực",
+          path: ["effectiveTo"],
+        });
+      }
+    }
+    if (data.signedOn != null) {
+      const signed = new Date(data.signedOn);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      if (!Number.isNaN(signed.getTime()) && signed > today) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Ngày ký không được trong tương lai",
+          path: ["signedOn"],
+        });
+      }
+    }
+  });
+export type UpdateEmployeeContractInput = z.infer<typeof updateEmployeeContractSchema>;
+
+export const createContractAppendixSchema = z.object({
+  appendixNo: z.string().nullish(),
+  effectiveOn: requiredDate("Ngày hiệu lực không được để trống"),
+  terms: z
+    .string({ error: "Nội dung điều khoản không được để trống" })
+    .min(1, "Nội dung điều khoản không được để trống"),
+  notes: z.string().nullish(),
+  appendixFileId: z.string().uuid().nullish(),
+});
+export type CreateContractAppendixInput = z.infer<typeof createContractAppendixSchema>;
+
+export const updateContractAppendixSchema = createContractAppendixSchema.partial();
+export type UpdateContractAppendixInput = z.infer<typeof updateContractAppendixSchema>;
+
 export const createEmployeeDegreeSchema = z.object({
   degreeName: z
     .string({ error: "Tên bằng không được để trống" })
@@ -243,11 +343,8 @@ export const createEmployeeDegreeSchema = z.object({
     .min(1, "Trường/Nơi cấp không được để trống"),
   degreeFileId: optionalUuid("File bằng không hợp lệ"),
 });
-
 export type CreateEmployeeDegreeInput = z.infer<typeof createEmployeeDegreeSchema>;
-
 export const updateEmployeeDegreeSchema = createEmployeeDegreeSchema.partial();
-
 export type UpdateEmployeeDegreeInput = z.infer<typeof updateEmployeeDegreeSchema>;
 
 export const createEmployeeCertificationSchema = z.object({
@@ -257,11 +354,8 @@ export const createEmployeeCertificationSchema = z.object({
   issuedBy: optionalText(),
   certFileId: optionalUuid("File chứng chỉ không hợp lệ"),
 });
-
 export type CreateEmployeeCertificationInput = z.infer<typeof createEmployeeCertificationSchema>;
-
 export const updateEmployeeCertificationSchema = createEmployeeCertificationSchema.partial();
-
 export type UpdateEmployeeCertificationInput = z.infer<typeof updateEmployeeCertificationSchema>;
 
 export const createForeignWorkPermitSchema = z.object({
@@ -273,11 +367,8 @@ export const createForeignWorkPermitSchema = z.object({
   workPermitExpiresOn: optionalDate(),
   workPermitFileId: optionalUuid("File giấy phép lao động không hợp lệ"),
 });
-
 export type CreateForeignWorkPermitInput = z.infer<typeof createForeignWorkPermitSchema>;
-
 export const updateForeignWorkPermitSchema = createForeignWorkPermitSchema.partial();
-
 export type UpdateForeignWorkPermitInput = z.infer<typeof updateForeignWorkPermitSchema>;
 
 export const importEmployeeRowSchema = z.object({

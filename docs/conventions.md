@@ -89,6 +89,7 @@ apps/frontend/src/routes/
 - `_authenticated.tsx` = layout route that checks auth, redirects to `/login` if unauthenticated
 - `employees_/$employeeId.tsx` = pathless layout for employee detail (tab nav + `<Outlet />`)
 - Each dev adds their tab files into `$employeeId/`
+- **Role-based route protection**: All route permissions are defined in `src/lib/permissions.ts` (single source of truth). To protect a new route, add it to `ROUTE_PERMISSIONS` and add `beforeLoad: authorizeRoute("/your-route")` in the route file. See `docs/frontend-architecture/05-routing-auth.md` for full details.
 
 ---
 
@@ -201,7 +202,7 @@ Eden Treaty: `const { data, error } = await api...get()`. Check `error` non-null
 - **Zustand** for auth state + UI state only. One store per domain, not one global store.
 - **React Hook Form + `zodResolver`** for forms — reuse `@hrms/shared` schemas.
 - **shadcn/ui** for components — install via `npx shadcn@latest add <component>`.
-- **Role-based UI**: Use `user.role` from auth store to conditionally render. Backend enforces via `requireRole()` — frontend checks are UX only.
+- **Role-based UI**: Route-level enforcement via `authorizeRoute()` in `beforeLoad` (redirects unauthorized users to `/forbidden`). Component-level via `<RoleGuard>`. All permissions defined in `src/lib/permissions.ts`. Backend also enforces via `requireRole()` — defense in depth.
 
 ### Auth Flow
 

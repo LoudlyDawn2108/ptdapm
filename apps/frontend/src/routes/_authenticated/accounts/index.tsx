@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { QueryError } from "@/components/shared/query-error";
 import { StatusBadgeFromCode } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -12,25 +13,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { accountListOptions, useSetAccountStatus } from "@/features/accounts/api";
-import { useDebounce } from "@/hooks/use-debounce";
+import { useListPage } from "@/hooks/use-list-page";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { authorizeRoute } from "@/lib/permissions";
 import { AuthUserStatus, Role, enumToSortedList } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Lock, Plus, Unlock } from "lucide-react";
-import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
 const searchSchema = z.object({
   page: z.number().default(1),
-  pageSize: z.number().default(20),
+  pageSize: z.number().default(DEFAULT_PAGE_SIZE),
   search: z.string().optional(),
   role: z.string().optional(),
   status: z.string().optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/accounts/")({
+  beforeLoad: authorizeRoute("/accounts"),
   validateSearch: searchSchema,
   component: AccountsPage,
 });
@@ -38,18 +41,21 @@ export const Route = createFileRoute("/_authenticated/accounts/")({
 function AccountsPage() {
   const navigate = useNavigate({ from: "/accounts/" });
   const search = Route.useSearch();
-  const [searchText, setSearchText] = useState(search.search ?? "");
-  const debouncedSearch = useDebounce(searchText);
+  const { searchText, setSearchText, debouncedSearch, pagination, onPaginationChange } =
+    useListPage({
+      search,
+      onNavigate: (update) => navigate({ search: (prev) => ({ ...prev, ...update }) }),
+    });
 
   const params = {
     page: search.page,
     pageSize: search.pageSize,
-    search: debouncedSearch || undefined,
+    search: debouncedSearch,
     role: search.role,
     status: search.status,
   };
 
-  const { data, isLoading } = useQuery(accountListOptions(params));
+  const { data, isLoading, isError, error, refetch } = useQuery(accountListOptions(params));
   const setStatusMutation = useSetAccountStatus();
   const result = data?.data;
 
@@ -102,7 +108,11 @@ function AccountsPage() {
               </Button>
             }
             title={isLocked ? "Mở khóa tài khoản" : "Khóa tài khoản"}
-            description={`Bạn có chắc muốn ${isLocked ? "mở khóa" : "khóa"} tài khoản "${row.original.username}"?`}
+            description={
+              isLocked
+                ? `Bạn có chắc muốn mở khóa tài khoản "${row.original.username}"?`
+                : `Bạn có chắc muốn khóa tài khoản "${row.original.username}"?`
+            }
             confirmLabel={isLocked ? "Mở khóa" : "Khóa"}
             variant={isLocked ? "default" : "destructive"}
             onConfirm={() =>
@@ -122,6 +132,18 @@ function AccountsPage() {
       },
     },
   ];
+
+  if (isError) {
+    return (
+      <div>
+        <PageHeader
+          title="Quản lý tài khoản"
+          description="Danh sách tài khoản người dùng hệ thống"
+        />
+        <QueryError error={error} onRetry={refetch} />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -199,26 +221,8 @@ function AccountsPage() {
         columns={columns}
         data={result?.items ?? []}
         pageCount={result?.totalPages ?? 0}
-        pagination={{
-          pageIndex: (search.page ?? 1) - 1,
-          pageSize: search.pageSize ?? 20,
-        }}
-        onPaginationChange={(updater) => {
-          const next =
-            typeof updater === "function"
-              ? updater({
-                  pageIndex: (search.page ?? 1) - 1,
-                  pageSize: search.pageSize ?? 20,
-                })
-              : updater;
-          navigate({
-            search: {
-              ...search,
-              page: next.pageIndex + 1,
-              pageSize: next.pageSize,
-            },
-          });
-        }}
+        pagination={pagination}
+        onPaginationChange={onPaginationChange}
         isLoading={isLoading}
         emptyMessage="Không có tài khoản nào"
       />

@@ -6,9 +6,7 @@ import type { DropdownOption } from "@/components/ui/combobox";
  * Each returns DropdownOption[] = { value, label }[].
  */
 
-export async function fetchContractTypeDropdown(
-  search: string,
-): Promise<DropdownOption[]> {
+export async function fetchContractTypeDropdown(search: string): Promise<DropdownOption[]> {
   const { data, error } = await api.api.config["contract-types"].dropdown.get({
     query: { search: search || undefined, limit: 20 },
   });
@@ -16,9 +14,7 @@ export async function fetchContractTypeDropdown(
   return (data as any)?.data ?? [];
 }
 
-export async function fetchAllowanceTypeDropdown(
-  search: string,
-): Promise<DropdownOption[]> {
+export async function fetchAllowanceTypeDropdown(search: string): Promise<DropdownOption[]> {
   const { data, error } = await api.api.config["allowance-types"].dropdown.get({
     query: { search: search || undefined, limit: 20 },
   });
@@ -26,9 +22,7 @@ export async function fetchAllowanceTypeDropdown(
   return (data as any)?.data ?? [];
 }
 
-export async function fetchSalaryGradeDropdown(
-  search: string,
-): Promise<DropdownOption[]> {
+export async function fetchSalaryGradeDropdown(search: string): Promise<DropdownOption[]> {
   const { data, error } = await api.api.config["salary-grades"].dropdown.get({
     query: { search: search || undefined, limit: 50 },
   });
@@ -36,9 +30,7 @@ export async function fetchSalaryGradeDropdown(
   return (data as any)?.data ?? [];
 }
 
-export async function fetchOrgUnitDropdown(
-  search: string,
-): Promise<DropdownOption[]> {
+export async function fetchOrgUnitDropdown(search: string): Promise<DropdownOption[]> {
   const { data, error } = await api.api["org-units"].dropdown.get({
     query: { search: search || undefined, limit: 20 },
   });

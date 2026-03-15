@@ -1,9 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/layout/page-header";
-import { statisticsOptions } from "@/features/dashboard/api";
+import { QueryError } from "@/components/shared/query-error";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Building2, GraduationCap, BarChart3 } from "lucide-react";
+import { statisticsOptions } from "@/features/dashboard/api";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { BarChart3, Building2, GraduationCap, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -37,8 +38,20 @@ function StatCard({
 }
 
 function DashboardPage() {
-  const { data, isLoading } = useQuery(statisticsOptions());
+  const { data, isLoading, isError, error, refetch } = useQuery(statisticsOptions());
   const stats = data?.data;
+
+  if (isError) {
+    return (
+      <div>
+        <PageHeader
+          title="Bảng điều khiển"
+          description="Tổng quan Hệ thống Quản lý Nhân sự — Trường Đại học Thủy Lợi"
+        />
+        <QueryError error={error} onRetry={refetch} />
+      </div>
+    );
+  }
 
   return (
     <div>

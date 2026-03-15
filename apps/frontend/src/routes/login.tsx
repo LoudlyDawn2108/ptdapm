@@ -1,6 +1,6 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
 import { sessionOptions } from "@/features/auth/api";
 import { LoginForm } from "@/features/auth/components/login-form";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import bgImage from "../../assets/image-476.jpeg";
 
 export const Route = createFileRoute("/login")({
