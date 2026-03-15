@@ -2,7 +2,6 @@ import { api } from "@/api/client";
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Combobox } from "@/components/ui/combobox";
 import {
   Form,
   FormControl,
@@ -20,19 +19,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { employeeDetailOptions, useUpdateEmployee } from "@/features/employees/api";
-import { fetchOrgUnitDropdown, fetchSalaryGradeDropdown } from "@/lib/api/config-dropdowns";
 import { applyFieldErrors } from "@/lib/error-handler";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AcademicRank,
-  AcademicTitle,
-  ContractStatus,
   EducationLevel,
   FamilyRelation,
   Gender,
   PartyOrgType,
-  TrainingLevel,
-  WorkStatus,
   enumToSortedList,
 } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
@@ -60,14 +54,7 @@ const editFormSchema = z.object({
   healthInsuranceNo: z.string().optional(),
   isForeigner: z.boolean().default(false),
   educationLevel: z.string().min(1, "Bắt buộc"),
-  trainingLevel: z.string().min(1, "Bắt buộc"),
-  academicTitle: z.string().min(1, "Bắt buộc"),
   academicRank: z.string().min(1, "Bắt buộc"),
-  workStatus: z.string().optional(),
-  contractStatus: z.string().optional(),
-  currentOrgUnitId: z.string().optional(),
-  currentPositionTitle: z.string().optional(),
-  salaryGradeStepId: z.string().optional(),
   portraitFileId: z.string().optional(),
   // --- Sub-entity arrays ---
   familyMembers: z
@@ -76,9 +63,6 @@ const editFormSchema = z.object({
         id: z.string().optional(),
         relation: z.string().min(1, "Bắt buộc"),
         fullName: z.string().min(1, "Bắt buộc"),
-        dob: z.string().optional(),
-        phone: z.string().optional(),
-        isDependent: z.boolean().default(false),
       }),
     )
     .default([]),
@@ -88,7 +72,6 @@ const editFormSchema = z.object({
         id: z.string().optional(),
         bankName: z.string().min(1, "Bắt buộc"),
         accountNo: z.string().min(1, "Bắt buộc"),
-        isPrimary: z.boolean().default(false),
       }),
     )
     .default([]),
@@ -99,7 +82,6 @@ const editFormSchema = z.object({
         workplace: z.string().min(1, "Bắt buộc"),
         startedOn: z.string().min(1, "Bắt buộc"),
         endedOn: z.string().min(1, "Bắt buộc"),
-        note: z.string().optional(),
       }),
     )
     .default([]),
@@ -119,8 +101,6 @@ const editFormSchema = z.object({
         id: z.string().optional(),
         degreeName: z.string().min(1, "Bắt buộc"),
         school: z.string().min(1, "Bắt buộc"),
-        major: z.string().optional(),
-        graduationYear: z.string().optional(),
       }),
     )
     .default([]),
@@ -130,8 +110,6 @@ const editFormSchema = z.object({
         id: z.string().optional(),
         certName: z.string().min(1, "Bắt buộc"),
         issuedBy: z.string().optional(),
-        issuedOn: z.string().optional(),
-        expiresOn: z.string().optional(),
       }),
     )
     .default([]),
@@ -198,36 +176,24 @@ function EditEmployeePage() {
       phone: emp.phone ?? "",
       isForeigner: emp.isForeigner ?? false,
       educationLevel: emp.educationLevel ?? "",
-      trainingLevel: emp.trainingLevel ?? "",
-      academicTitle: emp.academicTitle ?? "",
       academicRank: emp.academicRank ?? "",
-      workStatus: emp.workStatus ?? "",
-      contractStatus: emp.contractStatus ?? "",
-      currentOrgUnitId: emp.currentOrgUnitId ?? "",
-      currentPositionTitle: emp.currentPositionTitle ?? "",
-      salaryGradeStepId: emp.salaryGradeStepId ?? "",
       portraitFileId: emp.portraitFileId ?? "",
       // Sub-entity arrays
       familyMembers: familyMembers.map((fm: any) => ({
         id: fm.id,
         relation: fm.relation ?? "",
         fullName: fm.fullName ?? "",
-        dob: fm.dob ? String(fm.dob).split("T")[0] : "",
-        phone: fm.phone ?? "",
-        isDependent: fm.isDependent ?? false,
       })),
       bankAccounts: bankAccounts.map((ba: any) => ({
         id: ba.id,
         bankName: ba.bankName ?? "",
         accountNo: ba.accountNo ?? "",
-        isPrimary: ba.isPrimary ?? false,
       })),
       previousJobs: previousJobs.map((pj: any) => ({
         id: pj.id,
         workplace: pj.workplace ?? "",
         startedOn: pj.startedOn ? String(pj.startedOn).split("T")[0] : "",
         endedOn: pj.endedOn ? String(pj.endedOn).split("T")[0] : "",
-        note: pj.note ?? "",
       })),
       partyMemberships: partyMemberships.map((pm: any) => ({
         id: pm.id,
@@ -239,15 +205,11 @@ function EditEmployeePage() {
         id: d.id,
         degreeName: d.degreeName ?? "",
         school: d.school ?? "",
-        major: d.major ?? "",
-        graduationYear: d.graduationYear != null ? String(d.graduationYear) : "",
       })),
       certificates: (certifications ?? []).map((c: any) => ({
         id: c.id,
         certName: c.certName ?? "",
         issuedBy: c.issuedBy ?? "",
-        issuedOn: c.issuedOn ? String(c.issuedOn).split("T")[0] : "",
-        expiresOn: c.expiresOn ? String(c.expiresOn).split("T")[0] : "",
       })),
     });
   }, [data, form]);
@@ -425,92 +387,9 @@ function EditEmployeePage() {
                 />
                 <FormFieldSelect
                   form={form}
-                  name="trainingLevel"
-                  label="Trình độ đào tạo *"
-                  items={enumToSortedList(TrainingLevel)}
-                />
-                <FormFieldSelect
-                  form={form}
-                  name="academicTitle"
-                  label="Chức danh nghề nghiệp *"
-                  items={enumToSortedList(AcademicTitle)}
-                />
-                <FormFieldSelect
-                  form={form}
                   name="academicRank"
-                  label="Chức danh khoa học *"
+                  label="Học hàm/Học vị *"
                   items={enumToSortedList(AcademicRank)}
-                />
-              </div>
-            </section>
-
-            {/* ── ĐƠN VỊ & TRẠNG THÁI ── */}
-            <section>
-              <SectionHeader title="ĐƠN VỊ & TRẠNG THÁI" />
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="currentOrgUnitId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-medium text-slate-600">
-                        Đơn vị công tác
-                      </FormLabel>
-                      <FormControl>
-                        <Combobox
-                          queryKey={["org-units", "dropdown", "edit-form"]}
-                          fetchOptions={fetchOrgUnitDropdown}
-                          value={field.value ?? ""}
-                          onChange={field.onChange}
-                          placeholder="Chọn đơn vị..."
-                          className="w-full h-9 rounded-md"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FI form={form} name="currentPositionTitle" label="Chức vụ" />
-                <FormFieldSelect
-                  form={form}
-                  name="workStatus"
-                  label="Trạng thái làm việc *"
-                  items={enumToSortedList(WorkStatus)}
-                />
-                <FormFieldSelect
-                  form={form}
-                  name="contractStatus"
-                  label="Trạng thái hợp đồng *"
-                  items={enumToSortedList(ContractStatus)}
-                />
-              </div>
-            </section>
-
-            {/* ── LƯƠNG ── */}
-            <section>
-              <SectionHeader title="LƯƠNG" />
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="salaryGradeStepId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-medium text-slate-600">
-                        Bậc lương *
-                      </FormLabel>
-                      <FormControl>
-                        <Combobox
-                          queryKey={["salary-grades", "dropdown", "edit"]}
-                          fetchOptions={fetchSalaryGradeDropdown}
-                          value={field.value ?? ""}
-                          onChange={field.onChange}
-                          placeholder="Chọn bậc lương..."
-                          className="w-full h-9 rounded-md"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
                 />
               </div>
             </section>
@@ -527,9 +406,6 @@ function EditEmployeePage() {
                   familyFields.append({
                     relation: "",
                     fullName: "",
-                    dob: "",
-                    phone: "",
-                    isDependent: false,
                   })
                 }
               />
@@ -563,29 +439,6 @@ function EditEmployeePage() {
                       items={enumToSortedList(FamilyRelation)}
                     />
                     <FI form={form} name={`familyMembers.${index}.fullName`} label="Họ tên *" />
-                    <FI
-                      form={form}
-                      name={`familyMembers.${index}.dob`}
-                      label="Ngày sinh"
-                      type="date"
-                    />
-                    <FI form={form} name={`familyMembers.${index}.phone`} label="Số điện thoại" />
-                  </div>
-                  <div className="mt-3">
-                    <FormField
-                      control={form.control}
-                      name={`familyMembers.${index}.isDependent`}
-                      render={({ field: f }) => (
-                        <FormItem className="flex items-center gap-2">
-                          <FormControl>
-                            <Checkbox checked={f.value ?? false} onCheckedChange={f.onChange} />
-                          </FormControl>
-                          <FormLabel className="!mt-0 text-xs text-slate-600">
-                            Người phụ thuộc
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
                   </div>
                 </div>
               ))}
@@ -598,7 +451,7 @@ function EditEmployeePage() {
             <section>
               <DynamicSectionHeader
                 title="THÔNG TIN NGÂN HÀNG"
-                onAdd={() => bankFields.append({ bankName: "", accountNo: "", isPrimary: false })}
+                onAdd={() => bankFields.append({ bankName: "", accountNo: "" })}
               />
               {bankFields.fields.map((field, index) => (
                 <div
@@ -630,22 +483,6 @@ function EditEmployeePage() {
                       label="Số tài khoản *"
                     />
                   </div>
-                  <div className="mt-3">
-                    <FormField
-                      control={form.control}
-                      name={`bankAccounts.${index}.isPrimary`}
-                      render={({ field: f }) => (
-                        <FormItem className="flex items-center gap-2">
-                          <FormControl>
-                            <Checkbox checked={f.value ?? false} onCheckedChange={f.onChange} />
-                          </FormControl>
-                          <FormLabel className="!mt-0 text-xs text-slate-600">
-                            Tài khoản chính
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
                 </div>
               ))}
               {bankFields.fields.length === 0 && (
@@ -657,9 +494,7 @@ function EditEmployeePage() {
             <section>
               <DynamicSectionHeader
                 title="QUÁ TRÌNH CÔNG TÁC"
-                onAdd={() =>
-                  jobFields.append({ workplace: "", startedOn: "", endedOn: "", note: "" })
-                }
+                onAdd={() => jobFields.append({ workplace: "", startedOn: "", endedOn: "" })}
               />
               {jobFields.fields.map((field, index) => (
                 <div
@@ -689,7 +524,6 @@ function EditEmployeePage() {
                       name={`previousJobs.${index}.workplace`}
                       label="Nơi công tác *"
                     />
-                    <FI form={form} name={`previousJobs.${index}.note`} label="Ghi chú" />
                     <FI
                       form={form}
                       name={`previousJobs.${index}.startedOn`}
@@ -772,9 +606,7 @@ function EditEmployeePage() {
             <section>
               <DynamicSectionHeader
                 title="THÔNG TIN BẰNG CẤP"
-                onAdd={() =>
-                  degreeFields.append({ degreeName: "", school: "", major: "", graduationYear: "" })
-                }
+                onAdd={() => degreeFields.append({ degreeName: "", school: "" })}
               />
               {degreeFields.fields.map((field, index) => (
                 <div
@@ -801,12 +633,6 @@ function EditEmployeePage() {
                   <div className="grid grid-cols-2 gap-4">
                     <FI form={form} name={`degrees.${index}.degreeName`} label="Tên bằng *" />
                     <FI form={form} name={`degrees.${index}.school`} label="Trường *" />
-                    <FI form={form} name={`degrees.${index}.major`} label="Chuyên ngành" />
-                    <FI
-                      form={form}
-                      name={`degrees.${index}.graduationYear`}
-                      label="Năm tốt nghiệp"
-                    />
                   </div>
                 </div>
               ))}
@@ -819,9 +645,7 @@ function EditEmployeePage() {
             <section>
               <DynamicSectionHeader
                 title="THÔNG TIN CHỨNG CHỈ"
-                onAdd={() =>
-                  certFields.append({ certName: "", issuedBy: "", issuedOn: "", expiresOn: "" })
-                }
+                onAdd={() => certFields.append({ certName: "", issuedBy: "" })}
               />
               {certFields.fields.map((field, index) => (
                 <div
@@ -852,18 +676,6 @@ function EditEmployeePage() {
                       label="Tên chứng chỉ *"
                     />
                     <FI form={form} name={`certificates.${index}.issuedBy`} label="Cơ quan cấp" />
-                    <FI
-                      form={form}
-                      name={`certificates.${index}.issuedOn`}
-                      label="Ngày cấp"
-                      type="date"
-                    />
-                    <FI
-                      form={form}
-                      name={`certificates.${index}.expiresOn`}
-                      label="Ngày hết hạn"
-                      type="date"
-                    />
                   </div>
                 </div>
               ))}

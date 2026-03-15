@@ -244,8 +244,6 @@ export async function exportSingleEmployeeXlsx(
     ["Trạng thái hợp đồng", formatValue(employee.contractStatus)],
     ["Là người nước ngoài", formatValue(employee.isForeigner)],
     ["Trình độ học vấn", formatValue(employee.educationLevel)],
-    ["Trình độ đào tạo", formatValue(employee.trainingLevel)],
-    ["Học hàm", formatValue(employee.academicTitle)],
     ["Học vị", formatValue(employee.academicRank)],
   ];
 
@@ -262,10 +260,6 @@ export async function exportSingleEmployeeXlsx(
     [
       { header: "Quan hệ", value: (item) => item.relation },
       { header: "Họ tên", value: (item) => item.fullName },
-      { header: "Ngày sinh", value: (item) => item.dob },
-      { header: "SĐT", value: (item) => item.phone },
-      { header: "Phụ thuộc", value: (item) => item.isDependent },
-      { header: "Ghi chú", value: (item) => item.note, width: 28 },
     ],
     aggregate.familyMembers,
   );
@@ -276,7 +270,6 @@ export async function exportSingleEmployeeXlsx(
     [
       { header: "Ngân hàng", value: (item) => item.bankName },
       { header: "Số tài khoản", value: (item) => item.accountNo },
-      { header: "Chính", value: (item) => item.isPrimary },
     ],
     aggregate.bankAccounts,
   );
@@ -288,7 +281,6 @@ export async function exportSingleEmployeeXlsx(
       { header: "Nơi công tác", value: (item) => item.workplace, width: 24 },
       { header: "Từ ngày", value: (item) => item.startedOn },
       { header: "Đến ngày", value: (item) => item.endedOn },
-      { header: "Ghi chú", value: (item) => item.note, width: 28 },
     ],
     aggregate.previousJobs,
   );
@@ -321,9 +313,6 @@ export async function exportSingleEmployeeXlsx(
     [
       { header: "Tên bằng cấp", value: (item) => item.degreeName, width: 24 },
       { header: "Trường", value: (item) => item.school, width: 24 },
-      { header: "Chuyên ngành", value: (item) => item.major, width: 20 },
-      { header: "Năm TN", value: (item) => item.graduationYear },
-      { header: "Xếp loại", value: (item) => item.classification },
     ],
     optionalItems(aggregate.degrees),
   );
@@ -334,8 +323,6 @@ export async function exportSingleEmployeeXlsx(
     [
       { header: "Tên chứng chỉ", value: (item) => item.certName, width: 24 },
       { header: "Đơn vị cấp", value: (item) => item.issuedBy, width: 24 },
-      { header: "Ngày cấp", value: (item) => item.issuedOn },
-      { header: "Hết hạn", value: (item) => item.expiresOn },
     ],
     optionalItems(aggregate.certifications),
   );
@@ -422,26 +409,21 @@ export async function exportEmployeePdf(aggregate: EmployeeExportAggregate): Pro
     writeTableSection(
       doc,
       "Gia đình",
-      ["Quan hệ", "Họ tên", "Ngày sinh", "SĐT", "Phụ thuộc", "Ghi chú"],
+      ["Quan hệ", "Họ tên"],
       aggregate.familyMembers.map((item) => [
         formatValue(item.relation),
         formatValue(item.fullName),
-        formatValue(item.dob),
-        formatValue(item.phone),
-        formatValue(item.isDependent),
-        formatValue(item.note),
       ]),
     );
 
     writeTableSection(
       doc,
       "Quá trình công tác",
-      ["Nơi công tác", "Từ ngày", "Đến ngày", "Ghi chú"],
+      ["Nơi công tác", "Từ ngày", "Đến ngày"],
       aggregate.previousJobs.map((item) => [
         formatValue(item.workplace),
         formatValue(item.startedOn),
         formatValue(item.endedOn),
-        formatValue(item.note),
       ]),
     );
 
@@ -459,11 +441,10 @@ export async function exportEmployeePdf(aggregate: EmployeeExportAggregate): Pro
     writeTableSection(
       doc,
       "Tài khoản ngân hàng",
-      ["Ngân hàng", "Số tài khoản", "Chính"],
+      ["Ngân hàng", "Số tài khoản"],
       aggregate.bankAccounts.map((item) => [
         formatValue(item.bankName),
         formatValue(item.accountNo),
-        formatValue(item.isPrimary),
       ]),
     );
 
@@ -481,25 +462,20 @@ export async function exportEmployeePdf(aggregate: EmployeeExportAggregate): Pro
     writeTableSection(
       doc,
       "Bằng cấp",
-      ["Tên bằng cấp", "Trường", "Chuyên ngành", "Năm TN", "Xếp loại"],
+      ["Tên bằng cấp", "Trường"],
       optionalItems(aggregate.degrees).map((item) => [
         formatValue(item.degreeName),
         formatValue(item.school),
-        formatValue(item.major),
-        formatValue(item.graduationYear),
-        formatValue(item.classification),
       ]),
     );
 
     writeTableSection(
       doc,
       "Chứng chỉ",
-      ["Tên chứng chỉ", "Đơn vị cấp", "Ngày cấp", "Hết hạn"],
+      ["Tên chứng chỉ", "Đơn vị cấp"],
       optionalItems(aggregate.certifications).map((item) => [
         formatValue(item.certName),
         formatValue(item.issuedBy),
-        formatValue(item.issuedOn),
-        formatValue(item.expiresOn),
       ]),
     );
 

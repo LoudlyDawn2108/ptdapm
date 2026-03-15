@@ -1,29 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { updateEmployeeSchema } from "@hrms/shared";
-import type { UpdateEmployeeInput } from "@hrms/shared";
-import {
-  employeeDetailOptions,
-  useUpdateEmployee,
-} from "@/features/employees/api";
 import { PageHeader } from "@/components/layout/page-header";
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Combobox } from "@/components/ui/combobox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -32,27 +11,29 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
-  fetchOrgUnitDropdown,
-  fetchSalaryGradeDropdown,
-} from "@/lib/api/config-dropdowns";
-import {
-  Gender,
-  WorkStatus,
-  ContractStatus,
-  EducationLevel,
-  TrainingLevel,
-  AcademicTitle,
-  AcademicRank,
-  enumToSortedList,
-} from "@hrms/shared";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { employeeDetailOptions, useUpdateEmployee } from "@/features/employees/api";
 import { applyFieldErrors } from "@/lib/error-handler";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { updateEmployeeSchema } from "@hrms/shared";
+import type { UpdateEmployeeInput } from "@hrms/shared";
+import { AcademicRank, EducationLevel, Gender, enumToSortedList } from "@hrms/shared";
+import { useQuery } from "@tanstack/react-query";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Save } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
-export const Route = createFileRoute(
-  "/_authenticated/employees_/$employeeId/edit",
-)({
+export const Route = createFileRoute("/_authenticated/employees_/$employeeId/edit")({
   component: EditEmployeePage,
 });
 
@@ -86,14 +67,7 @@ function EditEmployeePage() {
       phone: emp.phone ?? "",
       isForeigner: emp.isForeigner ?? false,
       educationLevel: emp.educationLevel as any,
-      trainingLevel: emp.trainingLevel as any,
-      academicTitle: emp.academicTitle as any,
       academicRank: emp.academicRank as any,
-      workStatus: emp.workStatus as any,
-      contractStatus: emp.contractStatus as any,
-      currentOrgUnitId: emp.currentOrgUnitId ?? "",
-      currentPositionTitle: emp.currentPositionTitle ?? "",
-      salaryGradeStepId: emp.salaryGradeStepId ?? "",
       portraitFileId: emp.portraitFileId ?? "",
     });
   }, [emp, form]);
@@ -128,9 +102,7 @@ function EditEmployeePage() {
     return (
       <div>
         <PageHeader title="Không tìm thấy" />
-        <p className="text-muted-foreground">
-          Không tìm thấy thông tin nhân sự.
-        </p>
+        <p className="text-muted-foreground">Không tìm thấy thông tin nhân sự.</p>
       </div>
     );
   }
@@ -142,10 +114,7 @@ function EditEmployeePage() {
         description="Cập nhật thông tin hồ sơ nhân sự"
         actions={
           <Button variant="outline" asChild>
-            <Link
-              to="/employees/$employeeId"
-              params={{ employeeId }}
-            >
+            <Link to="/employees/$employeeId" params={{ employeeId }}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Quay lại
             </Link>
@@ -158,10 +127,7 @@ function EditEmployeePage() {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="w-full justify-start overflow-x-auto">
               <TabsTrigger value="general">Thông tin chung</TabsTrigger>
-              <TabsTrigger value="education">
-                Trình độ & Chức danh
-              </TabsTrigger>
-              <TabsTrigger value="salary">Lương</TabsTrigger>
+              <TabsTrigger value="education">Trình độ học vấn</TabsTrigger>
             </TabsList>
 
             {/* ── Tab: Thông tin chung ── */}
@@ -169,14 +135,17 @@ function EditEmployeePage() {
               <div className="grid gap-6 md:grid-cols-2">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">
-                      Thông tin cá nhân
-                    </CardTitle>
+                    <CardTitle className="text-base">Thông tin cá nhân</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <EditFormFieldInput form={form} name="fullName" label="Họ tên *" />
                     <EditFormFieldInput form={form} name="dob" label="Ngày sinh *" type="date" />
-                    <EditFormFieldSelect form={form} name="gender" label="Giới tính *" items={enumToSortedList(Gender)} />
+                    <EditFormFieldSelect
+                      form={form}
+                      name="gender"
+                      label="Giới tính *"
+                      items={enumToSortedList(Gender)}
+                    />
                     <EditFormFieldInput form={form} name="nationalId" label="Số CCCD/CMND *" />
                     <EditFormFieldInput form={form} name="hometown" label="Quê quán *" />
                     <EditFormFieldInput form={form} name="address" label="Địa chỉ *" />
@@ -185,9 +154,7 @@ function EditEmployeePage() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">
-                      Liên hệ & Bảo hiểm
-                    </CardTitle>
+                    <CardTitle className="text-base">Liên hệ & Bảo hiểm</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <EditFormFieldInput form={form} name="email" label="Email *" type="email" />
@@ -206,9 +173,7 @@ function EditEmployeePage() {
                               onCheckedChange={field.onChange}
                             />
                           </FormControl>
-                          <FormLabel className="!mt-0">
-                            Người nước ngoài
-                          </FormLabel>
+                          <FormLabel className="!mt-0">Người nước ngoài</FormLabel>
                         </FormItem>
                       )}
                     />
@@ -219,84 +184,22 @@ function EditEmployeePage() {
 
             {/* ── Tab: Trình độ ── */}
             <TabsContent value="education" className="mt-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">
-                      Trình độ học vấn
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <EditFormFieldSelect form={form} name="educationLevel" label="Trình độ văn hóa *" items={enumToSortedList(EducationLevel)} />
-                    <EditFormFieldSelect form={form} name="trainingLevel" label="Trình độ đào tạo *" items={enumToSortedList(TrainingLevel)} />
-                    <EditFormFieldSelect form={form} name="academicTitle" label="Chức danh nghề nghiệp *" items={enumToSortedList(AcademicTitle)} />
-                    <EditFormFieldSelect form={form} name="academicRank" label="Chức danh khoa học *" items={enumToSortedList(AcademicRank)} />
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">
-                      Đơn vị & Trạng thái
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="currentOrgUnitId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Đơn vị công tác</FormLabel>
-                          <FormControl>
-                            <Combobox
-                              queryKey={[
-                                "org-units",
-                                "dropdown",
-                                "edit-form",
-                              ]}
-                              fetchOptions={fetchOrgUnitDropdown}
-                              value={field.value ?? ""}
-                              onChange={field.onChange}
-                              placeholder="Chọn đơn vị..."
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <EditFormFieldInput form={form} name="currentPositionTitle" label="Chức vụ" />
-                    <EditFormFieldSelect form={form} name="workStatus" label="Trạng thái làm việc *" items={enumToSortedList(WorkStatus)} />
-                    <EditFormFieldSelect form={form} name="contractStatus" label="Trạng thái hợp đồng *" items={enumToSortedList(ContractStatus)} />
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            {/* ── Tab: Lương ── */}
-            <TabsContent value="salary" className="mt-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Hệ số lương</CardTitle>
+                  <CardTitle className="text-base">Trình độ học vấn</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="salaryGradeStepId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Bậc lương *</FormLabel>
-                        <FormControl>
-                          <Combobox
-                            queryKey={["salary-grades", "dropdown", "edit"]}
-                            fetchOptions={fetchSalaryGradeDropdown}
-                            value={field.value ?? ""}
-                            onChange={field.onChange}
-                            placeholder="Chọn bậc lương..."
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                  <EditFormFieldSelect
+                    form={form}
+                    name="educationLevel"
+                    label="Trình độ văn hóa *"
+                    items={enumToSortedList(EducationLevel)}
+                  />
+                  <EditFormFieldSelect
+                    form={form}
+                    name="academicRank"
+                    label="Học hàm/Học vị *"
+                    items={enumToSortedList(AcademicRank)}
                   />
                 </CardContent>
               </Card>

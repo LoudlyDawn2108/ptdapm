@@ -3,13 +3,11 @@ import { Button } from "@/components/ui/button";
 import { employeeDetailOptions } from "@/features/employees/api";
 import {
   AcademicRank,
-  AcademicTitle,
   ContractStatus,
   EducationLevel,
   FamilyRelation,
   Gender,
   PartyOrgType,
-  TrainingLevel,
   WorkStatus,
   enumToSortedList,
 } from "@hrms/shared";
@@ -85,8 +83,6 @@ function EmployeeDetailPage() {
   const workStatusMap = useMemo(() => buildMap(WorkStatus), []);
   const contractStatusMap = useMemo(() => buildMap(ContractStatus), []);
   const educationLevelMap = useMemo(() => buildMap(EducationLevel), []);
-  const trainingLevelMap = useMemo(() => buildMap(TrainingLevel), []);
-  const academicTitleMap = useMemo(() => buildMap(AcademicTitle), []);
   const academicRankMap = useMemo(() => buildMap(AcademicRank), []);
   const familyRelationMap = useMemo(() => buildMap(FamilyRelation), []);
   const partyOrgTypeMap = useMemo(() => buildMap(PartyOrgType), []);
@@ -229,14 +225,6 @@ function EmployeeDetailPage() {
               label="Trình độ văn hóa"
               value={educationLevelMap.get(emp.educationLevel ?? "")}
             />
-            <InfoField
-              label="Trình độ đào tạo"
-              value={trainingLevelMap.get(emp.trainingLevel ?? "")}
-            />
-            <InfoField
-              label="Chức danh nghề nghiệp"
-              value={academicTitleMap.get(emp.academicTitle ?? "")}
-            />
             <InfoField label="Học hàm/học vị" value={academicRankMap.get(emp.academicRank ?? "")} />
           </div>
         </section>
@@ -264,14 +252,11 @@ function EmployeeDetailPage() {
                 <tr>
                   <th className={thClass}>Quan hệ</th>
                   <th className={thClass}>Họ tên</th>
-                  <th className={thClass}>Ngày sinh</th>
-                  <th className={thClass}>Số điện thoại</th>
-                  <th className={thClass}>Người phụ thuộc</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {familyMembers.length === 0 ? (
-                  <EmptyRow colSpan={5} />
+                  <EmptyRow colSpan={2} />
                 ) : (
                   familyMembers.map((fm) => (
                     <tr key={fm.id}>
@@ -279,9 +264,6 @@ function EmployeeDetailPage() {
                         {familyRelationMap.get(fm.relation) ?? fm.relation}
                       </td>
                       <td className={tdClass}>{fm.fullName}</td>
-                      <td className={tdClass}>{formatDate(fm.dob)}</td>
-                      <td className={tdClass}>{fm.phone || "—"}</td>
-                      <td className={tdClass}>{fm.isDependent ? "Có" : "Không"}</td>
                     </tr>
                   ))
                 )}
@@ -299,18 +281,16 @@ function EmployeeDetailPage() {
                 <tr>
                   <th className={thClass}>Ngân hàng</th>
                   <th className={thClass}>Số tài khoản</th>
-                  <th className={thClass}>Tài khoản chính</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {bankAccounts.length === 0 ? (
-                  <EmptyRow colSpan={3} />
+                  <EmptyRow colSpan={2} />
                 ) : (
                   bankAccounts.map((ba) => (
                     <tr key={ba.id}>
                       <td className={tdClass}>{ba.bankName}</td>
                       <td className={`${tdClass} font-mono`}>{ba.accountNo}</td>
-                      <td className={tdClass}>{ba.isPrimary ? "Có" : "Không"}</td>
                     </tr>
                   ))
                 )}
@@ -329,19 +309,17 @@ function EmployeeDetailPage() {
                   <th className={thClass}>Nơi làm việc</th>
                   <th className={thClass}>Từ ngày</th>
                   <th className={thClass}>Đến ngày</th>
-                  <th className={thClass}>Ghi chú</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {previousJobs.length === 0 ? (
-                  <EmptyRow colSpan={4} />
+                  <EmptyRow colSpan={3} />
                 ) : (
                   previousJobs.map((pj) => (
                     <tr key={pj.id}>
                       <td className={tdClass}>{pj.workplace}</td>
                       <td className={tdClass}>{formatDate(pj.startedOn)}</td>
                       <td className={tdClass}>{formatDate(pj.endedOn)}</td>
-                      <td className={tdClass}>{pj.note || "—"}</td>
                     </tr>
                   ))
                 )}
@@ -390,20 +368,16 @@ function EmployeeDetailPage() {
                 <tr>
                   <th className={thClass}>Tên bằng cấp</th>
                   <th className={thClass}>Trường</th>
-                  <th className={thClass}>Chuyên ngành</th>
-                  <th className={thClass}>Năm tốt nghiệp</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {degrees.length === 0 ? (
-                  <EmptyRow colSpan={4} />
+                  <EmptyRow colSpan={2} />
                 ) : (
                   degrees.map((d) => (
                     <tr key={d.id}>
                       <td className={tdClass}>{d.degreeName}</td>
                       <td className={tdClass}>{d.school}</td>
-                      <td className={tdClass}>{d.major || "—"}</td>
-                      <td className={tdClass}>{d.graduationYear ?? "—"}</td>
                     </tr>
                   ))
                 )}
@@ -421,20 +395,16 @@ function EmployeeDetailPage() {
                 <tr>
                   <th className={thClass}>Tên chứng chỉ</th>
                   <th className={thClass}>Nơi cấp</th>
-                  <th className={thClass}>Ngày cấp</th>
-                  <th className={thClass}>Ngày hết hạn</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {certifications.length === 0 ? (
-                  <EmptyRow colSpan={4} />
+                  <EmptyRow colSpan={2} />
                 ) : (
                   certifications.map((c) => (
                     <tr key={c.id}>
                       <td className={tdClass}>{c.certName}</td>
                       <td className={tdClass}>{c.issuedBy || "—"}</td>
-                      <td className={tdClass}>{formatDate(c.issuedOn)}</td>
-                      <td className={tdClass}>{formatDate(c.expiresOn)}</td>
                     </tr>
                   ))
                 )}

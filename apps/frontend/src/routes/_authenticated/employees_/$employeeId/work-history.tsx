@@ -1,65 +1,37 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { employeeDetailOptions } from "@/features/employees/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
+import { ReadOnlyField } from "@/components/shared/read-only-field";
+import { employeeDetailOptions } from "@/features/employees/api";
 import { formatDate } from "@/lib/date-utils";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute(
-  "/_authenticated/employees_/$employeeId/work-history",
-)({
+export const Route = createFileRoute("/_authenticated/employees_/$employeeId/work-history")({
   component: WorkHistoryTab,
 });
 
 function WorkHistoryTab() {
   const { employeeId } = Route.useParams();
   const { data, isLoading } = useQuery(employeeDetailOptions(employeeId));
-  const emp = data?.data;
+  const aggregate = data?.data as any;
+  const previousJobs = aggregate?.previousJobs as any[] | undefined;
 
   if (isLoading) return <FormSkeleton fields={3} />;
-  if (!emp) return null;
-
-  const previousJobs = (emp as any).previousJobs as any[] | undefined;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">
-          Quá trình công tác trước khi về trường
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {previousJobs && previousJobs.length > 0 ? (
-          <div className="overflow-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th className="py-2 pr-4">STT</th>
-                  <th className="py-2 pr-4">Nơi công tác</th>
-                  <th className="py-2 pr-4">Từ ngày</th>
-                  <th className="py-2 pr-4">Đến ngày</th>
-                  <th className="py-2">Ghi chú</th>
-                </tr>
-              </thead>
-              <tbody>
-                {previousJobs.map((job: any, i: number) => (
-                  <tr key={job.id ?? i} className="border-b last:border-0">
-                    <td className="py-2 pr-4">{i + 1}</td>
-                    <td className="py-2 pr-4 font-medium">{job.workplace}</td>
-                    <td className="py-2 pr-4">{formatDate(job.startedOn)}</td>
-                    <td className="py-2 pr-4">{formatDate(job.endedOn)}</td>
-                    <td className="py-2">{job.note ?? "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+    <div className="rounded-xl border bg-card p-6 space-y-6">
+      {previousJobs && previousJobs.length > 0 ? (
+        previousJobs.map((job: any) => (
+          <div key={job.id} className="grid grid-cols-[2fr_1fr_1fr] gap-4">
+            <ReadOnlyField label="Tên nơi công tác" value={job.workplace} />
+            <ReadOnlyField label="Từ ngày" value={formatDate(job.startedOn)} />
+            <ReadOnlyField label="Đến ngày" value={formatDate(job.endedOn)} />
           </div>
-        ) : (
-          <p className="text-center text-sm text-muted-foreground py-4">
-            Chưa có thông tin quá trình công tác.
-          </p>
-        )}
-      </CardContent>
-    </Card>
+        ))
+      ) : (
+        <p className="text-center text-sm text-muted-foreground py-4">
+          Chưa có thông tin quá trình công tác.
+        </p>
+      )}
+    </div>
   );
 }

@@ -1,9 +1,7 @@
 import { z } from "zod";
 import {
   ACADEMIC_RANK_CODES,
-  ACADEMIC_TITLE_CODES,
   type AcademicRankCode,
-  type AcademicTitleCode,
   CONTRACT_STATUS_CODES,
   type ContractStatusCode,
   EDUCATION_LEVEL_CODES,
@@ -14,8 +12,6 @@ import {
   type GenderCode,
   PARTY_ORG_TYPE_CODES,
   type PartyOrgTypeCode,
-  TRAINING_LEVEL_CODES,
-  type TrainingLevelCode,
   WORK_STATUS_CODES,
   type WorkStatusCode,
 } from "../constants/enums";
@@ -91,12 +87,6 @@ const contractStatusSchema = z.enum(
 const educationLevelSchema = z.enum(
   EDUCATION_LEVEL_CODES as [EducationLevelCode, ...EducationLevelCode[]],
 );
-const trainingLevelSchema = z.enum(
-  TRAINING_LEVEL_CODES as [TrainingLevelCode, ...TrainingLevelCode[]],
-);
-const academicTitleSchema = z.enum(
-  ACADEMIC_TITLE_CODES as [AcademicTitleCode, ...AcademicTitleCode[]],
-);
 const academicRankSchema = z.enum(ACADEMIC_RANK_CODES as [AcademicRankCode, ...AcademicRankCode[]]);
 const familyRelationSchema = z.enum(
   FAMILY_RELATION_CODES as [FamilyRelationCode, ...FamilyRelationCode[]],
@@ -125,8 +115,6 @@ export const createEmployeeSchema = z.object({
   phone: requiredText("Số điện thoại không được để trống"),
   isForeigner: z.boolean({ error: "Giá trị quốc tịch không hợp lệ" }).default(false),
   educationLevel: requiredEnum(educationLevelSchema, "Trình độ văn hóa không được để trống"),
-  trainingLevel: requiredEnum(trainingLevelSchema, "Trình độ đào tạo không được để trống"),
-  academicTitle: requiredEnum(academicTitleSchema, "Chức danh nghề nghiệp không được để trống"),
   academicRank: requiredEnum(academicRankSchema, "Học hàm không được để trống"),
   workStatus: optionalField(workStatusSchema),
   contractStatus: optionalField(contractStatusSchema),
@@ -148,10 +136,6 @@ export type UpdateEmployeeInput = z.infer<typeof updateEmployeeSchema>;
 export const createEmployeeFamilyMemberSchema = z.object({
   relation: familyRelationSchema,
   fullName: z.string({ error: "Họ tên không được để trống" }).min(1, "Họ tên không được để trống"),
-  dob: optionalDate(),
-  phone: z.string().nullish(),
-  note: z.string().nullish(),
-  isDependent: z.boolean({ error: "Giá trị người phụ thuộc không hợp lệ" }).default(false),
 });
 
 export type CreateEmployeeFamilyMemberInput = z.infer<typeof createEmployeeFamilyMemberSchema>;
@@ -168,7 +152,6 @@ export const createEmployeeBankAccountSchema = z.object({
   accountNo: z
     .string({ error: "Số tài khoản không được để trống" })
     .min(1, "Số tài khoản không được để trống"),
-  isPrimary: z.boolean({ error: "Giá trị tài khoản chính không hợp lệ" }).default(true),
 });
 
 export type CreateEmployeeBankAccountInput = z.infer<typeof createEmployeeBankAccountSchema>;
@@ -184,7 +167,6 @@ const employeePreviousJobFieldsSchema = z.object({
     .min(1, "Nơi làm việc không được để trống"),
   startedOn: requiredDate("Ngày bắt đầu không được để trống"),
   endedOn: requiredDate("Ngày kết thúc không được để trống"),
-  note: z.string().nullish(),
 });
 
 export const createEmployeePreviousJobSchema = employeePreviousJobFieldsSchema.superRefine(

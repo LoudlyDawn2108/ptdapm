@@ -3,7 +3,6 @@ import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   date,
-  integer,
   numeric,
   pgSequence,
   pgTable,
@@ -38,8 +37,7 @@ export const employees = pgTable("employees", {
   phone: varchar("phone", { length: 30 }).notNull(),
   isForeigner: boolean("is_foreigner").notNull().default(false),
   educationLevel: varchar("education_level", { length: 50 }),
-  trainingLevel: varchar("training_level", { length: 50 }),
-  academicTitle: varchar("academic_title", { length: 50 }),
+
   academicRank: varchar("academic_rank", { length: 50 }),
   workStatus: varchar("work_status", { length: 20 })
     .$type<WorkStatusCode>()
@@ -107,10 +105,6 @@ export const employeeFamilyMembers = pgTable("employee_family_members", {
     .references(() => employees.id, { onDelete: "cascade" }),
   relation: varchar("relation", { length: 30 }).notNull(),
   fullName: varchar("full_name", { length: 255 }).notNull(),
-  dob: date("dob"),
-  phone: varchar("phone", { length: 30 }),
-  note: text("note"),
-  isDependent: boolean("is_dependent").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -124,7 +118,6 @@ export const employeeBankAccounts = pgTable("employee_bank_accounts", {
     .references(() => employees.id, { onDelete: "cascade" }),
   bankName: varchar("bank_name", { length: 255 }).notNull(),
   accountNo: varchar("account_no", { length: 50 }).notNull(),
-  isPrimary: boolean("is_primary").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -139,7 +132,6 @@ export const employeePreviousJobs = pgTable("employee_previous_jobs", {
   workplace: varchar("workplace", { length: 255 }).notNull(),
   startedOn: date("started_on"),
   endedOn: date("ended_on"),
-  note: text("note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -167,9 +159,6 @@ export const employeeDegrees = pgTable("employee_degrees", {
     .references(() => employees.id, { onDelete: "cascade" }),
   degreeName: varchar("degree_name", { length: 255 }).notNull(),
   school: varchar("school", { length: 255 }).notNull(),
-  major: varchar("major", { length: 255 }),
-  graduationYear: integer("graduation_year"),
-  classification: varchar("classification", { length: 100 }),
   degreeFileId: uuid("degree_file_id").references(() => files.id, {
     onDelete: "set null",
   }),
@@ -186,8 +175,6 @@ export const employeeCertifications = pgTable("employee_certifications", {
     .references(() => employees.id, { onDelete: "cascade" }),
   certName: varchar("cert_name", { length: 255 }).notNull(),
   issuedBy: varchar("issued_by", { length: 255 }),
-  issuedOn: date("issued_on"),
-  expiresOn: date("expires_on"),
   certFileId: uuid("cert_file_id").references(() => files.id, {
     onDelete: "set null",
   }),
