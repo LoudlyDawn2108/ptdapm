@@ -1,7 +1,7 @@
-import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { handleApiError } from "@/lib/error-handler";
 import type { CreateEmployeeInput, UpdateEmployeeInput } from "@hrms/shared";
+import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // ──────────────────────────────────────────
 // Keys
@@ -9,8 +9,7 @@ import type { CreateEmployeeInput, UpdateEmployeeInput } from "@hrms/shared";
 export const employeeKeys = {
   all: ["employees"] as const,
   lists: () => [...employeeKeys.all, "list"] as const,
-  list: (params: Record<string, unknown>) =>
-    [...employeeKeys.lists(), params] as const,
+  list: (params: Record<string, unknown>) => [...employeeKeys.lists(), params] as const,
   detail: (id: string) => [...employeeKeys.all, "detail", id] as const,
   me: () => [...employeeKeys.all, "me"] as const,
 };
@@ -119,5 +118,95 @@ export function useMarkResigned() {
       qc.invalidateQueries({ queryKey: employeeKeys.lists() });
       qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.id) });
     },
+  });
+}
+
+// ──────────────────────────────────────────
+// Sub-entity mutations
+// ──────────────────────────────────────────
+
+export function useCreateFamilyMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      ...input
+    }: {
+      employeeId: string;
+      relation: string;
+      fullName: string;
+      dob?: string;
+      phone?: string;
+      note?: string;
+      isDependent?: boolean;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["family-members"].post(input as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useCreateBankAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      ...input
+    }: { employeeId: string; bankName: string; accountNo: string; isPrimary?: boolean }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["bank-accounts"].post(input as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useCreatePreviousJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      ...input
+    }: {
+      employeeId: string;
+      workplace: string;
+      startedOn: string;
+      endedOn: string;
+      note?: string;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["previous-jobs"].post(input as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useCreatePartyMembership() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      ...input
+    }: { employeeId: string; organizationType: string; joinedOn: string; details: string }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["party-memberships"].post(input as any);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
   });
 }

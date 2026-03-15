@@ -1,9 +1,6 @@
-import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { z } from "zod";
-import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
+import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -12,18 +9,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Combobox } from "@/components/ui/combobox";
-import { fetchOrgUnitDropdown } from "@/lib/api/config-dropdowns";
 import { employeeListOptions } from "@/features/employees/api";
-import {
-  WorkStatus,
-  ContractStatus,
-  AcademicRank,
-  enumToSortedList,
-} from "@hrms/shared";
 import { useDebounce } from "@/hooks/use-debounce";
-import { ChevronDown, Pencil, Search, Users } from "lucide-react";
+import { fetchOrgUnitDropdown } from "@/lib/api/config-dropdowns";
+import { AcademicRank, ContractStatus, WorkStatus, enumToSortedList } from "@hrms/shared";
+import { useQuery } from "@tanstack/react-query";
+import { Link, Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
+import { ChevronDown, Pencil, Search, Users } from "lucide-react";
+import { useMemo, useState } from "react";
+import { z } from "zod";
 
 const searchSchema = z.object({
   page: z.number().default(1),
@@ -50,6 +45,7 @@ function EmployeesLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isNew = pathname === "/employees/new";
   const isEdit = /^\/employees\/[^/]+\/edit$/.test(pathname);
+  const isDetail = /^\/employees\/[^/]+$/.test(pathname) && !isNew;
   const showModal = isNew || isEdit;
 
   const params = {
@@ -67,21 +63,15 @@ function EmployeesLayout() {
   const result = data?.data;
 
   const academicRankMap = useMemo(() => {
-    return new Map(
-      enumToSortedList(AcademicRank).map((item) => [item.code, item.label]),
-    );
+    return new Map(enumToSortedList(AcademicRank).map((item) => [item.code, item.label]));
   }, []);
 
   const workStatusMap = useMemo(() => {
-    return new Map(
-      enumToSortedList(WorkStatus).map((item) => [item.code, item.label]),
-    );
+    return new Map(enumToSortedList(WorkStatus).map((item) => [item.code, item.label]));
   }, []);
 
   const contractStatusMap = useMemo(() => {
-    return new Map(
-      enumToSortedList(ContractStatus).map((item) => [item.code, item.label]),
-    );
+    return new Map(enumToSortedList(ContractStatus).map((item) => [item.code, item.label]));
   }, []);
 
   const updateSearch = (patch: {
@@ -147,9 +137,7 @@ function EmployeesLayout() {
       accessorKey: "staffCode",
       header: "Mã NS",
       cell: ({ row }) => (
-        <span className="font-mono text-xs text-slate-700">
-          {row.original.staffCode ?? "—"}
-        </span>
+        <span className="font-mono text-xs text-slate-700">{row.original.staffCode ?? "—"}</span>
       ),
     },
     {
@@ -180,8 +168,7 @@ function EmployeesLayout() {
     {
       accessorKey: "academicRank",
       header: "Học hàm/học vị",
-      cell: ({ row }) =>
-        academicRankMap.get(row.original.academicRank) ?? "—",
+      cell: ({ row }) => academicRankMap.get(row.original.academicRank) ?? "—",
     },
     {
       accessorKey: "currentPositionTitle",
@@ -236,150 +223,154 @@ function EmployeesLayout() {
   const paginationLabel = `Hiển thị ${result?.items?.length ?? 0} / ${
     result?.total ?? 0
   } hồ sơ nhân sự`;
-
   return (
     <div>
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
-              <Users className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold text-slate-800">Hồ sơ nhân sự</h1>
-              <p className="text-sm text-slate-500">Danh sách cán bộ, giảng viên, nhân viên</p>
+      {/* Employee list — hidden when viewing detail page */}
+      {!isDetail && (
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                <Users className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold text-slate-800">Hồ sơ nhân sự</h1>
+                <p className="text-sm text-slate-500">Danh sách cán bộ, giảng viên, nhân viên</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="px-6 py-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-1 flex-wrap items-center gap-3">
-              <div className="relative flex-[1.5] min-w-[180px] max-w-[280px]">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <Input
-                  placeholder="Tìm kiếm"
-                  className="h-10 w-full rounded-lg pl-9"
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                />
+          <div className="px-6 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-1 flex-wrap items-center gap-3">
+                <div className="relative flex-[1.5] min-w-[180px] max-w-[280px]">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    placeholder="Tìm kiếm"
+                    className="h-10 w-full rounded-lg pl-9"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex-1 min-w-[160px] max-w-[240px]">
+                  <Combobox
+                    queryKey={["org-units", "dropdown", "filter"]}
+                    fetchOptions={fetchOrgUnitDropdown}
+                    value={search.orgUnitId ?? ""}
+                    onChange={(v) => updateSearch({ orgUnitId: v || undefined })}
+                    placeholder="Đơn vị công tác"
+                    className="h-10 w-full rounded-lg"
+                  />
+                </div>
+
+                <Select
+                  value={search.academicRank}
+                  onValueChange={(v) => updateSearch({ academicRank: v === "all" ? undefined : v })}
+                >
+                  <SelectTrigger className="h-10 w-[160px] flex-shrink-0 rounded-lg">
+                    <SelectValue placeholder="Học hàm/học vị" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả</SelectItem>
+                    {enumToSortedList(AcademicRank).map((item) => (
+                      <SelectItem key={item.code} value={item.code}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={search.contractStatus}
+                  onValueChange={(v) =>
+                    updateSearch({ contractStatus: v === "all" ? undefined : v })
+                  }
+                >
+                  <SelectTrigger className="h-10 w-[140px] flex-shrink-0 rounded-lg">
+                    <SelectValue placeholder="Hợp đồng" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả</SelectItem>
+                    {enumToSortedList(ContractStatus).map((item) => (
+                      <SelectItem key={item.code} value={item.code}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={search.workStatus}
+                  onValueChange={(v) => updateSearch({ workStatus: v === "all" ? undefined : v })}
+                >
+                  <SelectTrigger className="h-10 w-[140px] flex-shrink-0 rounded-lg">
+                    <SelectValue placeholder="Trạng thái" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả</SelectItem>
+                    {enumToSortedList(WorkStatus).map((item) => (
+                      <SelectItem key={item.code} value={item.code}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="flex-1 min-w-[160px] max-w-[240px]">
-                <Combobox
-                  queryKey={["org-units", "dropdown", "filter"]}
-                  fetchOptions={fetchOrgUnitDropdown}
-                  value={search.orgUnitId ?? ""}
-                  onChange={(v) => updateSearch({ orgUnitId: v || undefined })}
-                  placeholder="Đơn vị công tác"
-                  className="h-10 w-full rounded-lg"
-                />
-              </div>
-
-              <Select
-                value={search.academicRank}
-                onValueChange={(v) => updateSearch({ academicRank: v === "all" ? undefined : v })}
+              <Button
+                asChild
+                className="h-10 flex-shrink-0 rounded-lg bg-[#3B5CCC] px-4 text-white hover:bg-[#2F4FB8]"
               >
-                <SelectTrigger className="h-10 w-[160px] flex-shrink-0 rounded-lg">
-                  <SelectValue placeholder="Học hàm/học vị" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả</SelectItem>
-                  {enumToSortedList(AcademicRank).map((item) => (
-                    <SelectItem key={item.code} value={item.code}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={search.contractStatus}
-                onValueChange={(v) => updateSearch({ contractStatus: v === "all" ? undefined : v })}
-              >
-                <SelectTrigger className="h-10 w-[140px] flex-shrink-0 rounded-lg">
-                  <SelectValue placeholder="Hợp đồng" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả</SelectItem>
-                  {enumToSortedList(ContractStatus).map((item) => (
-                    <SelectItem key={item.code} value={item.code}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={search.workStatus}
-                onValueChange={(v) => updateSearch({ workStatus: v === "all" ? undefined : v })}
-              >
-                <SelectTrigger className="h-10 w-[140px] flex-shrink-0 rounded-lg">
-                  <SelectValue placeholder="Trạng thái" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả</SelectItem>
-                  {enumToSortedList(WorkStatus).map((item) => (
-                    <SelectItem key={item.code} value={item.code}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <Link to="/employees/new">
+                  Thêm hồ sơ nhân sự
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
             </div>
+          </div>
 
-            <Button
-              asChild
-              className="h-10 flex-shrink-0 rounded-lg bg-[#3B5CCC] px-4 text-white hover:bg-[#2F4FB8]"
-            >
-              <Link to="/employees/new">
-                Thêm hồ sơ nhân sự
-                <ChevronDown className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
+          <div className="px-6 pb-6">
+            <DataTable
+              columns={columns}
+              data={result?.items ?? []}
+              pageCount={result?.totalPages ?? 0}
+              pagination={{
+                pageIndex: (search.page ?? 1) - 1,
+                pageSize: search.pageSize ?? 20,
+              }}
+              onPaginationChange={(updater) => {
+                const next =
+                  typeof updater === "function"
+                    ? updater({
+                        pageIndex: (search.page ?? 1) - 1,
+                        pageSize: search.pageSize ?? 20,
+                      })
+                    : updater;
+                navigate({
+                  search: (prev) => ({
+                    ...prev,
+                    page: next.pageIndex + 1,
+                    pageSize: next.pageSize,
+                  }),
+                });
+              }}
+              isLoading={isLoading}
+              emptyMessage="Không tìm thấy hồ sơ phù hợp."
+              paginationLabel={paginationLabel}
+              tableWrapperClassName="rounded-xl border border-slate-200"
+              headerRowClassName="bg-[#D7E0F0]"
+              headerCellClassName="text-[11px] font-semibold uppercase tracking-wide text-slate-700"
+              rowClassName="h-[56px]"
+              cellClassName="text-sm text-slate-700"
+              paginationClassName="px-0"
+              paginationButtonClassName="rounded-lg"
+            />
           </div>
         </div>
+      )}
 
-        <div className="px-6 pb-6">
-          <DataTable
-            columns={columns}
-            data={result?.items ?? []}
-            pageCount={result?.totalPages ?? 0}
-            pagination={{
-              pageIndex: (search.page ?? 1) - 1,
-              pageSize: search.pageSize ?? 20,
-            }}
-            onPaginationChange={(updater) => {
-              const next =
-                typeof updater === "function"
-                  ? updater({
-                      pageIndex: (search.page ?? 1) - 1,
-                      pageSize: search.pageSize ?? 20,
-                    })
-                  : updater;
-              navigate({
-                search: (prev) => ({
-                  ...prev,
-                  page: next.pageIndex + 1,
-                  pageSize: next.pageSize,
-                }),
-              });
-            }}
-            isLoading={isLoading}
-            emptyMessage="Không tìm thấy hồ sơ phù hợp."
-            paginationLabel={paginationLabel}
-            tableWrapperClassName="rounded-xl border border-slate-200"
-            headerRowClassName="bg-[#D7E0F0]"
-            headerCellClassName="text-[11px] font-semibold uppercase tracking-wide text-slate-700"
-            rowClassName="h-[56px]"
-            cellClassName="text-sm text-slate-700"
-            paginationClassName="px-0"
-            paginationButtonClassName="rounded-lg"
-          />
-        </div>
-      </div>
-
+      {/* Modal overlay for new/edit forms */}
       {showModal && (
         <div
           className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-6 overflow-auto"
@@ -390,8 +381,9 @@ function EmployeesLayout() {
           </div>
         </div>
       )}
+
+      {/* Detail page renders as full page (replaces list) */}
+      {isDetail && <Outlet />}
     </div>
   );
 }
-
-
