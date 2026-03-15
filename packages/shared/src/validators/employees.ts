@@ -136,6 +136,7 @@ export type UpdateEmployeeInput = z.infer<typeof updateEmployeeSchema>;
 export const createEmployeeFamilyMemberSchema = z.object({
   relation: familyRelationSchema,
   fullName: z.string({ error: "Họ tên không được để trống" }).min(1, "Họ tên không được để trống"),
+  isDependent: z.boolean().default(false),
 });
 
 export type CreateEmployeeFamilyMemberInput = z.infer<typeof createEmployeeFamilyMemberSchema>;
@@ -152,6 +153,7 @@ export const createEmployeeBankAccountSchema = z.object({
   accountNo: z
     .string({ error: "Số tài khoản không được để trống" })
     .min(1, "Số tài khoản không được để trống"),
+  isPrimary: z.boolean().default(false),
 });
 
 export type CreateEmployeeBankAccountInput = z.infer<typeof createEmployeeBankAccountSchema>;

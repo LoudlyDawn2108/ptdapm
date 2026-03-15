@@ -185,15 +185,17 @@ function EmployeeDetailPage() {
               Quay lại
             </Link>
           </Button>
-          <Button
-            asChild
-            className="h-9 rounded-lg bg-[#3B5CCC] px-4 text-white hover:bg-[#2F4FB8]"
-          >
-            <Link to="/employees/$employeeId/edit" params={{ employeeId }}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Chỉnh sửa
-            </Link>
-          </Button>
+          {["pending", "working"].includes(emp.workStatus) && (
+            <Button
+              asChild
+              className="h-9 rounded-lg bg-[#3B5CCC] px-4 text-white hover:bg-[#2F4FB8]"
+            >
+              <Link to="/employees/$employeeId/edit" params={{ employeeId }}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Chỉnh sửa
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 

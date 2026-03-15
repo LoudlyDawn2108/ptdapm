@@ -37,8 +37,9 @@ export const employees = pgTable("employees", {
   phone: varchar("phone", { length: 30 }).notNull(),
   isForeigner: boolean("is_foreigner").notNull().default(false),
   educationLevel: varchar("education_level", { length: 50 }),
-
+  trainingLevel: varchar("training_level", { length: 50 }),
   academicRank: varchar("academic_rank", { length: 50 }),
+  academicTitle: varchar("academic_title", { length: 50 }),
   workStatus: varchar("work_status", { length: 20 })
     .$type<WorkStatusCode>()
     .notNull()
@@ -105,6 +106,10 @@ export const employeeFamilyMembers = pgTable("employee_family_members", {
     .references(() => employees.id, { onDelete: "cascade" }),
   relation: varchar("relation", { length: 30 }).notNull(),
   fullName: varchar("full_name", { length: 255 }).notNull(),
+  dob: date("dob"),
+  phone: varchar("phone", { length: 30 }),
+  note: text("note"),
+  isDependent: boolean("is_dependent").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -118,6 +123,7 @@ export const employeeBankAccounts = pgTable("employee_bank_accounts", {
     .references(() => employees.id, { onDelete: "cascade" }),
   bankName: varchar("bank_name", { length: 255 }).notNull(),
   accountNo: varchar("account_no", { length: 50 }).notNull(),
+  isPrimary: boolean("is_primary").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -132,6 +138,7 @@ export const employeePreviousJobs = pgTable("employee_previous_jobs", {
   workplace: varchar("workplace", { length: 255 }).notNull(),
   startedOn: date("started_on"),
   endedOn: date("ended_on"),
+  note: text("note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

@@ -326,6 +326,23 @@ function EditEmployeePage() {
     return <div className="text-slate-600">Không tìm thấy thông tin nhân sự.</div>;
   }
 
+  if (!["pending", "working"].includes(emp.workStatus)) {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <p className="text-sm text-slate-600">
+          Không thể chỉnh sửa hồ sơ nhân viên ở trạng thái hiện tại ({emp.workStatus}).
+        </p>
+        <Button
+          variant="outline"
+          className="mt-4"
+          onClick={() => navigate({ to: "/employees/$employeeId", params: { employeeId } })}
+        >
+          Quay lại
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center gap-2 border-b border-slate-200 px-6 py-4">

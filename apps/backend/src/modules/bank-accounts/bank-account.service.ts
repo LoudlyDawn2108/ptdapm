@@ -3,7 +3,7 @@ import type {
   PaginatedResponse,
   UpdateEmployeeBankAccountInput,
 } from "@hrms/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { NotFoundError } from "../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
 import { db } from "../../db";
@@ -42,6 +42,13 @@ export async function create(
   employeeId: string,
   data: CreateEmployeeBankAccountInput,
 ): Promise<EmployeeBankAccount> {
+  if (data.isPrimary) {
+    await db
+      .update(employeeBankAccounts)
+      .set({ isPrimary: false, updatedAt: new Date() })
+      .where(eq(employeeBankAccounts.employeeId, employeeId));
+  }
+
   const [created] = await db
     .insert(employeeBankAccounts)
     .values({ ...data, employeeId })
