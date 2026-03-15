@@ -24,6 +24,12 @@ export const employeeIdParamSchema = z.object({
 
 export type EmployeeIdParam = z.infer<typeof employeeIdParamSchema>;
 
+export const contractIdParamSchema = z.object({
+  contractId: z.uuid(),
+});
+
+export type ContractIdParam = z.infer<typeof contractIdParamSchema>;
+
 export const dropdownQuerySchema = z.object({
   search: z.string().optional(),
   limit: z.coerce.number({ error: "Limit must be a number" }).int().min(1).max(100).default(20),
