@@ -46,7 +46,9 @@ export async function terminate(
 
   // E1: Employee already terminated
   if (emp.workStatus === "terminated") {
-    throw new BadRequestError("Nhân sự này đã được đánh dấu thôi việc trước đó");
+    throw new BadRequestError(
+      "Nhân sự này đã được đánh dấu thôi việc trước đó",
+    );
   }
 
   // E2: Check for active contracts (status = "valid")
@@ -81,69 +83,73 @@ export async function terminate(
 
   const today = new Date().toISOString().split("T")[0]!;
 
-  // 2. Insert termination record
-  const [termination] = await db
-    .insert(employeeTerminations)
-    .values({
-      employeeId,
-      terminatedOn: data.terminatedOn,
-      reason: data.reason,
-      isAuto: false,
-      createdByUserId: userId,
-    })
-    .returning();
+  return await db.transaction(async (tx) => {
+    // 2. Insert termination record
+    const [termination] = await tx
+      .insert(employeeTerminations)
+      .values({
+        employeeId,
+        terminatedOn: data.terminatedOn,
+        reason: data.reason,
+        isAuto: false,
+        createdByUserId: userId,
+      })
+      .returning();
 
-  // 3. Update employee: workStatus → terminated, contractStatus → expired, clear org unit
-  await db
-    .update(employees)
-    .set({
-      workStatus: "terminated",
-      contractStatus: "expired",
-      currentOrgUnitId: null,
-      currentPositionTitle: null,
-      terminatedOn: data.terminatedOn,
-      terminationReason: data.reason,
-      updatedAt: new Date(),
-    })
-    .where(eq(employees.id, employeeId));
+    // 3. Update employee: workStatus → terminated, contractStatus → expired, clear org unit
+    await tx
+      .update(employees)
+      .set({
+        workStatus: "terminated",
+        contractStatus: "expired",
+        currentOrgUnitId: null,
+        currentPositionTitle: null,
+        terminatedOn: data.terminatedOn,
+        terminationReason: data.reason,
+        updatedAt: new Date(),
+      })
+      .where(eq(employees.id, employeeId));
 
-  // 4. Expire all non-expired contracts
-  await db
-    .update(employmentContracts)
-    .set({ status: "expired", updatedAt: new Date() })
-    .where(
-      and(
-        eq(employmentContracts.employeeId, employeeId),
-        eq(employmentContracts.status, "draft"),
-      ),
-    );
+    // 4. Expire all non-expired contracts
+    await tx
+      .update(employmentContracts)
+      .set({ status: "expired", updatedAt: new Date() })
+      .where(
+        and(
+          eq(employmentContracts.employeeId, employeeId),
+          eq(employmentContracts.status, "draft"),
+        ),
+      );
 
-  // 5. End all remaining assignments
-  await db
-    .update(employeeAssignments)
-    .set({ endedOn: today, eventType: "DISMISS" })
-    .where(
-      and(
-        eq(employeeAssignments.employeeId, employeeId),
-        isNull(employeeAssignments.endedOn),
-      ),
-    );
+    // 5. End all remaining assignments
+    await tx
+      .update(employeeAssignments)
+      .set({ endedOn: today, eventType: "DISMISS" })
+      .where(
+        and(
+          eq(employeeAssignments.employeeId, employeeId),
+          isNull(employeeAssignments.endedOn),
+        ),
+      );
 
-  // 6. Lock linked auth account + revoke sessions
-  const [linkedUser] = await db
-    .select({ id: authUsers.id })
-    .from(authUsers)
-    .where(eq(authUsers.employeeId, employeeId))
-    .limit(1);
+    // 6. Lock linked auth account + revoke sessions
+    const [linkedUser] = await tx
+      .select({ id: authUsers.id })
+      .from(authUsers)
+      .where(eq(authUsers.employeeId, employeeId))
+      .limit(1);
 
-  if (linkedUser) {
-    await db
-      .update(authUsers)
-      .set({ status: "locked", updatedAt: new Date() })
-      .where(eq(authUsers.id, linkedUser.id));
+    if (linkedUser) {
+      await tx
+        .update(authUsers)
+        .set({ status: "locked", updatedAt: new Date() })
+        .where(eq(authUsers.id, linkedUser.id));
 
-    await db.delete(sessionTable).where(eq(sessionTable.userId, linkedUser.id));
-  }
+      await tx
+        .delete(sessionTable)
+        .where(eq(sessionTable.userId, linkedUser.id));
+    }
 
-  return termination!;
+    return termination!;
+  });
 }

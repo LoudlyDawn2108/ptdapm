@@ -11,10 +11,7 @@ import {
   ConflictError,
   NotFoundError,
 } from "../../common/utils/errors";
-import {
-  buildPaginatedResponse,
-  countRows,
-} from "../../common/utils/pagination";
+import { buildPaginatedResponse } from "../../common/utils/pagination";
 import { withAuditLog } from "../../common/utils/user-context";
 import { db } from "../../db";
 import {
@@ -283,16 +280,38 @@ export async function createBatch(
   const course = await ensureCourseExists(courseId);
   ensureCourseCompleted(course);
 
-  // Validate all registrations exist and have no existing results
-  for (const item of data.results) {
-    await ensureRegistrationExists(item.registrationId, courseId);
-    await ensureNoExistingResult(item.registrationId);
-  }
-
   const createdResults: TrainingResult[] = [];
 
+  // Validate and insert inside the same transaction to prevent race conditions
   await db.transaction(async (tx) => {
     for (const item of data.results) {
+      // Validate registration exists (inside tx)
+      const [registration] = await tx
+        .select()
+        .from(trainingRegistrations)
+        .where(
+          and(
+            eq(trainingRegistrations.id, item.registrationId),
+            eq(trainingRegistrations.courseId, courseId),
+          ),
+        );
+      if (!registration) {
+        throw new NotFoundError(
+          "Không tìm thấy đăng ký tham gia trong khóa đào tạo này",
+        );
+      }
+
+      // Validate no existing result (inside tx)
+      const [existingResult] = await tx
+        .select({ id: trainingResults.id })
+        .from(trainingResults)
+        .where(eq(trainingResults.registrationId, item.registrationId));
+      if (existingResult) {
+        throw new ConflictError(
+          "Kết quả đào tạo đã được ghi nhận cho đăng ký này",
+        );
+      }
+
       const [created] = await tx
         .insert(trainingResults)
         .values({

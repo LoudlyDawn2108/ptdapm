@@ -51,44 +51,6 @@ function ensureRegistrationPeriodActive(course: TrainingCourse) {
   }
 }
 
-async function getRegistrationCount(courseId: string): Promise<number> {
-  const result = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(trainingRegistrations)
-    .where(eq(trainingRegistrations.courseId, courseId));
-  return Number(result[0]?.count ?? 0);
-}
-
-async function ensureNotAtCapacity(
-  courseId: string,
-  registrationLimit: number | null,
-) {
-  if (registrationLimit == null) return;
-  const count = await getRegistrationCount(courseId);
-  if (count >= registrationLimit) {
-    throw new BadRequestError("Khóa đào tạo đã đủ số lượng đăng ký.");
-  }
-}
-
-async function ensureNotAlreadyRegistered(
-  courseId: string,
-  employeeId: string,
-) {
-  const [existing] = await db
-    .select({ id: trainingRegistrations.id })
-    .from(trainingRegistrations)
-    .where(
-      and(
-        eq(trainingRegistrations.courseId, courseId),
-        eq(trainingRegistrations.employeeId, employeeId),
-      ),
-    );
-
-  if (existing) {
-    throw new ConflictError("Bạn đã đăng ký khóa đào tạo này.");
-  }
-}
-
 async function ensureEmployeeExists(employeeId: string) {
   const [employee] = await db
     .select({ id: employees.id })
@@ -222,7 +184,6 @@ export async function create(
   const course = await ensureCourseExists(courseId);
   ensureCourseOpenForRegistration(course);
   ensureRegistrationPeriodActive(course);
-  await ensureNotAtCapacity(courseId, course.registrationLimit);
 
   // Resolve employeeId: ADMIN/TCCB can register on behalf, others use own
   let employeeId: string;
@@ -239,18 +200,47 @@ export async function create(
   }
 
   await ensureEmployeeExists(employeeId);
-  await ensureNotAlreadyRegistered(courseId, employeeId);
 
-  const [created] = await db
-    .insert(trainingRegistrations)
-    .values({
-      courseId,
-      employeeId,
-      participationStatus: "registered",
-    })
-    .returning();
+  // Use transaction to atomically check capacity + uniqueness and insert
+  const created = await db.transaction(async (tx) => {
+    // Re-check capacity inside transaction to prevent race condition
+    if (course.registrationLimit != null) {
+      const countResult = await tx
+        .select({ count: sql<number>`count(*)` })
+        .from(trainingRegistrations)
+        .where(eq(trainingRegistrations.courseId, courseId));
+      const count = Number(countResult[0]?.count ?? 0);
+      if (count >= course.registrationLimit) {
+        throw new BadRequestError("Khóa đào tạo đã đủ số lượng đăng ký.");
+      }
+    }
 
-  if (!created) throw new Error("Insert training registration failed");
+    // Check for existing registration inside transaction
+    const [existing] = await tx
+      .select({ id: trainingRegistrations.id })
+      .from(trainingRegistrations)
+      .where(
+        and(
+          eq(trainingRegistrations.courseId, courseId),
+          eq(trainingRegistrations.employeeId, employeeId),
+        ),
+      );
+    if (existing) {
+      throw new ConflictError("Bạn đã đăng ký khóa đào tạo này.");
+    }
+
+    const [row] = await tx
+      .insert(trainingRegistrations)
+      .values({
+        courseId,
+        employeeId,
+        participationStatus: "registered",
+      })
+      .returning();
+
+    if (!row) throw new Error("Insert training registration failed");
+    return row;
+  });
 
   await withAuditLog(
     db,
