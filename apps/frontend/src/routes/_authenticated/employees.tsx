@@ -190,7 +190,7 @@ function EmployeesLayout() {
     },
     {
       accessorKey: "contractStatus",
-      header: "Hợp đồng",
+      header: () => <div className="text-center">Hợp đồng</div>,
       cell: ({ row }) => {
         const label = contractStatusMap.get(row.original.contractStatus);
         return (
@@ -205,7 +205,7 @@ function EmployeesLayout() {
     },
     {
       accessorKey: "workStatus",
-      header: "Trạng thái",
+      header: () => <div className="text-center">Trạng thái</div>,
       cell: ({ row }) => {
         const label = workStatusMap.get(row.original.workStatus);
         return (
@@ -220,7 +220,7 @@ function EmployeesLayout() {
     },
     {
       id: "actions",
-      header: "Thao tác",
+      header: () => <div className="text-center">Thao tác</div>,
       cell: ({ row }) => (
         <div className="flex items-center justify-center">
           <Button variant="ghost" size="sm" asChild title="Chỉnh sửa">
@@ -240,6 +240,7 @@ function EmployeesLayout() {
   return (
     <div>
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
@@ -250,87 +251,94 @@ function EmployeesLayout() {
               <p className="text-sm text-slate-500">Danh sách cán bộ, giảng viên, nhân viên</p>
             </div>
           </div>
-          <Button
-            asChild
-            className="h-10 rounded-lg bg-[#3B5CCC] px-4 text-white hover:bg-[#2F4FB8]"
-          >
-            <Link to="/employees/new">
-              Thêm hồ sơ nhân sự
-              <ChevronDown className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 px-6 py-4">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <Input
-              placeholder="Tìm kiếm"
-              className="h-10 w-[220px] rounded-lg pl-9"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-            />
+        <div className="px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-1 flex-wrap items-center gap-3">
+              <div className="relative flex-[1.5] min-w-[180px] max-w-[280px]">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  placeholder="Tìm kiếm"
+                  className="h-10 w-full rounded-lg pl-9"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                />
+              </div>
+
+              <div className="flex-1 min-w-[160px] max-w-[240px]">
+                <Combobox
+                  queryKey={["org-units", "dropdown", "filter"]}
+                  fetchOptions={fetchOrgUnitDropdown}
+                  value={search.orgUnitId ?? ""}
+                  onChange={(v) => updateSearch({ orgUnitId: v || undefined })}
+                  placeholder="Đơn vị công tác"
+                  className="h-10 w-full rounded-lg"
+                />
+              </div>
+
+              <Select
+                value={search.academicRank}
+                onValueChange={(v) => updateSearch({ academicRank: v === "all" ? undefined : v })}
+              >
+                <SelectTrigger className="h-10 w-[160px] flex-shrink-0 rounded-lg">
+                  <SelectValue placeholder="Học hàm/học vị" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  {enumToSortedList(AcademicRank).map((item) => (
+                    <SelectItem key={item.code} value={item.code}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={search.contractStatus}
+                onValueChange={(v) => updateSearch({ contractStatus: v === "all" ? undefined : v })}
+              >
+                <SelectTrigger className="h-10 w-[140px] flex-shrink-0 rounded-lg">
+                  <SelectValue placeholder="Hợp đồng" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  {enumToSortedList(ContractStatus).map((item) => (
+                    <SelectItem key={item.code} value={item.code}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={search.workStatus}
+                onValueChange={(v) => updateSearch({ workStatus: v === "all" ? undefined : v })}
+              >
+                <SelectTrigger className="h-10 w-[140px] flex-shrink-0 rounded-lg">
+                  <SelectValue placeholder="Trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  {enumToSortedList(WorkStatus).map((item) => (
+                    <SelectItem key={item.code} value={item.code}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              asChild
+              className="h-10 flex-shrink-0 rounded-lg bg-[#3B5CCC] px-4 text-white hover:bg-[#2F4FB8]"
+            >
+              <Link to="/employees/new">
+                Thêm hồ sơ nhân sự
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
           </div>
-
-          <Combobox
-            queryKey={["org-units", "dropdown", "filter"]}
-            fetchOptions={fetchOrgUnitDropdown}
-            value={search.orgUnitId ?? ""}
-            onChange={(v) => updateSearch({ orgUnitId: v || undefined })}
-            placeholder="Đơn vị công tác"
-            className="h-10 min-w-[180px] rounded-lg"
-          />
-
-          <Select
-            value={search.academicRank ?? "all"}
-            onValueChange={(v) => updateSearch({ academicRank: v === "all" ? undefined : v })}
-          >
-            <SelectTrigger className="h-10 min-w-[160px] rounded-lg">
-              <SelectValue placeholder="Học hàm/học vị" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
-              {enumToSortedList(AcademicRank).map((item) => (
-                <SelectItem key={item.code} value={item.code}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={search.contractStatus ?? "all"}
-            onValueChange={(v) => updateSearch({ contractStatus: v === "all" ? undefined : v })}
-          >
-            <SelectTrigger className="h-10 min-w-[140px] rounded-lg">
-              <SelectValue placeholder="Hợp đồng" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
-              {enumToSortedList(ContractStatus).map((item) => (
-                <SelectItem key={item.code} value={item.code}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={search.workStatus ?? "all"}
-            onValueChange={(v) => updateSearch({ workStatus: v === "all" ? undefined : v })}
-          >
-            <SelectTrigger className="h-10 min-w-[140px] rounded-lg">
-              <SelectValue placeholder="Trạng thái" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
-              {enumToSortedList(WorkStatus).map((item) => (
-                <SelectItem key={item.code} value={item.code}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
         <div className="px-6 pb-6">
@@ -385,4 +393,5 @@ function EmployeesLayout() {
     </div>
   );
 }
+
 
