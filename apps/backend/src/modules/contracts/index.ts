@@ -1,16 +1,20 @@
 import {
   CONTRACT_DOC_STATUS_CODES,
   type ContractDocStatusCode,
+  contractIdParamSchema,
+  createContractAppendixSchema,
   createEmployeeContractSchema,
   employeeIdParamSchema,
   idParamSchema,
   paginationSchema,
+  updateContractAppendixSchema,
   updateEmployeeContractSchema,
 } from "@hrms/shared";
 import { Elysia } from "elysia";
 import { z } from "zod";
 import { authPlugin } from "../../common/plugins/auth";
 import { requireRole } from "../../common/utils/role-guard";
+import * as appendixService from "./contract-appendix.service";
 import * as contractService from "./contract.service";
 
 const contractListQuerySchema = paginationSchema.extend({
@@ -82,5 +86,79 @@ export const contractRoutes = new Elysia({
     {
       auth: true,
       params: employeeIdParamSchema.merge(idParamSchema),
+    },
+  );
+
+const appendixParamsSchema = employeeIdParamSchema.merge(contractIdParamSchema);
+const appendixItemParamsSchema = appendixParamsSchema.merge(idParamSchema);
+
+export const contractAppendixRoutes = new Elysia({
+  prefix: "/api/employees/:employeeId/contracts/:contractId/appendices",
+})
+  .use(authPlugin)
+  .get(
+    "/",
+    async ({ params, query }) => {
+      const data = await appendixService.listByContract(
+        params.employeeId,
+        params.contractId,
+        query.page,
+        query.pageSize,
+      );
+      return { data };
+    },
+    { auth: true, params: appendixParamsSchema, query: paginationSchema },
+  )
+  .get(
+    "/:id",
+    async ({ params }) => {
+      const { employeeId, contractId, id } = params;
+      const data = await appendixService.getById(employeeId, contractId, id);
+      return { data };
+    },
+    {
+      auth: true,
+      params: appendixItemParamsSchema,
+    },
+  )
+  .post(
+    "/",
+    async ({ params, body, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
+      const data = await appendixService.create(
+        params.employeeId,
+        params.contractId,
+        body,
+        user.id,
+      );
+      return { data };
+    },
+    { auth: true, params: appendixParamsSchema, body: createContractAppendixSchema },
+  )
+  .put(
+    "/:id",
+    async ({ params, body, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
+      const { employeeId, contractId, id } = params;
+      const data = await appendixService.update(employeeId, contractId, id, body);
+      return { data };
+    },
+    {
+      auth: true,
+      params: appendixItemParamsSchema,
+      body: updateContractAppendixSchema,
+    },
+  )
+  .delete(
+    "/:id",
+    async ({ params, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
+      const { employeeId, contractId, id } = params;
+      const data = await appendixService.remove(employeeId, contractId, id);
+      return { data };
+    },
+    {
+      auth: true,
+      params: appendixItemParamsSchema,
     },
   );
