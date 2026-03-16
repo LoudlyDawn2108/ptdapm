@@ -159,6 +159,14 @@ export const employeePartyMemberships = pgTable("employee_party_memberships", {
 export type EmployeePartyMembership = typeof employeePartyMemberships.$inferSelect;
 export type NewEmployeePartyMembership = typeof employeePartyMemberships.$inferInsert;
 
+/**
+ * Employee degrees table.
+ *
+ * NOTE: `major`, `graduationYear`, and `classification` columns were intentionally omitted
+ * from this schema. The current design stores only the degree name, school, and an optional
+ * file attachment. If richer degree metadata is needed in the future, these columns can be
+ * added via a new migration. Current data is test-only — no production data migration required.
+ */
 export const employeeDegrees = pgTable("employee_degrees", {
   id: uuid("id").primaryKey().defaultRandom(),
   employeeId: uuid("employee_id")
@@ -175,6 +183,14 @@ export const employeeDegrees = pgTable("employee_degrees", {
 export type EmployeeDegree = typeof employeeDegrees.$inferSelect;
 export type NewEmployeeDegree = typeof employeeDegrees.$inferInsert;
 
+/**
+ * Employee certifications table.
+ *
+ * NOTE: `issuedOn` and `expiresOn` date columns were intentionally omitted from this schema.
+ * The current design stores only the cert name, issuer, and an optional file attachment.
+ * If date tracking is needed in the future, these columns can be added via a new migration.
+ * Current data is test-only — no production data migration required.
+ */
 export const employeeCertifications = pgTable("employee_certifications", {
   id: uuid("id").primaryKey().defaultRandom(),
   employeeId: uuid("employee_id")

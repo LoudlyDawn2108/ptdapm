@@ -253,8 +253,10 @@ function NewEmployeePage() {
           createFamilyMember
             .mutateAsync({ employeeId, relation: fm.relation, fullName: fm.fullName })
             .then(() => {})
-            .catch(() => {
-              subEntityErrors.push("Thành viên gia đình");
+            .catch((err: unknown) => {
+              subEntityErrors.push(
+                `Thành viên gia đình: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+              );
             }),
         );
       }
@@ -265,8 +267,10 @@ function NewEmployeePage() {
           createBankAccount
             .mutateAsync({ employeeId, bankName: ba.bankName, accountNo: ba.accountNo })
             .then(() => {})
-            .catch(() => {
-              subEntityErrors.push("Tài khoản ngân hàng");
+            .catch((err: unknown) => {
+              subEntityErrors.push(
+                `Tài khoản ngân hàng: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+              );
             }),
         );
       }
@@ -282,8 +286,10 @@ function NewEmployeePage() {
               details: pm.details,
             })
             .then(() => {})
-            .catch(() => {
-              subEntityErrors.push("Thông tin đoàn/đảng");
+            .catch((err: unknown) => {
+              subEntityErrors.push(
+                `Thông tin đoàn/đảng: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+              );
             }),
         );
       }
@@ -299,8 +305,10 @@ function NewEmployeePage() {
               endedOn: pj.endedOn,
             })
             .then(() => {})
-            .catch(() => {
-              subEntityErrors.push("Lịch sử công tác");
+            .catch((err: unknown) => {
+              subEntityErrors.push(
+                `Lịch sử công tác: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+              );
             }),
         );
       }
@@ -316,8 +324,10 @@ function NewEmployeePage() {
               degreeFileId: d.degreeFileId || undefined,
             })
             .then(() => {})
-            .catch(() => {
-              subEntityErrors.push("Bằng cấp");
+            .catch((err: unknown) => {
+              subEntityErrors.push(
+                `Bằng cấp: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+              );
             }),
         );
       }
@@ -333,8 +343,10 @@ function NewEmployeePage() {
               certFileId: c.certFileId || undefined,
             })
             .then(() => {})
-            .catch(() => {
-              subEntityErrors.push("Chứng chỉ");
+            .catch((err: unknown) => {
+              subEntityErrors.push(
+                `Chứng chỉ: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+              );
             }),
         );
       }
@@ -362,8 +374,10 @@ function NewEmployeePage() {
                 workPermitFileId: data.workPermitFileId || undefined,
               })
               .then(() => {})
-              .catch(() => {
-                subEntityErrors.push("Giấy phép lao động");
+              .catch((err: unknown) => {
+                subEntityErrors.push(
+                  `Giấy phép lao động: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                );
               }),
           );
         }

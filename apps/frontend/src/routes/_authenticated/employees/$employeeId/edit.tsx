@@ -406,8 +406,10 @@ function EditEmployeeFormContent({
             deleteFamilyMemberMutation
               .mutateAsync({ employeeId, id })
               .then(() => {})
-              .catch(() => {
-                subEntityErrors.push("Thành viên gia đình");
+              .catch((err: unknown) => {
+                subEntityErrors.push(
+                  `Thành viên gia đình: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                );
               }),
           );
         }
@@ -419,8 +421,10 @@ function EditEmployeeFormContent({
             updateFamilyMemberMutation
               .mutateAsync({ employeeId, id, ...body })
               .then(() => {})
-              .catch(() => {
-                subEntityErrors.push("Thành viên gia đình");
+              .catch((err: unknown) => {
+                subEntityErrors.push(
+                  `Thành viên gia đình: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                );
               }),
           );
         } else {
@@ -428,8 +432,10 @@ function EditEmployeeFormContent({
             createFamilyMemberMutation
               .mutateAsync({ employeeId, ...body })
               .then(() => {})
-              .catch(() => {
-                subEntityErrors.push("Thành viên gia đình");
+              .catch((err: unknown) => {
+                subEntityErrors.push(
+                  `Thành viên gia đình: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                );
               }),
           );
         }
@@ -443,8 +449,10 @@ function EditEmployeeFormContent({
             deleteBankAccountMutation
               .mutateAsync({ employeeId, id })
               .then(() => {})
-              .catch(() => {
-                subEntityErrors.push("Tài khoản ngân hàng");
+              .catch((err: unknown) => {
+                subEntityErrors.push(
+                  `Tài khoản ngân hàng: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                );
               }),
           );
         }
@@ -456,8 +464,10 @@ function EditEmployeeFormContent({
             updateBankAccountMutation
               .mutateAsync({ employeeId, id, ...body })
               .then(() => {})
-              .catch(() => {
-                subEntityErrors.push("Tài khoản ngân hàng");
+              .catch((err: unknown) => {
+                subEntityErrors.push(
+                  `Tài khoản ngân hàng: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                );
               }),
           );
         } else {
@@ -465,8 +475,10 @@ function EditEmployeeFormContent({
             createBankAccountMutation
               .mutateAsync({ employeeId, ...body })
               .then(() => {})
-              .catch(() => {
-                subEntityErrors.push("Tài khoản ngân hàng");
+              .catch((err: unknown) => {
+                subEntityErrors.push(
+                  `Tài khoản ngân hàng: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                );
               }),
           );
         }
@@ -480,8 +492,10 @@ function EditEmployeeFormContent({
             deletePreviousJobMutation
               .mutateAsync({ employeeId, id })
               .then(() => {})
-              .catch(() => {
-                subEntityErrors.push("Lịch sử công tác");
+              .catch((err: unknown) => {
+                subEntityErrors.push(
+                  `Lịch sử công tác: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                );
               }),
           );
         }
@@ -493,8 +507,10 @@ function EditEmployeeFormContent({
             updatePreviousJobMutation
               .mutateAsync({ employeeId, id, ...body })
               .then(() => {})
-              .catch(() => {
-                subEntityErrors.push("Lịch sử công tác");
+              .catch((err: unknown) => {
+                subEntityErrors.push(
+                  `Lịch sử công tác: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                );
               }),
           );
         } else {
@@ -502,8 +518,10 @@ function EditEmployeeFormContent({
             createPreviousJobMutation
               .mutateAsync({ employeeId, ...body })
               .then(() => {})
-              .catch(() => {
-                subEntityErrors.push("Lịch sử công tác");
+              .catch((err: unknown) => {
+                subEntityErrors.push(
+                  `Lịch sử công tác: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                );
               }),
           );
         }
@@ -517,8 +535,10 @@ function EditEmployeeFormContent({
             deletePartyMembershipMutation
               .mutateAsync({ employeeId, id })
               .then(() => {})
-              .catch(() => {
-                subEntityErrors.push("Đoàn/Đảng");
+              .catch((err: unknown) => {
+                subEntityErrors.push(
+                  `Đoàn/Đảng: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                );
               }),
           );
         }
@@ -530,8 +550,10 @@ function EditEmployeeFormContent({
             updatePartyMembershipMutation
               .mutateAsync({ employeeId, id, ...body })
               .then(() => {})
-              .catch(() => {
-                subEntityErrors.push("Đoàn/Đảng");
+              .catch((err: unknown) => {
+                subEntityErrors.push(
+                  `Đoàn/Đảng: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                );
               }),
           );
         } else {
@@ -539,8 +561,10 @@ function EditEmployeeFormContent({
             createPartyMembershipMutation
               .mutateAsync({ employeeId, ...body })
               .then(() => {})
-              .catch(() => {
-                subEntityErrors.push("Đoàn/Đảng");
+              .catch((err: unknown) => {
+                subEntityErrors.push(
+                  `Đoàn/Đảng: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                );
               }),
           );
         }
@@ -554,8 +578,10 @@ function EditEmployeeFormContent({
             deleteDegreeMutation
               .mutateAsync({ employeeId, id })
               .then(() => {})
-              .catch(() => {
-                subEntityErrors.push("Bằng cấp");
+              .catch((err: unknown) => {
+                subEntityErrors.push(
+                  `Bằng cấp: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                );
               }),
           );
         }
@@ -572,8 +598,10 @@ function EditEmployeeFormContent({
                 degreeFileId: d.degreeFileId || undefined,
               })
               .then(() => {})
-              .catch(() => {
-                subEntityErrors.push("Bằng cấp");
+              .catch((err: unknown) => {
+                subEntityErrors.push(
+                  `Bằng cấp: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                );
               }),
           );
         } else {
@@ -582,8 +610,10 @@ function EditEmployeeFormContent({
             createDegreeMutation
               .mutateAsync({ employeeId, ...body })
               .then(() => {})
-              .catch(() => {
-                subEntityErrors.push("Bằng cấp");
+              .catch((err: unknown) => {
+                subEntityErrors.push(
+                  `Bằng cấp: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                );
               }),
           );
         }
@@ -597,8 +627,10 @@ function EditEmployeeFormContent({
             deleteCertificationMutation
               .mutateAsync({ employeeId, id })
               .then(() => {})
-              .catch(() => {
-                subEntityErrors.push("Chứng chỉ");
+              .catch((err: unknown) => {
+                subEntityErrors.push(
+                  `Chứng chỉ: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                );
               }),
           );
         }
@@ -615,8 +647,10 @@ function EditEmployeeFormContent({
                 certFileId: c.certFileId || undefined,
               })
               .then(() => {})
-              .catch(() => {
-                subEntityErrors.push("Chứng chỉ");
+              .catch((err: unknown) => {
+                subEntityErrors.push(
+                  `Chứng chỉ: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                );
               }),
           );
         } else {
@@ -625,8 +659,10 @@ function EditEmployeeFormContent({
             createCertificationMutation
               .mutateAsync({ employeeId, ...body })
               .then(() => {})
-              .catch(() => {
-                subEntityErrors.push("Chứng chỉ");
+              .catch((err: unknown) => {
+                subEntityErrors.push(
+                  `Chứng chỉ: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                );
               }),
           );
         }
@@ -661,8 +697,10 @@ function EditEmployeeFormContent({
                   id: foreignWorkPermitsData[0].id,
                 })
                 .then(() => {})
-                .catch(() => {
-                  subEntityErrors.push("Giấy phép lao động");
+                .catch((err: unknown) => {
+                  subEntityErrors.push(
+                    `Giấy phép lao động: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                  );
                 }),
             );
           } else {
@@ -670,8 +708,10 @@ function EditEmployeeFormContent({
               createForeignWorkPermitMutation
                 .mutateAsync(permitPayload)
                 .then(() => {})
-                .catch(() => {
-                  subEntityErrors.push("Giấy phép lao động");
+                .catch((err: unknown) => {
+                  subEntityErrors.push(
+                    `Giấy phép lao động: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
+                  );
                 }),
             );
           }

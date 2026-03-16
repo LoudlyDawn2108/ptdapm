@@ -9,6 +9,12 @@ import type {
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { EmployeeAggregate } from "./types";
 
+// Eden Treaty generates strict literal types from Elysia route definitions, but frontend
+// form values use broader types (e.g. `string` vs enum literals). Backend Zod schemas
+// handle runtime validation, so this type bridge is safe.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const edenBody = <T>(input: T): any => input;
+
 export type UploadedFile = {
   id: string;
   originalName: string;
@@ -93,7 +99,9 @@ export const employeeListOptions = (params: {
       const cleanParams = Object.fromEntries(
         Object.entries(params).filter(([_, v]) => v != null && v !== ""),
       );
-      const { data, error } = await api.api.employees.get({ query: cleanParams as any });
+      const { data, error } = await api.api.employees.get({
+        query: edenBody(cleanParams),
+      });
       if (error) throw handleApiError(error);
       return data;
     },
@@ -122,6 +130,8 @@ export const myEmployeeOptions = () =>
 
 export function useEmployeeDetail(employeeId: string) {
   const { data, isLoading } = useQuery(employeeDetailOptions(employeeId));
+  // TODO: Replace unsafe cast with runtime validation (e.g. zod parse) or type guard
+  // to detect API response shape changes at runtime instead of silently crashing.
   const aggregate = data?.data as EmployeeAggregate | undefined;
   return { aggregate, employee: aggregate?.employee, isLoading };
 }
@@ -133,7 +143,7 @@ export function useCreateEmployee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateEmployeeInput) => {
-      const { data, error } = await api.api.employees.post(input as Record<string, unknown>);
+      const { data, error } = await api.api.employees.post(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -145,9 +155,7 @@ export function useUpdateEmployee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: UpdateEmployeeInput & { id: string }) => {
-      const { data, error } = await api.api
-        .employees({ employeeId: id })
-        .put(input as Record<string, unknown>);
+      const { data, error } = await api.api.employees({ employeeId: id }).put(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -177,7 +185,7 @@ export function useMarkResigned() {
       const { data, error } = await api.api.employees({ employeeId: id }).put({
         workStatus: "terminated",
         terminationReason: reason,
-      } as any);
+      } as Record<string, unknown>);
       if (error) throw handleApiError(error);
       return data;
     },
@@ -209,7 +217,7 @@ export function useCreateFamilyMember() {
     }) => {
       const { data, error } = await api.api
         .employees({ employeeId })
-        ["family-members"].post(input as any);
+        ["family-members"].post(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -227,7 +235,7 @@ export function useCreateBankAccount() {
     }: { employeeId: string; bankName: string; accountNo: string; isPrimary?: boolean }) => {
       const { data, error } = await api.api
         .employees({ employeeId })
-        ["bank-accounts"].post(input as any);
+        ["bank-accounts"].post(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -251,7 +259,7 @@ export function useCreatePreviousJob() {
     }) => {
       const { data, error } = await api.api
         .employees({ employeeId })
-        ["previous-jobs"].post(input as any);
+        ["previous-jobs"].post(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -269,7 +277,7 @@ export function useCreatePartyMembership() {
     }: { employeeId: string; organizationType: string; joinedOn: string; details: string }) => {
       const { data, error } = await api.api
         .employees({ employeeId })
-        ["party-memberships"].post(input as any);
+        ["party-memberships"].post(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -298,7 +306,7 @@ export function useUpdateFamilyMember() {
       const { data, error } = await api.api
         .employees({ employeeId })
         ["family-members"]({ id })
-        .put(input as any);
+        .put(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -324,7 +332,7 @@ export function useUpdateBankAccount() {
       const { data, error } = await api.api
         .employees({ employeeId })
         ["bank-accounts"]({ id })
-        .put(input as any);
+        .put(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -351,7 +359,7 @@ export function useUpdatePreviousJob() {
       const { data, error } = await api.api
         .employees({ employeeId })
         ["previous-jobs"]({ id })
-        .put(input as any);
+        .put(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -377,7 +385,7 @@ export function useUpdatePartyMembership() {
       const { data, error } = await api.api
         .employees({ employeeId })
         ["party-memberships"]({ id })
-        .put(input as any);
+        .put(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -393,7 +401,7 @@ export function useCreateDegree() {
       employeeId,
       ...input
     }: { employeeId: string; degreeName: string; school: string; degreeFileId?: string }) => {
-      const { data, error } = await api.api.employees({ employeeId }).degrees.post(input as any);
+      const { data, error } = await api.api.employees({ employeeId }).degrees.post(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -419,7 +427,7 @@ export function useUpdateDegree() {
       const { data, error } = await api.api
         .employees({ employeeId })
         .degrees({ id })
-        .put(input as any);
+        .put(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -437,7 +445,7 @@ export function useCreateCertification() {
     }: { employeeId: string; certName: string; issuedBy?: string; certFileId?: string }) => {
       const { data, error } = await api.api
         .employees({ employeeId })
-        .certifications.post(input as any);
+        .certifications.post(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -463,7 +471,7 @@ export function useUpdateCertification() {
       const { data, error } = await api.api
         .employees({ employeeId })
         .certifications({ id })
-        .put(input as any);
+        .put(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -490,7 +498,7 @@ export function useCreateForeignWorkPermit() {
     }) => {
       const { data, error } = await api.api
         .employees({ employeeId })
-        ["foreign-work-permits"].post(input as any);
+        ["foreign-work-permits"].post(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -520,7 +528,7 @@ export function useUpdateForeignWorkPermit() {
       const { data, error } = await api.api
         .employees({ employeeId })
         ["foreign-work-permits"]({ id })
-        .put(input as any);
+        .put(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -635,7 +643,9 @@ export function useCreateAllowance() {
       amount?: number | null;
       note?: string | null;
     }) => {
-      const { data, error } = await api.api.employees({ employeeId }).allowances.post(input as any);
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        .allowances.post(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -661,7 +671,7 @@ export function useUpdateAllowance() {
       const { data, error } = await api.api
         .employees({ employeeId })
         .allowances({ id })
-        .put(input as any);
+        .put(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -690,7 +700,9 @@ export function useCreateContract() {
       employeeId,
       ...input
     }: { employeeId: string } & CreateEmploymentContractInput) => {
-      const { data, error } = await api.api.employees({ employeeId }).contracts.post(input as any);
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        .contracts.post(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -709,8 +721,8 @@ export function useUpdateContract() {
     }: { employeeId: string; id: string } & UpdateEmploymentContractInput) => {
       const { data, error } = await api.api
         .employees({ employeeId })
-        .contracts({ id })
-        .put(input as any);
+        .contracts({ contractId: id })
+        .put(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -723,7 +735,10 @@ export function useDeleteContract() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ employeeId, id }: { employeeId: string; id: string }) => {
-      const { data, error } = await api.api.employees({ employeeId }).contracts({ id }).delete();
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        .contracts({ contractId: id })
+        .delete();
       if (error) throw handleApiError(error);
       return data;
     },
