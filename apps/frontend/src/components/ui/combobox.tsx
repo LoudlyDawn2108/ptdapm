@@ -55,14 +55,28 @@ export function Combobox({
     queryFn: () => fetchOptions(debouncedSearch),
     placeholderData: keepPreviousData,
     staleTime: 30_000,
-    enabled: open, // only fetch when popover is open
+    enabled: open,
   });
 
-  // Find label for currently selected value
-  const selectedLabel = options.find((o) => o.value === value)?.label;
+  const { data: initialOptions = [] } = useQuery({
+    queryKey: [...queryKey, ""],
+    queryFn: () => fetchOptions(""),
+    staleTime: 60_000,
+    enabled: !!value && !open,
+  });
+
+  const selectedLabel =
+    options.find((o) => o.value === value)?.label ??
+    initialOptions.find((o) => o.value === value)?.label;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(isOpen: boolean) => {
+        setOpen(isOpen);
+        if (!isOpen) setSearchText("");
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           variant="outline"

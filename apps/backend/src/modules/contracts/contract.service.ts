@@ -5,7 +5,7 @@ import type {
 } from "@hrms/shared";
 import type { ContractDocStatusCode } from "@hrms/shared";
 import { type SQL, and, eq } from "drizzle-orm";
-import { ConflictError, NotFoundError } from "../../common/utils/errors";
+import { BadRequestError, ConflictError, NotFoundError } from "../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
 import { db } from "../../db";
 import {
@@ -35,6 +35,19 @@ async function ensureOrgUnitExists(orgUnitId: string): Promise<void> {
   if (!item) throw new NotFoundError("Không tìm thấy đơn vị");
 }
 
+export async function getByIdForEmployee(
+  employeeId: string,
+  id: string,
+): Promise<EmploymentContract> {
+  const [item] = await db
+    .select()
+    .from(employmentContracts)
+    .where(and(eq(employmentContracts.id, id), eq(employmentContracts.employeeId, employeeId)));
+
+  if (!item) throw new NotFoundError("Không tìm thấy hợp đồng");
+  return item;
+}
+
 export async function listByEmployee(
   employeeId: string,
   page: number,
@@ -61,19 +74,6 @@ export async function listByEmployee(
   return buildPaginatedResponse(items, total, page, pageSize);
 }
 
-export async function getByIdForEmployee(
-  employeeId: string,
-  id: string,
-): Promise<EmploymentContract> {
-  const [item] = await db
-    .select()
-    .from(employmentContracts)
-    .where(and(eq(employmentContracts.id, id), eq(employmentContracts.employeeId, employeeId)));
-
-  if (!item) throw new NotFoundError("Không tìm thấy hợp đồng");
-  return item;
-}
-
 export async function create(
   employeeId: string,
   data: CreateEmployeeContractInput,
@@ -97,7 +97,7 @@ export async function create(
     .values({ ...data, employeeId, createdByUserId })
     .returning();
 
-  if (!created) throw new Error("Insert failed");
+  if (!created) throw new BadRequestError("Không thể tạo hợp đồng");
   return created;
 }
 
@@ -134,7 +134,7 @@ export async function update(
     .where(and(eq(employmentContracts.id, id), eq(employmentContracts.employeeId, employeeId)))
     .returning();
 
-  if (!updated) throw new Error("Update failed");
+  if (!updated) throw new BadRequestError("Không thể cập nhật hợp đồng");
   return updated;
 }
 

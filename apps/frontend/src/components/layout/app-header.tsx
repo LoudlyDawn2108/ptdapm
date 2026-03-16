@@ -18,7 +18,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useLogout } from "@/features/auth/api";
 import { useAuth } from "@/features/auth/hooks";
 import { Role } from "@hrms/shared";
-import { Link, useMatches } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronsUpDown, Loader2, LogOut } from "lucide-react";
 
 const BREADCRUMB_LABELS: Record<string, string> = {
@@ -26,6 +26,7 @@ const BREADCRUMB_LABELS: Record<string, string> = {
   accounts: "Tài khoản",
   employees: "Nhân sự",
   new: "Thêm mới",
+  edit: "Chỉnh sửa",
   "org-units": "Đơn vị tổ chức",
   config: "Cấu hình",
   "contract-types": "Loại hợp đồng",
@@ -38,9 +39,19 @@ const BREADCRUMB_LABELS: Record<string, string> = {
   my: "Cá nhân",
   profile: "Hồ sơ",
   org: "Đơn vị công tác",
+  family: "Gia đình",
+  "work-history": "Lịch sử công tác",
+  education: "Học vấn",
+  salary: "Lương & phụ cấp",
+  contracts: "Hợp đồng",
+  rewards: "Khen thưởng",
+  party: "Đoàn/Đảng",
 };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function getLabel(segment: string): string {
+  if (UUID_RE.test(segment)) return "Chi tiết";
   return BREADCRUMB_LABELS[segment] ?? segment;
 }
 
@@ -55,20 +66,15 @@ function getInitials(name?: string | null): string {
 }
 
 export function AppHeader() {
-  const matches = useMatches();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { user } = useAuth();
   const logoutMutation = useLogout();
 
-  const breadcrumbs = matches
-    .filter((m) => m.id !== "__root__" && m.id !== "/_authenticated")
-    .map((m) => {
-      const segments = m.pathname.replace(/\/$/, "").split("/").filter(Boolean);
-      const lastSegment = segments[segments.length - 1] ?? "";
-      return {
-        label: getLabel(lastSegment),
-        path: m.pathname,
-      };
-    });
+  const segments = pathname.replace(/\/$/, "").split("/").filter(Boolean);
+  const breadcrumbs = segments.map((seg, i) => ({
+    label: getLabel(seg),
+    path: `/${segments.slice(0, i + 1).join("/")}`,
+  }));
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 px-4">

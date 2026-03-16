@@ -12,15 +12,18 @@ import { allowanceRoutes } from "./modules/allowances";
 import { assignmentRoutes } from "./modules/assignments";
 import { authRoutes } from "./modules/auth";
 import { bankAccountRoutes } from "./modules/bank-accounts";
+import { certificationRoutes } from "./modules/certifications";
 import { allowanceTypeRoutes } from "./modules/config/allowance-types";
 import { contractTypeRoutes } from "./modules/config/contract-types";
 import { salaryGradeRoutes } from "./modules/config/salary-grades";
 import { contractAppendixRoutes, contractRoutes } from "./modules/contracts";
 import { dashboardRoutes } from "./modules/dashboard";
+import { degreeRoutes } from "./modules/degrees";
 import { employeeRoutes } from "./modules/employees";
 import { employeeExportRoutes } from "./modules/employees-export";
 import { familyMemberRoutes } from "./modules/family-members";
 import { fileRoutes } from "./modules/files";
+import { foreignWorkPermitRoutes } from "./modules/foreign-work-permits";
 import { orgUnitRoutes } from "./modules/org-units";
 import { partyMembershipRoutes } from "./modules/party-memberships";
 import { previousJobRoutes } from "./modules/previous-jobs";
@@ -54,6 +57,7 @@ const app = new Elysia()
   .use(fileRoutes)
   .use(familyMemberRoutes)
   .use(bankAccountRoutes)
+  .use(contractRoutes)
   .use(contractTypeRoutes)
   .use(salaryGradeRoutes)
   .use(allowanceTypeRoutes)
@@ -62,8 +66,10 @@ const app = new Elysia()
   .use(dashboardRoutes)
   .use(previousJobRoutes)
   .use(partyMembershipRoutes)
+  .use(degreeRoutes)
+  .use(certificationRoutes)
+  .use(foreignWorkPermitRoutes)
   .use(accountRoutes)
-  .use(contractRoutes)
   .use(contractAppendixRoutes)
   .listen(env.PORT);
 

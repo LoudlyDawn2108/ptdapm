@@ -1,7 +1,78 @@
 import { api } from "@/api/client";
 import { handleApiError } from "@/lib/error-handler";
-import type { CreateEmployeeInput, UpdateEmployeeInput } from "@hrms/shared";
-import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
+import type {
+  CreateEmployeeInput,
+  CreateEmploymentContractInput,
+  UpdateEmployeeInput,
+  UpdateEmploymentContractInput,
+} from "@hrms/shared";
+import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { EmployeeAggregate } from "./types";
+import { isEmployeeAggregate } from "./types";
+
+// Eden Treaty infers narrow literal unions (e.g. "NAM" | "NU") from Elysia routes, but
+// shared validators / form values use broader `string`. This identity function returns `any`
+// so Eden accepts the wider type — the `any` does NOT leak beyond the Eden call site.
+// Backend Zod schemas provide runtime validation.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const edenBody = <T>(input: T): any => input;
+
+export type UploadedFile = {
+  id: string;
+  originalName: string;
+  mimeType: string | null;
+};
+
+const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+
+export function getFileUrl(fileId: string): string {
+  return `${apiBaseUrl}/api/files/${fileId}`;
+}
+
+function isUploadedFileResponse(value: unknown): value is { data: UploadedFile } {
+  if (!value || typeof value !== "object" || !("data" in value)) {
+    return false;
+  }
+
+  const payload = value.data;
+  return (
+    !!payload && typeof payload === "object" && "id" in payload && typeof payload.id === "string"
+  );
+}
+
+/**
+ * Upload a file via raw fetch. Eden Treaty does not support multipart/FormData bodies,
+ * so we bypass it here while manually mirroring its base URL and credential settings.
+ */
+export async function uploadFile(file: File): Promise<UploadedFile> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl}/api/files/upload`, {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+  } catch {
+    throw handleApiError({ error: "Không thể tải ảnh lên" });
+  }
+
+  const payload: unknown = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw handleApiError(
+      (payload ?? { error: "Tải ảnh lên thất bại" }) as Parameters<typeof handleApiError>[0],
+    );
+  }
+
+  if (!isUploadedFileResponse(payload)) {
+    throw handleApiError({ error: "Phản hồi tải ảnh không hợp lệ" });
+  }
+
+  return payload.data;
+}
 
 // ──────────────────────────────────────────
 // Keys
@@ -25,12 +96,17 @@ export const employeeListOptions = (params: {
   workStatus?: string;
   contractStatus?: string;
   gender?: string;
+  academicRank?: string;
 }) =>
   queryOptions({
     queryKey: employeeKeys.list(params),
     queryFn: async () => {
+      // Strip undefined/null/empty values — Eden serializes them as "undefined" string
+      const cleanParams = Object.fromEntries(
+        Object.entries(params).filter(([_, v]) => v != null && v !== ""),
+      );
       const { data, error } = await api.api.employees.get({
-        query: params as Record<string, unknown>,
+        query: edenBody(cleanParams),
       });
       if (error) throw handleApiError(error);
       return data;
@@ -58,6 +134,13 @@ export const myEmployeeOptions = () =>
     },
   });
 
+export function useEmployeeDetail(employeeId: string) {
+  const { data, isLoading } = useQuery(employeeDetailOptions(employeeId));
+  const raw = data?.data;
+  const aggregate = isEmployeeAggregate(raw) ? raw : undefined;
+  return { aggregate, employee: aggregate?.employee, isLoading };
+}
+
 // ──────────────────────────────────────────
 // Mutations
 // ──────────────────────────────────────────
@@ -65,7 +148,7 @@ export function useCreateEmployee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateEmployeeInput) => {
-      const { data, error } = await api.api.employees.post(input as Record<string, unknown>);
+      const { data, error } = await api.api.employees.post(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -77,9 +160,7 @@ export function useUpdateEmployee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: UpdateEmployeeInput & { id: string }) => {
-      const { data, error } = await api.api
-        .employees({ employeeId: id })
-        .put(input as Record<string, unknown>);
+      const { data, error } = await api.api.employees({ employeeId: id }).put(edenBody(input));
       if (error) throw handleApiError(error);
       return data;
     },
@@ -99,5 +180,574 @@ export function useDeleteEmployee() {
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: employeeKeys.lists() }),
+  });
+}
+
+export function useMarkResigned() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason?: string }) => {
+      const { data, error } = await api.api.employees({ employeeId: id }).put({
+        workStatus: "terminated",
+        terminationReason: reason,
+      } as Record<string, unknown>);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: employeeKeys.lists() });
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.id) });
+    },
+  });
+}
+
+// ──────────────────────────────────────────
+// Sub-entity mutations
+// ──────────────────────────────────────────
+
+export function useCreateFamilyMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      ...input
+    }: {
+      employeeId: string;
+      relation: string;
+      fullName: string;
+      dob?: string;
+      phone?: string;
+      note?: string;
+      isDependent?: boolean;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["family-members"].post(edenBody(input));
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useCreateBankAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      ...input
+    }: { employeeId: string; bankName: string; accountNo: string; isPrimary?: boolean }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["bank-accounts"].post(edenBody(input));
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useCreatePreviousJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      ...input
+    }: {
+      employeeId: string;
+      workplace: string;
+      startedOn: string;
+      endedOn: string;
+      note?: string;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["previous-jobs"].post(edenBody(input));
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useCreatePartyMembership() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      ...input
+    }: { employeeId: string; organizationType: string; joinedOn: string; details: string }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["party-memberships"].post(edenBody(input));
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useUpdateFamilyMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      id,
+      ...input
+    }: {
+      employeeId: string;
+      id: string;
+      relation?: string;
+      fullName?: string;
+      dob?: string;
+      phone?: string;
+      note?: string;
+      isDependent?: boolean;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["family-members"]({ id })
+        .put(edenBody(input));
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useUpdateBankAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      id,
+      ...input
+    }: {
+      employeeId: string;
+      id: string;
+      bankName?: string;
+      accountNo?: string;
+      isPrimary?: boolean;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["bank-accounts"]({ id })
+        .put(edenBody(input));
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useUpdatePreviousJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      id,
+      ...input
+    }: {
+      employeeId: string;
+      id: string;
+      workplace?: string;
+      startedOn?: string;
+      endedOn?: string;
+      note?: string;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["previous-jobs"]({ id })
+        .put(edenBody(input));
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useUpdatePartyMembership() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      id,
+      ...input
+    }: {
+      employeeId: string;
+      id: string;
+      organizationType?: string;
+      joinedOn?: string;
+      details?: string;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["party-memberships"]({ id })
+        .put(edenBody(input));
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useCreateDegree() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      ...input
+    }: { employeeId: string; degreeName: string; school: string; degreeFileId?: string }) => {
+      const { data, error } = await api.api.employees({ employeeId }).degrees.post(edenBody(input));
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useUpdateDegree() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      id,
+      ...input
+    }: {
+      employeeId: string;
+      id: string;
+      degreeName?: string;
+      school?: string;
+      degreeFileId?: string;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        .degrees({ id })
+        .put(edenBody(input));
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useCreateCertification() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      ...input
+    }: { employeeId: string; certName: string; issuedBy?: string; certFileId?: string }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        .certifications.post(edenBody(input));
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useUpdateCertification() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      id,
+      ...input
+    }: {
+      employeeId: string;
+      id: string;
+      certName?: string;
+      issuedBy?: string;
+      certFileId?: string;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        .certifications({ id })
+        .put(edenBody(input));
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useCreateForeignWorkPermit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      ...input
+    }: {
+      employeeId: string;
+      visaNo?: string;
+      visaExpiresOn?: string;
+      passportNo?: string;
+      passportExpiresOn?: string;
+      workPermitNo?: string;
+      workPermitExpiresOn?: string;
+      workPermitFileId?: string;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["foreign-work-permits"].post(edenBody(input));
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useUpdateForeignWorkPermit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      id,
+      ...input
+    }: {
+      employeeId: string;
+      id: string;
+      visaNo?: string;
+      visaExpiresOn?: string;
+      passportNo?: string;
+      passportExpiresOn?: string;
+      workPermitNo?: string;
+      workPermitExpiresOn?: string;
+      workPermitFileId?: string;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["foreign-work-permits"]({ id })
+        .put(edenBody(input));
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useDeleteFamilyMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, id }: { employeeId: string; id: string }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["family-members"]({ id })
+        .delete();
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useDeleteBankAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, id }: { employeeId: string; id: string }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["bank-accounts"]({ id })
+        .delete();
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useDeletePreviousJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, id }: { employeeId: string; id: string }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["previous-jobs"]({ id })
+        .delete();
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useDeletePartyMembership() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, id }: { employeeId: string; id: string }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        ["party-memberships"]({ id })
+        .delete();
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useDeleteDegree() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, id }: { employeeId: string; id: string }) => {
+      const { data, error } = await api.api.employees({ employeeId }).degrees({ id }).delete();
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useDeleteCertification() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, id }: { employeeId: string; id: string }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        .certifications({ id })
+        .delete();
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+// Allowance mutations
+export function useCreateAllowance() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      ...input
+    }: {
+      employeeId: string;
+      allowanceTypeId: string;
+      amount?: number | null;
+      note?: string | null;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        .allowances.post(edenBody(input));
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useUpdateAllowance() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      id,
+      ...input
+    }: {
+      employeeId: string;
+      id: string;
+      allowanceTypeId?: string;
+      amount?: number | null;
+      note?: string | null;
+    }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        .allowances({ id })
+        .put(edenBody(input));
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useDeleteAllowance() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, id }: { employeeId: string; id: string }) => {
+      const { data, error } = await api.api.employees({ employeeId }).allowances({ id }).delete();
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useCreateContract() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      ...input
+    }: { employeeId: string } & CreateEmploymentContractInput) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        .contracts.post(edenBody(input));
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useUpdateContract() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      employeeId,
+      id,
+      ...input
+    }: { employeeId: string; id: string } & UpdateEmploymentContractInput) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        .contracts({ contractId: id })
+        .put(edenBody(input));
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
+  });
+}
+
+export function useDeleteContract() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, id }: { employeeId: string; id: string }) => {
+      const { data, error } = await api.api
+        .employees({ employeeId })
+        .contracts({ contractId: id })
+        .delete();
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: employeeKeys.detail(vars.employeeId) }),
   });
 }

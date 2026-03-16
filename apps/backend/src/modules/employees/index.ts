@@ -1,6 +1,5 @@
 import {
   ACADEMIC_RANK_CODES,
-  ACADEMIC_TITLE_CODES,
   CONTRACT_STATUS_CODES,
   GENDER_CODES,
   WORK_STATUS_CODES,
@@ -22,7 +21,6 @@ const listQuerySchema = paginationSchema.extend({
   contractStatus: z.enum(CONTRACT_STATUS_CODES as [string, ...string[]]).optional(),
   gender: z.enum(GENDER_CODES as [string, ...string[]]).optional(),
   academicRank: z.enum(ACADEMIC_RANK_CODES as [string, ...string[]]).optional(),
-  academicTitle: z.enum(ACADEMIC_TITLE_CODES as [string, ...string[]]).optional(),
   positionTitle: z.string().optional(),
 });
 
@@ -86,7 +84,6 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
         query.contractStatus as Parameters<typeof employeeService.list>[5],
         query.gender as Parameters<typeof employeeService.list>[6],
         query.academicRank as Parameters<typeof employeeService.list>[7],
-        query.academicTitle as Parameters<typeof employeeService.list>[8],
         query.positionTitle,
       );
       return { data };

@@ -74,7 +74,6 @@ export async function list(
   contractStatus?: Employee["contractStatus"],
   gender?: Employee["gender"],
   academicRank?: Employee["academicRank"],
-  academicTitle?: Employee["academicTitle"],
   positionTitle?: string,
 ) {
   const normalizedSearch = normalizeOptional(search);
@@ -86,9 +85,6 @@ export async function list(
   const normalizedGender = normalizeOptional(gender) as Employee["gender"] | undefined;
   const normalizedAcademicRank = normalizeOptional(academicRank) as
     | Employee["academicRank"]
-    | undefined;
-  const normalizedAcademicTitle = normalizeOptional(academicTitle) as
-    | Employee["academicTitle"]
     | undefined;
   const normalizedPositionTitle = normalizeOptional(positionTitle);
 
@@ -126,10 +122,6 @@ export async function list(
 
   if (normalizedAcademicRank) {
     conditions.push(eq(employees.academicRank, normalizedAcademicRank));
-  }
-
-  if (normalizedAcademicTitle) {
-    conditions.push(eq(employees.academicTitle, normalizedAcademicTitle));
   }
 
   if (normalizedPositionTitle) {

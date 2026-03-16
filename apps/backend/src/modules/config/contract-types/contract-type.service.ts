@@ -4,9 +4,9 @@ import type {
   PaginatedResponse,
   UpdateContractTypeInput,
 } from "@hrms/shared";
-import { type SQL, eq, ilike } from "drizzle-orm";
+import { type SQL, and, eq, ilike, ne } from "drizzle-orm";
 import { queryDropdown } from "../../../common/utils/dropdown";
-import { ConflictError, NotFoundError } from "../../../common/utils/errors";
+import { BadRequestError, ConflictError, NotFoundError } from "../../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../../common/utils/pagination";
 import { db } from "../../../db";
 import { type ContractType, contractTypes } from "../../../db/schema";
@@ -66,12 +66,26 @@ export async function create(data: CreateContractTypeInput): Promise<ContractTyp
   }
 
   const [created] = await db.insert(contractTypes).values(data).returning();
-  if (!created) throw new Error("Insert failed");
+  if (!created) throw new BadRequestError("Không thể tạo loại hợp đồng");
   return created;
 }
 
 export async function update(id: string, data: UpdateContractTypeInput): Promise<ContractType> {
-  await getById(id);
+  const item = await getById(id);
+
+  if (data.contractTypeName && data.contractTypeName !== item.contractTypeName) {
+    const existing = await db
+      .select({ id: contractTypes.id })
+      .from(contractTypes)
+      .where(
+        and(eq(contractTypes.contractTypeName, data.contractTypeName), ne(contractTypes.id, id)),
+      )
+      .limit(1);
+
+    if (existing.length > 0) {
+      throw new ConflictError("Loại hợp đồng đã tồn tại");
+    }
+  }
 
   const [updated] = await db
     .update(contractTypes)
@@ -79,7 +93,7 @@ export async function update(id: string, data: UpdateContractTypeInput): Promise
     .where(eq(contractTypes.id, id))
     .returning();
 
-  if (!updated) throw new Error("Update failed");
+  if (!updated) throw new BadRequestError("Không thể cập nhật loại hợp đồng");
   return updated;
 }
 

@@ -4,7 +4,7 @@ import type {
   UpdateEmployeeBankAccountInput,
 } from "@hrms/shared";
 import { and, eq, ne } from "drizzle-orm";
-import { NotFoundError } from "../../common/utils/errors";
+import { BadRequestError, NotFoundError } from "../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
 import { db } from "../../db";
 import { type EmployeeBankAccount, employeeBankAccounts } from "../../db/schema";
@@ -42,30 +42,37 @@ export async function create(
   employeeId: string,
   data: CreateEmployeeBankAccountInput,
 ): Promise<EmployeeBankAccount> {
-  if (!data.isPrimary) {
-    const [created] = await db
-      .insert(employeeBankAccounts)
-      .values({ ...data, employeeId })
-      .returning();
+  // Auto-set isPrimary if this is the first bank account for the employee
+  const existingCount = await countRows(
+    employeeBankAccounts,
+    eq(employeeBankAccounts.employeeId, employeeId),
+  );
+  const shouldBePrimary = data.isPrimary || existingCount === 0;
 
-    if (!created) throw new Error("Insert failed");
-    return created;
+  if (shouldBePrimary) {
+    return db.transaction(async (tx) => {
+      await tx
+        .update(employeeBankAccounts)
+        .set({ isPrimary: false, updatedAt: new Date() })
+        .where(eq(employeeBankAccounts.employeeId, employeeId));
+
+      const [created] = await tx
+        .insert(employeeBankAccounts)
+        .values({ ...data, employeeId, isPrimary: true })
+        .returning();
+
+      if (!created) throw new BadRequestError("Không thể tạo tài khoản ngân hàng");
+      return created;
+    });
   }
 
-  return db.transaction(async (tx) => {
-    await tx
-      .update(employeeBankAccounts)
-      .set({ isPrimary: false })
-      .where(eq(employeeBankAccounts.employeeId, employeeId));
+  const [created] = await db
+    .insert(employeeBankAccounts)
+    .values({ ...data, employeeId })
+    .returning();
 
-    const [created] = await tx
-      .insert(employeeBankAccounts)
-      .values({ ...data, employeeId })
-      .returning();
-
-    if (!created) throw new Error("Insert failed");
-    return created;
-  });
+  if (!created) throw new BadRequestError("Không thể tạo tài khoản ngân hàng");
+  return created;
 }
 
 export async function update(
@@ -75,32 +82,36 @@ export async function update(
 ): Promise<EmployeeBankAccount> {
   await getByIdForEmployee(employeeId, id);
 
-  if (!data.isPrimary) {
-    const [updated] = await db
-      .update(employeeBankAccounts)
-      .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(employeeBankAccounts.id, id), eq(employeeBankAccounts.employeeId, employeeId)))
-      .returning();
+  if (data.isPrimary) {
+    return db.transaction(async (tx) => {
+      await tx
+        .update(employeeBankAccounts)
+        .set({ isPrimary: false, updatedAt: new Date() })
+        .where(
+          and(eq(employeeBankAccounts.employeeId, employeeId), ne(employeeBankAccounts.id, id)),
+        );
 
-    if (!updated) throw new Error("Update failed");
-    return updated;
+      const [updated] = await tx
+        .update(employeeBankAccounts)
+        .set({ ...data, updatedAt: new Date() })
+        .where(
+          and(eq(employeeBankAccounts.id, id), eq(employeeBankAccounts.employeeId, employeeId)),
+        )
+        .returning();
+
+      if (!updated) throw new BadRequestError("Không thể cập nhật tài khoản ngân hàng");
+      return updated;
+    });
   }
 
-  return db.transaction(async (tx) => {
-    await tx
-      .update(employeeBankAccounts)
-      .set({ isPrimary: false })
-      .where(and(eq(employeeBankAccounts.employeeId, employeeId), ne(employeeBankAccounts.id, id)));
+  const [updated] = await db
+    .update(employeeBankAccounts)
+    .set({ ...data, updatedAt: new Date() })
+    .where(and(eq(employeeBankAccounts.id, id), eq(employeeBankAccounts.employeeId, employeeId)))
+    .returning();
 
-    const [updated] = await tx
-      .update(employeeBankAccounts)
-      .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(employeeBankAccounts.id, id), eq(employeeBankAccounts.employeeId, employeeId)))
-      .returning();
-
-    if (!updated) throw new Error("Update failed");
-    return updated;
-  });
+  if (!updated) throw new BadRequestError("Không thể cập nhật tài khoản ngân hàng");
+  return updated;
 }
 
 export async function remove(employeeId: string, id: string): Promise<{ id: string }> {

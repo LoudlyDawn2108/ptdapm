@@ -3,7 +3,6 @@ import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   date,
-  integer,
   numeric,
   pgSequence,
   pgTable,
@@ -39,8 +38,8 @@ export const employees = pgTable("employees", {
   isForeigner: boolean("is_foreigner").notNull().default(false),
   educationLevel: varchar("education_level", { length: 50 }),
   trainingLevel: varchar("training_level", { length: 50 }),
-  academicTitle: varchar("academic_title", { length: 50 }),
   academicRank: varchar("academic_rank", { length: 50 }),
+  academicTitle: varchar("academic_title", { length: 50 }),
   workStatus: varchar("work_status", { length: 20 })
     .$type<WorkStatusCode>()
     .notNull()
@@ -124,7 +123,7 @@ export const employeeBankAccounts = pgTable("employee_bank_accounts", {
     .references(() => employees.id, { onDelete: "cascade" }),
   bankName: varchar("bank_name", { length: 255 }).notNull(),
   accountNo: varchar("account_no", { length: 50 }).notNull(),
-  isPrimary: boolean("is_primary").notNull().default(true),
+  isPrimary: boolean("is_primary").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -160,6 +159,14 @@ export const employeePartyMemberships = pgTable("employee_party_memberships", {
 export type EmployeePartyMembership = typeof employeePartyMemberships.$inferSelect;
 export type NewEmployeePartyMembership = typeof employeePartyMemberships.$inferInsert;
 
+/**
+ * Employee degrees table.
+ *
+ * NOTE: `major`, `graduationYear`, and `classification` columns were intentionally omitted
+ * from this schema. The current design stores only the degree name, school, and an optional
+ * file attachment. If richer degree metadata is needed in the future, these columns can be
+ * added via a new migration. Current data is test-only — no production data migration required.
+ */
 export const employeeDegrees = pgTable("employee_degrees", {
   id: uuid("id").primaryKey().defaultRandom(),
   employeeId: uuid("employee_id")
@@ -167,9 +174,6 @@ export const employeeDegrees = pgTable("employee_degrees", {
     .references(() => employees.id, { onDelete: "cascade" }),
   degreeName: varchar("degree_name", { length: 255 }).notNull(),
   school: varchar("school", { length: 255 }).notNull(),
-  major: varchar("major", { length: 255 }),
-  graduationYear: integer("graduation_year"),
-  classification: varchar("classification", { length: 100 }),
   degreeFileId: uuid("degree_file_id").references(() => files.id, {
     onDelete: "set null",
   }),
@@ -179,6 +183,14 @@ export const employeeDegrees = pgTable("employee_degrees", {
 export type EmployeeDegree = typeof employeeDegrees.$inferSelect;
 export type NewEmployeeDegree = typeof employeeDegrees.$inferInsert;
 
+/**
+ * Employee certifications table.
+ *
+ * NOTE: `issuedOn` and `expiresOn` date columns were intentionally omitted from this schema.
+ * The current design stores only the cert name, issuer, and an optional file attachment.
+ * If date tracking is needed in the future, these columns can be added via a new migration.
+ * Current data is test-only — no production data migration required.
+ */
 export const employeeCertifications = pgTable("employee_certifications", {
   id: uuid("id").primaryKey().defaultRandom(),
   employeeId: uuid("employee_id")
@@ -186,8 +198,6 @@ export const employeeCertifications = pgTable("employee_certifications", {
     .references(() => employees.id, { onDelete: "cascade" }),
   certName: varchar("cert_name", { length: 255 }).notNull(),
   issuedBy: varchar("issued_by", { length: 255 }),
-  issuedOn: date("issued_on"),
-  expiresOn: date("expires_on"),
   certFileId: uuid("cert_file_id").references(() => files.id, {
     onDelete: "set null",
   }),

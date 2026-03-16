@@ -4,7 +4,7 @@ import type {
   UpdateEmployeeAllowanceInput,
 } from "@hrms/shared";
 import { and, eq } from "drizzle-orm";
-import { NotFoundError } from "../../common/utils/errors";
+import { BadRequestError, NotFoundError } from "../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
 import { db } from "../../db";
 import { type EmployeeAllowance, allowanceTypes, employeeAllowances } from "../../db/schema";
@@ -68,7 +68,7 @@ export async function create(
 
   const [created] = await db.insert(employeeAllowances).values(payload).returning();
 
-  if (!created) throw new Error("Insert failed");
+  if (!created) throw new BadRequestError("Không thể tạo phụ cấp");
   return created;
 }
 
@@ -96,7 +96,7 @@ export async function update(
     .where(and(eq(employeeAllowances.id, id), eq(employeeAllowances.employeeId, employeeId)))
     .returning();
 
-  if (!updated) throw new Error("Update failed");
+  if (!updated) throw new BadRequestError("Không thể cập nhật phụ cấp");
   return updated;
 }
 

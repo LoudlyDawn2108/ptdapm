@@ -8,6 +8,12 @@ import { files } from "../../db/schema";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
+// Anchor relative UPLOAD_DIR to project root (not CWD) so Turborepo vs direct-run both work
+const PROJECT_ROOT = path.resolve(import.meta.dir, "../../../../..");
+const RESOLVED_UPLOAD_DIR = path.isAbsolute(env.UPLOAD_DIR)
+  ? env.UPLOAD_DIR
+  : path.resolve(PROJECT_ROOT, env.UPLOAD_DIR);
+
 const ALLOWED_MIME_TYPES = [
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -44,14 +50,13 @@ export async function uploadFile(file: File, userId: string) {
 
   const uuid = crypto.randomUUID();
   const storageFilename = `${uuid}${ext}`;
-  const uploadDir = path.resolve(env.UPLOAD_DIR);
-  await mkdir(uploadDir, { recursive: true });
+  await mkdir(RESOLVED_UPLOAD_DIR, { recursive: true });
 
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
   const sha256 = new Bun.CryptoHasher("sha256").update(buffer).digest("hex");
 
-  const filePath = path.join(uploadDir, storageFilename);
+  const filePath = path.join(RESOLVED_UPLOAD_DIR, storageFilename);
   await Bun.write(filePath, buffer);
 
   try {
@@ -85,8 +90,15 @@ export async function getFileById(id: string) {
     throw new NotFoundError("Không tìm thấy file");
   }
 
-  const bunFile = Bun.file(fileRecord.storagePath);
-  const exists = await bunFile.exists();
+  let bunFile = Bun.file(fileRecord.storagePath);
+  let exists = await bunFile.exists();
+
+  if (!exists) {
+    const filename = path.basename(fileRecord.storagePath);
+    const fallbackPath = path.join(RESOLVED_UPLOAD_DIR, filename);
+    bunFile = Bun.file(fallbackPath);
+    exists = await bunFile.exists();
+  }
 
   if (!exists) {
     throw new NotFoundError("File không tồn tại trên hệ thống");

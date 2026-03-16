@@ -23,6 +23,7 @@ import {
 } from "../constants/enums";
 
 const normalizeOptionalTextInput = (value: unknown) => {
+  if (value === null || value === undefined) return undefined;
   if (typeof value !== "string") return value;
 
   const trimmedValue = value.trim();
@@ -127,15 +128,19 @@ export const createEmployeeSchema = z.object({
   phone: requiredText("Số điện thoại không được để trống"),
   isForeigner: z.boolean({ error: "Giá trị quốc tịch không hợp lệ" }).default(false),
   educationLevel: requiredEnum(educationLevelSchema, "Trình độ văn hóa không được để trống"),
-  trainingLevel: requiredEnum(trainingLevelSchema, "Trình độ đào tạo không được để trống"),
-  academicTitle: requiredEnum(academicTitleSchema, "Chức danh nghề nghiệp không được để trống"),
-  academicRank: requiredEnum(academicRankSchema, "Học hàm không được để trống"),
-  workStatus: requiredEnum(workStatusSchema, "Trạng thái làm việc không được để trống"),
-  contractStatus: requiredEnum(contractStatusSchema, "Trạng thái hợp đồng không được để trống"),
+  trainingLevel: optionalField(trainingLevelSchema),
+  academicTitle: optionalField(academicTitleSchema),
+  academicRank: optionalField(academicRankSchema),
+  // NOTE: workStatus, contractStatus, and salaryGradeStepId are optional at creation time.
+  // The DB schema defines defaults: workStatus='pending', contractStatus='none'.
+  // Backend does NOT need explicit values — Postgres defaults apply on INSERT.
+  // Existing create/edit forms rely on this behavior.
+  workStatus: optionalField(workStatusSchema),
+  contractStatus: optionalField(contractStatusSchema),
   currentOrgUnitId: optionalUuid("Đơn vị công tác không hợp lệ"),
   currentPositionTitle: optionalText(),
-  salaryGradeStepId: requiredUuid("Bậc lương không được để trống"),
-  portraitFileId: requiredUuid("Ảnh chân dung không được để trống"),
+  salaryGradeStepId: optionalUuid("Bậc lương không hợp lệ"),
+  portraitFileId: optionalUuid("Ảnh chân dung không hợp lệ"),
   terminatedOn: optionalDate(),
   terminationReason: optionalText(),
 });
@@ -170,7 +175,7 @@ export const createEmployeeBankAccountSchema = z.object({
   accountNo: z
     .string({ error: "Số tài khoản không được để trống" })
     .min(1, "Số tài khoản không được để trống"),
-  isPrimary: z.boolean({ error: "Giá trị tài khoản chính không hợp lệ" }).default(true),
+  isPrimary: z.boolean({ error: "Giá trị tài khoản chính không hợp lệ" }).default(false),
 });
 
 export type CreateEmployeeBankAccountInput = z.infer<typeof createEmployeeBankAccountSchema>;
@@ -333,6 +338,43 @@ export type CreateContractAppendixInput = z.infer<typeof createContractAppendixS
 
 export const updateContractAppendixSchema = createContractAppendixSchema.partial();
 export type UpdateContractAppendixInput = z.infer<typeof updateContractAppendixSchema>;
+
+export const createEmployeeDegreeSchema = z.object({
+  degreeName: z
+    .string({ error: "Tên bằng không được để trống" })
+    .min(1, "Tên bằng không được để trống"),
+  school: z
+    .string({ error: "Trường/Nơi cấp không được để trống" })
+    .min(1, "Trường/Nơi cấp không được để trống"),
+  degreeFileId: optionalUuid("File bằng không hợp lệ"),
+});
+export type CreateEmployeeDegreeInput = z.infer<typeof createEmployeeDegreeSchema>;
+export const updateEmployeeDegreeSchema = createEmployeeDegreeSchema.partial();
+export type UpdateEmployeeDegreeInput = z.infer<typeof updateEmployeeDegreeSchema>;
+
+export const createEmployeeCertificationSchema = z.object({
+  certName: z
+    .string({ error: "Tên chứng chỉ không được để trống" })
+    .min(1, "Tên chứng chỉ không được để trống"),
+  issuedBy: optionalText(),
+  certFileId: optionalUuid("File chứng chỉ không hợp lệ"),
+});
+export type CreateEmployeeCertificationInput = z.infer<typeof createEmployeeCertificationSchema>;
+export const updateEmployeeCertificationSchema = createEmployeeCertificationSchema.partial();
+export type UpdateEmployeeCertificationInput = z.infer<typeof updateEmployeeCertificationSchema>;
+
+export const createForeignWorkPermitSchema = z.object({
+  visaNo: optionalText(),
+  visaExpiresOn: optionalDate(),
+  passportNo: optionalText(),
+  passportExpiresOn: optionalDate(),
+  workPermitNo: optionalText(),
+  workPermitExpiresOn: optionalDate(),
+  workPermitFileId: optionalUuid("File giấy phép lao động không hợp lệ"),
+});
+export type CreateForeignWorkPermitInput = z.infer<typeof createForeignWorkPermitSchema>;
+export const updateForeignWorkPermitSchema = createForeignWorkPermitSchema.partial();
+export type UpdateForeignWorkPermitInput = z.infer<typeof updateForeignWorkPermitSchema>;
 
 export const importEmployeeRowSchema = z.object({
   fullName: z.string().min(1, "Họ tên không được để trống"),

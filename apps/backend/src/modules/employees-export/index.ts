@@ -1,6 +1,5 @@
 import {
   ACADEMIC_RANK_CODES,
-  ACADEMIC_TITLE_CODES,
   CONTRACT_STATUS_CODES,
   GENDER_CODES,
   WORK_STATUS_CODES,
@@ -33,7 +32,6 @@ const exportListQuerySchema = z.object({
   contractStatus: z.enum(CONTRACT_STATUS_CODES as [string, ...string[]]).optional(),
   gender: z.enum(GENDER_CODES as [string, ...string[]]).optional(),
   academicRank: z.enum(ACADEMIC_RANK_CODES as [string, ...string[]]).optional(),
-  academicTitle: z.enum(ACADEMIC_TITLE_CODES as [string, ...string[]]).optional(),
   positionTitle: z.string().optional(),
 });
 
@@ -68,7 +66,6 @@ async function listAllEmployees(params: {
   contractStatus?: string;
   gender?: string;
   academicRank?: string;
-  academicTitle?: string;
   positionTitle?: string;
 }): Promise<Employee[]> {
   const pageSize = 500;
@@ -87,7 +84,6 @@ async function listAllEmployees(params: {
       params.contractStatus as Parameters<typeof employeeService.list>[5],
       params.gender as Parameters<typeof employeeService.list>[6],
       params.academicRank as Parameters<typeof employeeService.list>[7],
-      params.academicTitle as Parameters<typeof employeeService.list>[8],
       params.positionTitle,
     );
     items.push(...response.items);
@@ -189,29 +185,23 @@ function buildEmployeeAggregateCsv(
     ],
   ];
 
-  const familyMemberHeaders = ["relation", "fullName", "dob", "phone", "isDependent", "note"];
+  const familyMemberHeaders = ["relation", "fullName"];
   const familyMemberRows = aggregate.familyMembers.map((member) => [
     formatValue(member.relation),
     formatValue(member.fullName),
-    formatValue(member.dob),
-    formatValue(member.phone),
-    formatValue(member.isDependent),
-    formatValue(member.note),
   ]);
 
-  const bankAccountHeaders = ["bankName", "accountNo", "isPrimary"];
+  const bankAccountHeaders = ["bankName", "accountNo"];
   const bankAccountRows = aggregate.bankAccounts.map((account) => [
     formatValue(account.bankName),
     formatValue(account.accountNo),
-    formatValue(account.isPrimary),
   ]);
 
-  const previousJobHeaders = ["workplace", "startedOn", "endedOn", "note"];
+  const previousJobHeaders = ["workplace", "startedOn", "endedOn"];
   const previousJobRows = aggregate.previousJobs.map((job) => [
     formatValue(job.workplace),
     formatValue(job.startedOn),
     formatValue(job.endedOn),
-    formatValue(job.note),
   ]);
 
   const partyMembershipHeaders = ["organizationType", "joinedOn", "details"];
@@ -228,21 +218,16 @@ function buildEmployeeAggregateCsv(
     formatValue(allowance.note),
   ]);
 
-  const degreeHeaders = ["degreeName", "school", "major", "graduationYear", "classification"];
+  const degreeHeaders = ["degreeName", "school"];
   const degreeRows = degrees.map((degree) => [
     formatValue(degree.degreeName),
     formatValue(degree.school),
-    formatValue(degree.major),
-    formatValue(degree.graduationYear),
-    formatValue(degree.classification),
   ]);
 
-  const certificationHeaders = ["certName", "issuedBy", "issuedOn", "expiresOn"];
+  const certificationHeaders = ["certName", "issuedBy"];
   const certificationRows = certifications.map((certification) => [
     formatValue(certification.certName),
     formatValue(certification.issuedBy),
-    formatValue(certification.issuedOn),
-    formatValue(certification.expiresOn),
   ]);
 
   const foreignWorkPermitHeaders = [
@@ -326,7 +311,6 @@ export const employeeExportRoutes = new Elysia({ prefix: "/api/employees" })
         contractStatus: query.contractStatus,
         gender: query.gender,
         academicRank: query.academicRank,
-        academicTitle: query.academicTitle,
         positionTitle: query.positionTitle,
       });
 

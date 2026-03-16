@@ -39,7 +39,7 @@ export const Route = createFileRoute("/_authenticated/accounts/")({
 });
 
 function AccountsPage() {
-  const navigate = useNavigate({ from: "/accounts" });
+  const navigate = useNavigate({ from: "/accounts/" });
   const search = Route.useSearch();
   const { searchText, setSearchText, debouncedSearch, pagination, onPaginationChange } =
     useListPage({
@@ -171,11 +171,11 @@ function AccountsPage() {
           value={search.role ?? "all"}
           onValueChange={(v) =>
             navigate({
-              search: (prev) => ({
-                ...prev,
+              search: {
+                ...search,
                 role: v === "all" ? undefined : v,
                 page: 1,
-              }),
+              },
             })
           }
         >
@@ -195,11 +195,11 @@ function AccountsPage() {
           value={search.status ?? "all"}
           onValueChange={(v) =>
             navigate({
-              search: (prev) => ({
-                ...prev,
+              search: {
+                ...search,
                 status: v === "all" ? undefined : v,
                 page: 1,
-              }),
+              },
             })
           }
         >

@@ -13,6 +13,31 @@ type FieldError = {
 type GenericError = { error: string };
 type ApiError = ToastError | FieldError | GenericError | string;
 
+function isFieldError(error: unknown): error is FieldError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "type" in error &&
+    "error" in error &&
+    "fields" in error &&
+    error.type === "field"
+  );
+}
+
+function isToastError(error: unknown): error is ToastError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "type" in error &&
+    "error" in error &&
+    error.type === "toast"
+  );
+}
+
+function isGenericError(error: unknown): error is GenericError {
+  return typeof error === "object" && error !== null && "error" in error;
+}
+
 // Extended Error with optional field errors (for RHF integration)
 export class ApiResponseError extends Error {
   fields?: Record<string, string>;
@@ -27,7 +52,7 @@ export class ApiResponseError extends Error {
 // ──────────────────────────────────────────
 // Main handler — call this from queryFn / mutationFn
 // ──────────────────────────────────────────
-export function handleApiError(error: ApiError): ApiResponseError {
+export function handleApiError(error: unknown): ApiResponseError {
   // Plain string (401/403 from auth middleware)
   if (typeof error === "string") {
     const message =
@@ -41,19 +66,19 @@ export function handleApiError(error: ApiError): ApiResponseError {
   }
 
   // Field validation errors — show toast + return fields for RHF
-  if ("type" in error && error.type === "field") {
+  if (isFieldError(error)) {
     toast.error(error.error);
     return new ApiResponseError(error.error, error.fields);
   }
 
   // Toast errors — just show toast
-  if ("type" in error && error.type === "toast") {
+  if (isToastError(error)) {
     toast.error(error.error);
     return new ApiResponseError(error.error);
   }
 
   // Generic { error } shape (rate limit, etc.)
-  if ("error" in error) {
+  if (isGenericError(error) && typeof error.error === "string") {
     toast.error(error.error);
     return new ApiResponseError(error.error);
   }

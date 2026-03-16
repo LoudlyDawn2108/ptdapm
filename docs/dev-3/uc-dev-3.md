@@ -1,5 +1,5 @@
 
-### 4.23. Use Case: Tìm kiếm hồ sơ nhân sự (Nguyễn Hải Ninh)
+### 4.23. Use Case: Tìm kiếm hồ sơ nhân sự 
 
 |  |  |
 | --- | --- |
@@ -30,6 +30,94 @@
 | Luồng sự kiện chính  (Basic Flow) | 1.  Tại màn hình danh sách, Phòng TCCB, phòng TCKT nhấn "Bộ lọc nâng cao".  2.  Hệ thống hiển thị panel lọc với nhiều tiêu chí:   * **Đơn vị công tác:** Chọn Khoa, Phòng, Ban, Bộ môn * **Chức danh khoa học:** GS, PGS, Không có * **Chức vụ đơn vị:**Trưởng khoa, Phó khoa, Không chức vụ * **Trạng thái làm việc:** Đang chờ xét,Đang công tác, Đã thôi việc * **Trạng thái hợp đồng:** Chưa hợp đồng, Còn hiệu lực, Hết hiệu lực, Chờ gia hạn. * **Giới tính:** Nam, Nữ   3.  Phòng TCCB, phòng TCKT chọn các tiêu chí lọc.  4.  Nhấn "Áp dụng bộ lọc".  5.  Hệ thống hiển thị kết quả lọc đa tiêu chí. |
 | Luồng sự kiện thay thế  (Alternative Flow) | Không có |
 | Luồng sự kiện ngoại lệ  (Exception Flow) | **E1: Không có kết quả lọc**   1. Tại bước 5, nếu không có hồ sơ nào thỏa mãn tiêu chí đã chọn 2. Hệ thống hiển thị thông báo *“Không có hồ sơ phù hợp với tiêu chí lọc.”* |
+
+### 4.24.1. Thiết kế lại giao diện trang hồ sơ nhân sự (theo ảnh mẫu)
+
+**Mục tiêu giao diện**
+
+- Tái hiện bố cục danh sách hồ sơ nhân sự giống ảnh mẫu: thanh tiêu đề, hàng bộ lọc, bảng dữ liệu, phân trang.
+- Tối ưu khả năng quét nhanh: cột rõ ràng, khoảng cách thoáng, trạng thái dạng pill màu.
+- Nhất quán giữa tìm kiếm và lọc: cùng hàng, cùng chiều cao control.
+
+**Bố cục tổng thể**
+
+- Trang dạng card lớn bo góc, nền trắng, đổ bóng nhẹ, padding đều.
+- Thanh tiêu đề: biểu tượng menu bên trái, tiêu đề "Hồ sơ nhân sự"; khu vực tài khoản bên phải (avatar + vai trò).
+- Hàng bộ lọc: ô tìm kiếm, 4 dropdown lọc, nút "Thêm hồ sơ nhân sự".
+- Bảng dữ liệu: header nền xanh nhạt, dữ liệu hàng trắng, kẻ line mảnh.
+- Footer: thông tin số lượng hiển thị bên trái, phân trang bên phải.
+
+**Hệ thống lưới và khoảng cách**
+
+- Lưới 12 cột; khối filter nằm một hàng, mỗi control cao 36-40px.
+- Khoảng cách dọc giữa các khối: 16-20px.
+- Chiều cao mỗi hàng bảng: 56-60px để dễ quét.
+
+**Thành phần giao diện chính**
+
+**Thanh tìm kiếm**
+
+- Placeholder: "Tìm kiếm".
+- Icon kính lúp bên trái trong ô.
+- Border màu xám nhạt, focus viền xanh nhẹ.
+
+**Bộ lọc dropdown**
+
+- Nhãn hiển thị trong ô: "Đơn vị công tác", "Học hàm/học vị", "Hợp đồng", "Trạng thái".
+- Icon mũi tên xuống ở cuối ô.
+
+**Nút chính**
+
+- Label: "Thêm hồ sơ nhân sự".
+- Nền xanh chủ đạo, chữ trắng, bo góc 8px.
+- Có icon mũi tên xuống nhỏ bên phải.
+
+**Bảng danh sách**
+
+- Cột: Mã NS, Họ tên, Đơn vị công tác, Học hàm/học vị, Chức vụ, Hợp đồng, Trạng thái, Thao tác.
+- Cột "Thao tác" hiển thị icon bút chì chỉnh sửa.
+- Header nền xanh nhạt, chữ đậm.
+- Hàng zebra không bắt buộc; ưu tiên line mảnh để đồng nhất ảnh mẫu.
+
+**Pill trạng thái**
+
+- "Đang hoạt động": nền xanh nhạt, text xanh đậm, dot xanh.
+- "Đã thôi việc": nền đỏ nhạt, text đỏ đậm, dot đỏ.
+- "Chờ gia hạn": nền cam nhạt, text cam đậm, dot cam.
+
+**Phân trang**
+
+- Hiển thị "Hiển thị 10 / 20 hồ sơ nhân sự" bên trái.
+- Cụm trang: nút "Trước", số trang "1 / 2", nút "Sau" bên phải.
+
+**Màu sắc đề xuất**
+
+- Primary: `#3B5CCC`
+- Header table: `#D7E0F0`
+- Border: `#E6E6E6`
+- Text chính: `#2B2B2B`
+- Text phụ: `#6B6B6B`
+- Success: `#18A058`, background `#EAF7F0`
+- Danger: `#E14B4B`, background `#FDECEC`
+- Warning: `#F2994A`, background `#FFF3E6`
+
+**Typography**
+
+- Tiêu đề: 18-20px, semibold.
+- Header bảng: 12-13px, semibold, uppercase nhẹ.
+- Nội dung: 13-14px, regular.
+
+**Trạng thái tương tác**
+
+- Hover hàng: nền xám rất nhạt `#F7F7F7`.
+- Hover nút chính: đậm hơn `#2F4FB8`.
+- Focus input: outline 2px màu primary, offset 1px.
+
+**Ghi chú triển khai**
+
+- Bảo đảm canh lề trái các cột chữ; cột trạng thái căn giữa để dễ so sánh.
+- Tất cả control filter cùng chiều cao để tạo nhịp thị giác.
+- Thao tác chỉ cần icon bút chì, tooltip "Chỉnh sửa".
 
 ### 4.25. Use Case: Thêm mới Hồ sơ nhân sự
 
@@ -95,3 +183,5 @@
 | Luồng sự kiện chính  (Basic Flow) | 1.  CB/GV chọn các mục kích hoạt chức năng xem hồ sơ nhân sự  2.  Hệ thống hiển thị đầy đủ thông tin theo các tab:   * **Tab "Thông tin chung":** Mã cán bộ,Lý lịch, liên hệ, gia đình, ảnh chân dung * **Tab "Trình độ & Chức danh":** Bằng cấp, chứng chỉ, chức danh khoa học, chức vụ, đơn vị công tác. * **Tab "Thông tin Đảng/ Đoàn":** Thông tin Đảng/ Đoàn đã được lưu. * **Tab "Lương & Phụ cấp":** Thông tin về ngạch, bậc, hệ số lương, thông tin ngân hàng * **Tab "Hợp đồng":** Thông tin về các loại hợp đồng đã ký * **Tab "Khen thưởng/Kỷ luật":** Các mục khen thưởng, kỷ luật của nhân sự * **Tab "Công tác":** Quá trình công tác |
 | Luồng sự kiện thay thế  (Alternative Flow) | Không có |
 | Luồng sự kiện ngoại lệ  (Exception Flow) | Không có |
+
+

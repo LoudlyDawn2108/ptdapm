@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/config/allowance-types/")(
 });
 
 function AllowanceTypesPage() {
-  const navigate = useNavigate({ from: "/config/allowance-types" });
+  const navigate = useNavigate({ from: "/config/allowance-types/" });
   const search = Route.useSearch();
   const listPage = useListPage({
     search,
