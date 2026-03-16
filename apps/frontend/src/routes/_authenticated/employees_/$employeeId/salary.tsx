@@ -46,7 +46,7 @@ import {
 } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Save } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -56,6 +56,7 @@ export const Route = createFileRoute("/_authenticated/employees_/$employeeId/sal
 });
 
 type EmployeeRecord = {
+  staffCode?: string | null;
   salaryGradeStepId?: string | null;
 };
 
@@ -344,16 +345,28 @@ function SalaryTab() {
           }
         }}
       >
-        <DialogContent>
+        <DialogContent showCloseButton={false}>
           <DialogHeader>
-            <DialogTitle>Sửa hệ số lương</DialogTitle>
-            <DialogDescription>Chọn ngạch lương và bậc lương cho nhân sự.</DialogDescription>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2">
+                <Pencil className="h-4 w-4" />
+                Sửa hệ số lương
+              </DialogTitle>
+              {emp?.staffCode && (
+                <span className="rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+                  Mã nhân sự: {emp.staffCode}
+                </span>
+              )}
+            </div>
+            <DialogDescription className="sr-only">
+              Chọn ngạch lương và bậc lương cho nhân sự.
+            </DialogDescription>
           </DialogHeader>
 
           <form className="space-y-4" onSubmit={handleSalarySubmit}>
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="salary-grade">
-                Ngạch lương
+                Ngạch viên chức <span className="text-red-500">*</span>
               </label>
               <Select
                 value={selectedGradeId}
@@ -363,7 +376,7 @@ function SalaryTab() {
                 }}
               >
                 <SelectTrigger id="salary-grade" className="w-full">
-                  <SelectValue placeholder="Chọn ngạch lương" />
+                  <SelectValue placeholder="Chọn ngạch viên chức" />
                 </SelectTrigger>
                 <SelectContent>
                   {salaryGrades.map((grade) => (
@@ -377,7 +390,7 @@ function SalaryTab() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="salary-step">
-                Bậc lương
+                Bậc lương <span className="text-red-500">*</span>
               </label>
               <Select
                 value={selectedStepId}
@@ -390,11 +403,28 @@ function SalaryTab() {
                 <SelectContent>
                   {salarySteps.map((step) => (
                     <SelectItem key={step.id} value={step.id}>
-                      {`Bậc ${step.stepNo} - Hệ số ${step.coefficient}`}
+                      {`Bậc ${step.stepNo}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="salary-coefficient">
+                Hệ số lương <span className="text-red-500">*</span>
+              </label>
+              <Input
+                id="salary-coefficient"
+                readOnly
+                value={
+                  selectedStepId
+                    ? (salarySteps.find((s) => s.id === selectedStepId)?.coefficient ?? "")
+                    : ""
+                }
+                placeholder="Hệ số lương"
+                className="bg-muted/50"
+              />
             </div>
 
             <DialogFooter>
@@ -402,7 +432,8 @@ function SalaryTab() {
                 Hủy
               </Button>
               <Button type="submit" disabled={!selectedStepId || updateEmployeeMutation.isPending}>
-                {updateEmployeeMutation.isPending ? "Đang lưu..." : "Lưu thay đổi"}
+                <Save className="mr-1.5 h-3.5 w-3.5" />
+                {updateEmployeeMutation.isPending ? "Đang lưu..." : "Lưu hệ số lương"}
               </Button>
             </DialogFooter>
           </form>

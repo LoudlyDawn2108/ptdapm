@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useDebounce } from "./use-debounce";
 
 const DEFAULT_PAGE = 1;
-const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 10;
 
 interface ListPageSearch {
   page: number;

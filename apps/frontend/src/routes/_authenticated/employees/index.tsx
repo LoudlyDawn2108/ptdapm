@@ -143,7 +143,7 @@ function EmployeesPage() {
       <DataTable
         columns={columns}
         data={result?.items ?? []}
-        pageCount={result?.totalPages ?? 0}
+        pageCount={result?.total ? Math.ceil(result.total / (search.pageSize ?? 10)) : 0}
         pagination={pagination}
         onPaginationChange={onPaginationChange}
         isLoading={isLoading}
