@@ -19,6 +19,7 @@ import {
   trainingRegistrations,
 } from "../../db/schema/training";
 import { employees } from "../../db/schema/employees";
+import { orgUnits } from "../../db/schema/organization";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -104,7 +105,7 @@ export async function getById(courseId: string) {
     .from(trainingCourseTypes)
     .where(eq(trainingCourseTypes.id, course.courseTypeId));
 
-  // Lấy danh sách đăng ký kèm thông tin nhân sự
+  // Lấy danh sách đăng ký kèm thông tin nhân sự và đơn vị công tác
   const registrations = await db
     .select({
       id: trainingRegistrations.id,
@@ -114,9 +115,11 @@ export async function getById(courseId: string) {
       fullName: employees.fullName,
       staffCode: employees.staffCode,
       currentOrgUnitId: employees.currentOrgUnitId,
+      orgUnitName: orgUnits.unitName,
     })
     .from(trainingRegistrations)
     .innerJoin(employees, eq(trainingRegistrations.employeeId, employees.id))
+    .leftJoin(orgUnits, eq(employees.currentOrgUnitId, orgUnits.id))
     .where(eq(trainingRegistrations.courseId, courseId))
     .orderBy(trainingRegistrations.registeredAt);
 

@@ -26,7 +26,9 @@ export function buildTrainingCourseColumns(
       accessorKey: "courseName",
       header: "Tên khóa đào tạo",
       cell: ({ row }) => (
-        <span className="font-medium">{row.original.courseName}</span>
+        <span className="font-semibold text-slate-800">
+          {row.original.courseName}
+        </span>
       ),
     },
     {
