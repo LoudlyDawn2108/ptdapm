@@ -30,6 +30,15 @@ import {
   useCreateContract,
   useUpdateContract,
 } from "@/features/employees/api";
+import type { EmployeeAggregate, EmploymentContract } from "@/features/employees/types";
+
+/** Contract with optional joined display names from the API */
+type ContractRow = EmploymentContract & {
+  contractTypeName?: string;
+  orgUnitName?: string;
+};
+
+type OrgUnitNode = { id: string; unitName: string; children?: OrgUnitNode[] };
 import { orgUnitTreeOptions } from "@/features/org-units/api";
 import { formatDate, formatForInput } from "@/lib/date-utils";
 import { applyFieldErrors } from "@/lib/error-handler";
@@ -43,7 +52,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Eye, Pencil, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { type UseFormSetError, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/employees_/$employeeId/contracts")({
@@ -80,10 +89,10 @@ function ContractsTab() {
   const createContract = useCreateContract();
   const updateContract = useUpdateContract();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [editingContract, setEditingContract] = useState<any | null>(null);
-  const [viewingContract, setViewingContract] = useState<any | null>(null);
-  const aggregate = data?.data as any;
-  const contracts = aggregate?.contracts as any[] | undefined;
+  const [editingContract, setEditingContract] = useState<ContractRow | null>(null);
+  const [viewingContract, setViewingContract] = useState<ContractRow | null>(null);
+  const aggregate = data?.data as EmployeeAggregate | undefined;
+  const contracts = aggregate?.contracts as ContractRow[] | undefined;
   const contractTypes = (contractTypesData?.data?.items ?? []) as Array<{
     id: string;
     contractTypeName: string;
@@ -91,7 +100,7 @@ function ContractsTab() {
 
   const orgUnitOptions = useMemo(() => {
     const flatten = (
-      nodes: any[] | undefined,
+      nodes: OrgUnitNode[] | undefined,
       acc: Array<{ id: string; unitName: string }> = [],
     ) => {
       for (const node of nodes ?? []) {
@@ -101,7 +110,7 @@ function ContractsTab() {
       return acc;
     };
 
-    return flatten((orgUnitsData?.data ?? []) as any[]);
+    return flatten((orgUnitsData?.data ?? []) as OrgUnitNode[]);
   }, [orgUnitsData?.data]);
 
   const contractTypeMap = useMemo(
@@ -115,7 +124,10 @@ function ContractsTab() {
 
   if (isLoading) return <FormSkeleton fields={3} />;
 
-  const handleCreate = async (input: CreateEmploymentContractInput, setError: any) => {
+  const handleCreate = async (
+    input: CreateEmploymentContractInput,
+    setError: UseFormSetError<CreateEmploymentContractInput>,
+  ) => {
     try {
       await createContract.mutateAsync({ employeeId, ...input });
       toast.success("Thêm hợp đồng thành công");
@@ -125,7 +137,11 @@ function ContractsTab() {
     }
   };
 
-  const handleUpdate = async (id: string, input: CreateEmploymentContractInput, setError: any) => {
+  const handleUpdate = async (
+    id: string,
+    input: CreateEmploymentContractInput,
+    setError: UseFormSetError<CreateEmploymentContractInput>,
+  ) => {
     try {
       await updateContract.mutateAsync({ employeeId, id, ...input });
       toast.success("Cập nhật hợp đồng thành công");
@@ -161,7 +177,7 @@ function ContractsTab() {
               </tr>
             </thead>
             <tbody>
-              {contracts.map((c: any, i: number) => (
+              {contracts.map((c, i) => (
                 <tr key={c.id ?? i} className="border-b border-gray-100 last:border-0">
                   <td className="px-4 py-3">
                     {c.contractTypeName ?? contractTypeMap.get(c.contractTypeId) ?? "—"}
@@ -226,7 +242,7 @@ function ContractsTab() {
         contractTypes={contractTypes}
         orgUnits={orgUnitOptions}
         isSubmitting={updateContract.isPending}
-        onSubmit={(input, setError) => handleUpdate(editingContract.id, input, setError)}
+        onSubmit={(input, setError) => handleUpdate(editingContract!.id, input, setError)}
       />
 
       <ContractDetailDialog
@@ -267,11 +283,14 @@ function ContractFormDialog({
   title: string;
   description: string;
   submitLabel: string;
-  contract?: any | null;
+  contract?: ContractRow | null;
   contractTypes: Array<{ id: string; contractTypeName: string }>;
   orgUnits: Array<{ id: string; unitName: string }>;
   isSubmitting: boolean;
-  onSubmit: (input: CreateEmploymentContractInput, setError: any) => Promise<void>;
+  onSubmit: (
+    input: CreateEmploymentContractInput,
+    setError: UseFormSetError<CreateEmploymentContractInput>,
+  ) => Promise<void>;
 }) {
   const form = useForm<CreateEmploymentContractInput>({
     resolver: zodResolver(createEmploymentContractSchema),
@@ -444,7 +463,7 @@ function ContractDetailDialog({
   contractTypeName,
   orgUnitName,
 }: {
-  contract: any | null;
+  contract: ContractRow | null;
   onOpenChange: (open: boolean) => void;
   contractTypeName?: string;
   orgUnitName?: string;

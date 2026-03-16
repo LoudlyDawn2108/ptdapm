@@ -2,6 +2,7 @@ import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { ReadOnlyField, SectionTitle } from "@/components/shared/read-only-field";
 import { Button } from "@/components/ui/button";
 import { employeeDetailOptions, getFileUrl } from "@/features/employees/api";
+import type { Certification, Degree, EmployeeAggregate } from "@/features/employees/types";
 import { AcademicRank, EducationLevel } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -14,10 +15,10 @@ export const Route = createFileRoute("/_authenticated/employees_/$employeeId/edu
 function EducationTab() {
   const { employeeId } = Route.useParams();
   const { data, isLoading } = useQuery(employeeDetailOptions(employeeId));
-  const aggregate = data?.data as any;
+  const aggregate = data?.data as EmployeeAggregate | undefined;
   const emp = aggregate?.employee;
-  const degrees = aggregate?.degrees as any[] | undefined;
-  const certifications = aggregate?.certifications as any[] | undefined;
+  const degrees = aggregate?.degrees;
+  const certifications = aggregate?.certifications;
 
   if (isLoading) return <FormSkeleton fields={4} />;
   if (!emp) return null;
@@ -39,7 +40,7 @@ function EducationTab() {
       <SectionTitle title="Thông tin bằng cấp" />
       {degrees && degrees.length > 0 ? (
         <div className="space-y-4">
-          {degrees.map((d: any, i: number) => (
+          {degrees.map((d, i) => (
             <div
               key={d.id ?? i}
               className="grid grid-cols-1 items-end gap-4 md:grid-cols-[2fr_1fr_auto]"
@@ -66,7 +67,7 @@ function EducationTab() {
       <SectionTitle title="Thông tin chứng chỉ" />
       {certifications && certifications.length > 0 ? (
         <div className="space-y-4">
-          {certifications.map((c: any, i: number) => (
+          {certifications.map((c, i) => (
             <div
               key={c.id ?? i}
               className="grid grid-cols-1 items-end gap-4 md:grid-cols-[2fr_1fr_auto]"

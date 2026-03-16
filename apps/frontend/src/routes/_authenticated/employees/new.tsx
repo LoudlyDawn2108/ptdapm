@@ -34,7 +34,7 @@ import {
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus, Upload, UserPlus } from "lucide-react";
 import { useState } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
+import { type Control, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -65,7 +65,7 @@ const formSchema = z.object({
   workPermitNumber: z.string().optional(),
   workPermitExpiry: z.string().optional(),
   educationLevel: z.string().min(1, "Bắt buộc"),
-  academicRank: z.string().min(1, "Bắt buộc"),
+  academicRank: z.string().optional(),
 
   // ── Sub-entity arrays ──
   familyMembers: z
@@ -125,6 +125,34 @@ const formSchema = z.object({
 
 type FormInput = z.input<typeof formSchema>;
 type FormValues = z.output<typeof formSchema>;
+
+function FileUploadButton({
+  control,
+  name,
+  inputId,
+  uploadedLabel,
+  defaultLabel,
+}: {
+  control: Control<FormInput>;
+  name: string;
+  inputId: string;
+  uploadedLabel: string;
+  defaultLabel: string;
+}) {
+  const value = useWatch({ control, name: name as never });
+  return (
+    <Button
+      type="button"
+      className={`h-8 rounded-md px-3 text-xs text-white ${
+        value ? "bg-green-600 hover:bg-green-700" : "bg-[#3B5CCC] hover:bg-[#2F4FB8]"
+      }`}
+      onClick={() => document.getElementById(inputId)?.click()}
+    >
+      <Upload className="mr-1 h-3.5 w-3.5" />
+      {value ? uploadedLabel : defaultLabel}
+    </Button>
+  );
+}
 
 function NewEmployeePage() {
   const navigate = useNavigate();
@@ -213,89 +241,101 @@ function NewEmployeePage() {
         return;
       }
 
-      // Phase 2: Create sub-entities
+      // Phase 2: Create sub-entities in parallel
       const subEntityErrors: string[] = [];
+
+      const subEntityPromises: Promise<void>[] = [];
 
       for (const fm of data.familyMembers ?? []) {
         if (!fm.fullName || !fm.relation) continue;
-        try {
-          await createFamilyMember.mutateAsync({
-            employeeId,
-            relation: fm.relation,
-            fullName: fm.fullName,
-          });
-        } catch {
-          subEntityErrors.push("Thành viên gia đình");
-        }
+        subEntityPromises.push(
+          createFamilyMember
+            .mutateAsync({ employeeId, relation: fm.relation, fullName: fm.fullName })
+            .then(() => {})
+            .catch(() => {
+              subEntityErrors.push("Thành viên gia đình");
+            }),
+        );
       }
 
       for (const ba of data.bankAccounts ?? []) {
         if (!ba.accountNo || !ba.bankName) continue;
-        try {
-          await createBankAccount.mutateAsync({
-            employeeId,
-            bankName: ba.bankName,
-            accountNo: ba.accountNo,
-          });
-        } catch {
-          subEntityErrors.push("Tài khoản ngân hàng");
-        }
+        subEntityPromises.push(
+          createBankAccount
+            .mutateAsync({ employeeId, bankName: ba.bankName, accountNo: ba.accountNo })
+            .then(() => {})
+            .catch(() => {
+              subEntityErrors.push("Tài khoản ngân hàng");
+            }),
+        );
       }
 
       for (const pm of data.partyMemberships ?? []) {
         if (!pm.organizationType || !pm.joinedOn || !pm.details) continue;
-        try {
-          await createPartyMembership.mutateAsync({
-            employeeId,
-            organizationType: pm.organizationType,
-            joinedOn: pm.joinedOn,
-            details: pm.details,
-          });
-        } catch {
-          subEntityErrors.push("Thông tin đoàn/đảng");
-        }
+        subEntityPromises.push(
+          createPartyMembership
+            .mutateAsync({
+              employeeId,
+              organizationType: pm.organizationType,
+              joinedOn: pm.joinedOn,
+              details: pm.details,
+            })
+            .then(() => {})
+            .catch(() => {
+              subEntityErrors.push("Thông tin đoàn/đảng");
+            }),
+        );
       }
 
       for (const pj of data.previousJobs ?? []) {
         if (!pj.workplace || !pj.startedOn || !pj.endedOn) continue;
-        try {
-          await createPreviousJob.mutateAsync({
-            employeeId,
-            workplace: pj.workplace,
-            startedOn: pj.startedOn,
-            endedOn: pj.endedOn,
-          });
-        } catch {
-          subEntityErrors.push("Lịch sử công tác");
-        }
+        subEntityPromises.push(
+          createPreviousJob
+            .mutateAsync({
+              employeeId,
+              workplace: pj.workplace,
+              startedOn: pj.startedOn,
+              endedOn: pj.endedOn,
+            })
+            .then(() => {})
+            .catch(() => {
+              subEntityErrors.push("Lịch sử công tác");
+            }),
+        );
       }
 
       for (const d of data.degrees ?? []) {
         if (!d.degreeName || !d.school) continue;
-        try {
-          await createDegree.mutateAsync({
-            employeeId,
-            degreeName: d.degreeName,
-            school: d.school,
-            degreeFileId: d.degreeFileId || undefined,
-          });
-        } catch {
-          subEntityErrors.push("Bằng cấp");
-        }
+        subEntityPromises.push(
+          createDegree
+            .mutateAsync({
+              employeeId,
+              degreeName: d.degreeName,
+              school: d.school,
+              degreeFileId: d.degreeFileId || undefined,
+            })
+            .then(() => {})
+            .catch(() => {
+              subEntityErrors.push("Bằng cấp");
+            }),
+        );
       }
 
       for (const c of data.certificates ?? []) {
         if (!c.certName) continue;
-        try {
-          await createCertification.mutateAsync({
-            employeeId,
-            certName: c.certName,
-            issuedBy: c.issuedBy || undefined,
-            certFileId: c.certFileId || undefined,
-          });
-        } catch {
-          subEntityErrors.push("Chứng chỉ");
-        }
+        subEntityPromises.push(
+          createCertification
+            .mutateAsync({
+              employeeId,
+              certName: c.certName,
+              issuedBy: c.issuedBy || undefined,
+              certFileId: c.certFileId || undefined,
+            })
+            .then(() => {})
+            .catch(() => {
+              subEntityErrors.push("Chứng chỉ");
+            }),
+        );
       }
 
       if (data.isForeigner) {
@@ -308,22 +348,27 @@ function NewEmployeePage() {
           data.workPermitExpiry ||
           data.workPermitFileId;
         if (hasWorkPermitData) {
-          try {
-            await createForeignWorkPermit.mutateAsync({
-              employeeId,
-              visaNo: data.visaNumber || undefined,
-              visaExpiresOn: data.visaExpiry || undefined,
-              passportNo: data.passportNumber || undefined,
-              passportExpiresOn: data.passportExpiry || undefined,
-              workPermitNo: data.workPermitNumber || undefined,
-              workPermitExpiresOn: data.workPermitExpiry || undefined,
-              workPermitFileId: data.workPermitFileId || undefined,
-            });
-          } catch {
-            subEntityErrors.push("Giấy phép lao động");
-          }
+          subEntityPromises.push(
+            createForeignWorkPermit
+              .mutateAsync({
+                employeeId,
+                visaNo: data.visaNumber || undefined,
+                visaExpiresOn: data.visaExpiry || undefined,
+                passportNo: data.passportNumber || undefined,
+                passportExpiresOn: data.passportExpiry || undefined,
+                workPermitNo: data.workPermitNumber || undefined,
+                workPermitExpiresOn: data.workPermitExpiry || undefined,
+                workPermitFileId: data.workPermitFileId || undefined,
+              })
+              .then(() => {})
+              .catch(() => {
+                subEntityErrors.push("Giấy phép lao động");
+              }),
+          );
         }
       }
+
+      await Promise.all(subEntityPromises);
 
       if (subEntityErrors.length > 0) {
         toast.warning(
@@ -495,20 +540,13 @@ function NewEmployeePage() {
                         }
                       }}
                     />
-                    <Button
-                      type="button"
-                      className={`h-8 rounded-md px-3 text-xs text-white ${
-                        form.watch("workPermitFileId")
-                          ? "bg-green-600 hover:bg-green-700"
-                          : "bg-[#3B5CCC] hover:bg-[#2F4FB8]"
-                      }`}
-                      onClick={() => document.getElementById("work-permit-pdf")?.click()}
-                    >
-                      <Upload className="mr-1 h-3.5 w-3.5" />
-                      {form.watch("workPermitFileId")
-                        ? "Đã tải PDF giấy phép"
-                        : "Tải PDF giấy phép lao động"}
-                    </Button>
+                    <FileUploadButton
+                      control={form.control}
+                      name="workPermitFileId"
+                      inputId="work-permit-pdf"
+                      uploadedLabel="Đã tải PDF giấy phép"
+                      defaultLabel="Tải PDF giấy phép lao động"
+                    />
                   </div>
                 </div>
               )}
@@ -669,18 +707,13 @@ function NewEmployeePage() {
                         }
                       }}
                     />
-                    <Button
-                      type="button"
-                      className={`h-8 rounded-md px-3 text-xs text-white ${
-                        form.watch(`degrees.${index}.degreeFileId`)
-                          ? "bg-green-600 hover:bg-green-700"
-                          : "bg-[#3B5CCC] hover:bg-[#2F4FB8]"
-                      }`}
-                      onClick={() => document.getElementById(`degree-pdf-${index}`)?.click()}
-                    >
-                      <Upload className="mr-1 h-3.5 w-3.5" />
-                      {form.watch(`degrees.${index}.degreeFileId`) ? "Đã tải" : "Tải PDF"}
-                    </Button>
+                    <FileUploadButton
+                      control={form.control}
+                      name={`degrees.${index}.degreeFileId`}
+                      inputId={`degree-pdf-${index}`}
+                      uploadedLabel="Đã tải"
+                      defaultLabel="Tải PDF"
+                    />
                   </div>
                   <RemoveBtn onClick={() => degreeFields.remove(index)} />
                 </div>
@@ -716,18 +749,13 @@ function NewEmployeePage() {
                         }
                       }}
                     />
-                    <Button
-                      type="button"
-                      className={`h-8 rounded-md px-3 text-xs text-white ${
-                        form.watch(`certificates.${index}.certFileId`)
-                          ? "bg-green-600 hover:bg-green-700"
-                          : "bg-[#3B5CCC] hover:bg-[#2F4FB8]"
-                      }`}
-                      onClick={() => document.getElementById(`cert-pdf-${index}`)?.click()}
-                    >
-                      <Upload className="mr-1 h-3.5 w-3.5" />
-                      {form.watch(`certificates.${index}.certFileId`) ? "Đã tải" : "Tải PDF"}
-                    </Button>
+                    <FileUploadButton
+                      control={form.control}
+                      name={`certificates.${index}.certFileId`}
+                      inputId={`cert-pdf-${index}`}
+                      uploadedLabel="Đã tải"
+                      defaultLabel="Tải PDF"
+                    />
                   </div>
                   <RemoveBtn onClick={() => certFields.remove(index)} />
                 </div>

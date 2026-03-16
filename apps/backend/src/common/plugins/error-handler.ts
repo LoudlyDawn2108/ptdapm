@@ -31,6 +31,15 @@ function extractFieldErrors(validationError: Error): Record<string, string> | nu
   return fields;
 }
 
+function isPostgresError(error: unknown): error is { code: string; detail?: string } {
+  return (
+    error !== null &&
+    typeof error === "object" &&
+    "code" in error &&
+    typeof (error as { code: unknown }).code === "string"
+  );
+}
+
 export const errorPlugin = new Elysia({ name: "error-handler" }).onError(
   { as: "global" },
   ({ code, error }) => {
@@ -56,12 +65,7 @@ export const errorPlugin = new Elysia({ name: "error-handler" }).onError(
     if (code === "NOT_FOUND") {
       return toastError(404, "Không tìm thấy route");
     }
-    if (
-      error !== null &&
-      typeof error === "object" &&
-      "code" in error &&
-      (error as { code: string }).code === "23505"
-    ) {
+    if (isPostgresError(error) && error.code === "23505") {
       return toastError(409, "Dữ liệu đã tồn tại");
     }
     console.error("Unhandled error:", error);
