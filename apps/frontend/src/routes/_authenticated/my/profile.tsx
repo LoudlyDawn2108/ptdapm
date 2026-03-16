@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { myEmployeeOptions } from "@/features/employees/api";
+import type { EmployeeAggregate } from "@/features/employees/types";
 import { formatDate } from "@/lib/date-utils";
 import {
   AcademicRank,
@@ -36,7 +37,13 @@ function InfoRow({ label, value }: { label: string; value: string | undefined | 
 function MyProfilePage() {
   const { data, isLoading } = useQuery(myEmployeeOptions());
   const [activeTab, setActiveTab] = useState("general");
-  const emp = data?.data;
+  const aggregate = data?.data as EmployeeAggregate | undefined;
+  const emp = aggregate?.employee;
+  const salaryInfo = aggregate as
+    | (EmployeeAggregate & {
+        salaryGradeStep?: { gradeName?: string; stepName?: string; coefficient?: number };
+      })
+    | undefined;
 
   if (isLoading) {
     return (
@@ -170,11 +177,11 @@ function MyProfilePage() {
               </CardHeader>
               <CardContent>
                 <dl>
-                  <InfoRow label="Ngạch lương" value={(emp as any).salaryGradeStep?.gradeName} />
-                  <InfoRow label="Bậc" value={(emp as any).salaryGradeStep?.stepName} />
+                  <InfoRow label="Ngạch lương" value={salaryInfo?.salaryGradeStep?.gradeName} />
+                  <InfoRow label="Bậc" value={salaryInfo?.salaryGradeStep?.stepName} />
                   <InfoRow
                     label="Hệ số"
-                    value={(emp as any).salaryGradeStep?.coefficient?.toString()}
+                    value={salaryInfo?.salaryGradeStep?.coefficient?.toString()}
                   />
                 </dl>
               </CardContent>
@@ -184,9 +191,9 @@ function MyProfilePage() {
                 <CardTitle className="text-base">Thông tin ngân hàng</CardTitle>
               </CardHeader>
               <CardContent>
-                {(emp as any).bankAccounts?.length > 0 ? (
+                {aggregate?.bankAccounts && aggregate.bankAccounts.length > 0 ? (
                   <dl>
-                    {((emp as any).bankAccounts as any[]).map((b: any, i: number) => (
+                    {aggregate.bankAccounts.map((b, i) => (
                       <div key={b.id ?? i} className="py-2 border-b last:border-0 space-y-1">
                         <InfoRow label="Ngân hàng" value={b.bankName} />
                         <InfoRow label="Số tài khoản" value={b.accountNo} />
@@ -208,7 +215,7 @@ function MyProfilePage() {
               <CardTitle className="text-base">Thông tin gia đình</CardTitle>
             </CardHeader>
             <CardContent>
-              {(emp as any).familyMembers?.length > 0 ? (
+              {aggregate?.familyMembers && aggregate.familyMembers.length > 0 ? (
                 <div className="overflow-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -218,7 +225,7 @@ function MyProfilePage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {((emp as any).familyMembers as any[]).map((m: any, i: number) => (
+                      {aggregate.familyMembers.map((m, i) => (
                         <tr key={m.id ?? i} className="border-b last:border-0">
                           <td className="py-2 pr-4">
                             {FamilyRelation[m.relation as keyof typeof FamilyRelation]?.label ??
@@ -244,9 +251,9 @@ function MyProfilePage() {
               <CardTitle className="text-base">Thông tin Đảng/Đoàn</CardTitle>
             </CardHeader>
             <CardContent>
-              {(emp as any).partyMemberships?.length > 0 ? (
+              {aggregate?.partyMemberships && aggregate.partyMemberships.length > 0 ? (
                 <dl>
-                  {((emp as any).partyMemberships as any[]).map((m: any, i: number) => (
+                  {aggregate.partyMemberships.map((m, i) => (
                     <div key={m.id ?? i} className="py-2 border-b last:border-0 space-y-1">
                       <InfoRow
                         label="Tổ chức"

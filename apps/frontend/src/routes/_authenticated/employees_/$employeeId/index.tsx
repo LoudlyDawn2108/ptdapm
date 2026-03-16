@@ -2,6 +2,7 @@ import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { ReadOnlyField } from "@/components/shared/read-only-field";
 import { Button } from "@/components/ui/button";
 import { employeeDetailOptions, getFileUrl } from "@/features/employees/api";
+import type { EmployeeAggregate } from "@/features/employees/types";
 import { formatDate } from "@/lib/date-utils";
 import { Gender } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
@@ -16,11 +17,11 @@ function GeneralInfoTab() {
   const { employeeId } = Route.useParams();
   const { data, isLoading } = useQuery(employeeDetailOptions(employeeId));
 
-  const aggregate = data?.data as any;
+  const aggregate = data?.data as EmployeeAggregate | undefined;
   const emp = aggregate?.employee;
-  const partyMemberships = aggregate?.partyMemberships as any[] | undefined;
-  const bankAccounts = aggregate?.bankAccounts as any[] | undefined;
-  const foreignWorkPermits = aggregate?.foreignWorkPermits as any[] | undefined;
+  const partyMemberships = aggregate?.partyMemberships;
+  const bankAccounts = aggregate?.bankAccounts;
+  const foreignWorkPermits = aggregate?.foreignWorkPermits;
 
   if (isLoading) return <FormSkeleton fields={6} />;
   if (!emp) return null;

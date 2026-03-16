@@ -1,6 +1,7 @@
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { ReadOnlyField } from "@/components/shared/read-only-field";
 import { employeeDetailOptions } from "@/features/employees/api";
+import type { EmployeeAggregate } from "@/features/employees/types";
 import { FamilyRelation } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -12,15 +13,15 @@ export const Route = createFileRoute("/_authenticated/employees_/$employeeId/fam
 function FamilyTab() {
   const { employeeId } = Route.useParams();
   const { data, isLoading } = useQuery(employeeDetailOptions(employeeId));
-  const aggregate = data?.data as any;
-  const familyMembers = aggregate?.familyMembers as any[] | undefined;
+  const aggregate = data?.data as EmployeeAggregate | undefined;
+  const familyMembers = aggregate?.familyMembers;
 
   if (isLoading) return <FormSkeleton fields={4} />;
 
   return (
     <div className="rounded-xl border bg-card p-6 space-y-6">
       {familyMembers && familyMembers.length > 0 ? (
-        familyMembers.map((member: any, i: number) => {
+        familyMembers.map((member, i) => {
           const relationLabel =
             FamilyRelation[member.relation as keyof typeof FamilyRelation]?.label ??
             member.relation;

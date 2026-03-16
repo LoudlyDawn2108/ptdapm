@@ -1,22 +1,7 @@
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import {
   employeeDetailOptions,
   getFileUrl,
@@ -43,6 +28,14 @@ import {
   useUpdatePartyMembership,
   useUpdatePreviousJob,
 } from "@/features/employees/api";
+import {
+  DynamicSection,
+  FI,
+  FormFieldSelect,
+  RemoveBtn,
+  SectionHeader,
+} from "@/features/employees/components/form-helpers";
+import type { EmployeeAggregate } from "@/features/employees/types";
 import { formatForInput } from "@/lib/date-utils";
 import { ApiResponseError, applyFieldErrors } from "@/lib/error-handler";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -57,9 +50,15 @@ import {
 } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ChevronDown, Minus, Pencil, Plus, Save, Upload } from "lucide-react";
+import { ChevronDown, Pencil, Plus, Save, Upload } from "lucide-react";
 import { useMemo, useState } from "react";
-import { type SubmitHandler, useFieldArray, useForm } from "react-hook-form";
+import {
+  type Control,
+  type SubmitHandler,
+  useFieldArray,
+  useForm,
+  useWatch,
+} from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -189,10 +188,10 @@ function EditEmployeePage() {
     );
   }
 
-  const agg = data?.data as any;
-  const emp = agg?.employee ?? agg;
+  const agg = data?.data as EmployeeAggregate | undefined;
+  const emp = agg?.employee;
 
-  if (!emp) {
+  if (!agg || !emp) {
     return <div className="text-slate-600">Không tìm thấy thông tin nhân sự.</div>;
   }
 
@@ -221,7 +220,7 @@ function EditEmployeeFormContent({
   aggregate,
 }: {
   employeeId: string;
-  aggregate: any;
+  aggregate: EmployeeAggregate;
 }) {
   const navigate = useNavigate();
   const updateMutation = useUpdateEmployee();
@@ -247,7 +246,7 @@ function EditEmployeeFormContent({
   const updateForeignWorkPermitMutation = useUpdateForeignWorkPermit();
   const [isSaving, setIsSaving] = useState(false);
 
-  const emp = aggregate.employee ?? aggregate;
+  const emp = aggregate.employee;
 
   const [portraitPreview, setPortraitPreview] = useState<string | null>(
     emp.portraitFileId ? getFileUrl(emp.portraitFileId) : null,
@@ -265,12 +264,12 @@ function EditEmployeeFormContent({
   // Track initial IDs to detect deletions on submit
   const initialIds = useMemo(
     () => ({
-      familyMembers: new Set(familyMembersData.map((x: any) => x.id as string)),
-      bankAccounts: new Set(bankAccountsData.map((x: any) => x.id as string)),
-      previousJobs: new Set(previousJobsData.map((x: any) => x.id as string)),
-      partyMemberships: new Set(partyMembershipsData.map((x: any) => x.id as string)),
-      degrees: new Set(degreesData.map((x: any) => x.id as string)),
-      certifications: new Set(certificationsData.map((x: any) => x.id as string)),
+      familyMembers: new Set<string>(familyMembersData.map((x) => x.id)),
+      bankAccounts: new Set<string>(bankAccountsData.map((x) => x.id)),
+      previousJobs: new Set<string>(previousJobsData.map((x) => x.id)),
+      partyMemberships: new Set<string>(partyMembershipsData.map((x) => x.id)),
+      degrees: new Set<string>(degreesData.map((x) => x.id)),
+      certifications: new Set<string>(certificationsData.map((x) => x.id)),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -301,35 +300,35 @@ function EditEmployeeFormContent({
       educationLevel: emp.educationLevel ?? "",
       academicRank: emp.academicRank ?? "",
       portraitFileId: emp.portraitFileId ?? "",
-      familyMembers: familyMembersData.map((fm: any) => ({
+      familyMembers: familyMembersData.map((fm) => ({
         id: fm.id,
         relation: fm.relation ?? "",
         fullName: fm.fullName ?? "",
       })),
-      bankAccounts: bankAccountsData.map((ba: any) => ({
+      bankAccounts: bankAccountsData.map((ba) => ({
         id: ba.id,
         bankName: ba.bankName ?? "",
         accountNo: ba.accountNo ?? "",
       })),
-      previousJobs: previousJobsData.map((pj: any) => ({
+      previousJobs: previousJobsData.map((pj) => ({
         id: pj.id,
         workplace: pj.workplace ?? "",
         startedOn: formatForInput(pj.startedOn),
         endedOn: formatForInput(pj.endedOn),
       })),
-      partyMemberships: partyMembershipsData.map((pm: any) => ({
+      partyMemberships: partyMembershipsData.map((pm) => ({
         id: pm.id,
         organizationType: pm.organizationType ?? "",
         joinedOn: formatForInput(pm.joinedOn),
         details: pm.details ?? "",
       })),
-      degrees: degreesData.map((d: any) => ({
+      degrees: degreesData.map((d) => ({
         id: d.id,
         degreeName: d.degreeName ?? "",
         school: d.school ?? "",
         degreeFileId: d.degreeFileId ?? "",
       })),
-      certificates: certificationsData.map((c: any) => ({
+      certificates: certificationsData.map((c) => ({
         id: c.id,
         certName: c.certName ?? "",
         issuedBy: c.issuedBy ?? "",
@@ -707,20 +706,13 @@ function EditEmployeeFormContent({
                         }
                       }}
                     />
-                    <Button
-                      type="button"
-                      className={`h-8 rounded-md px-3 text-xs text-white ${
-                        form.watch("workPermitFileId")
-                          ? "bg-green-600 hover:bg-green-700"
-                          : "bg-[#3B5CCC] hover:bg-[#2F4FB8]"
-                      }`}
-                      onClick={() => document.getElementById("work-permit-pdf-edit")?.click()}
-                    >
-                      <Upload className="mr-1 h-3.5 w-3.5" />
-                      {form.watch("workPermitFileId")
-                        ? "Đã tải PDF giấy phép"
-                        : "Tải PDF giấy phép lao động"}
-                    </Button>
+                    <FileUploadButton
+                      control={form.control}
+                      name="workPermitFileId"
+                      inputId="work-permit-pdf-edit"
+                      uploadedLabel="Đã tải PDF giấy phép"
+                      defaultLabel="Tải PDF giấy phép lao động"
+                    />
                   </div>
                 </div>
               )}
@@ -906,18 +898,13 @@ function EditEmployeeFormContent({
                         }
                       }}
                     />
-                    <Button
-                      type="button"
-                      className={`h-8 rounded-md px-3 text-xs text-white ${
-                        form.watch(`degrees.${index}.degreeFileId`)
-                          ? "bg-green-600 hover:bg-green-700"
-                          : "bg-[#3B5CCC] hover:bg-[#2F4FB8]"
-                      }`}
-                      onClick={() => document.getElementById(`degree-pdf-edit-${index}`)?.click()}
-                    >
-                      <Upload className="mr-1 h-3.5 w-3.5" />
-                      {form.watch(`degrees.${index}.degreeFileId`) ? "Đã tải" : "Tải PDF"}
-                    </Button>
+                    <FileUploadButton
+                      control={form.control}
+                      name={`degrees.${index}.degreeFileId`}
+                      inputId={`degree-pdf-edit-${index}`}
+                      uploadedLabel="Đã tải"
+                      defaultLabel="Tải PDF"
+                    />
                   </div>
                   <RemoveBtn onClick={() => degreeFields.remove(index)} />
                 </div>
@@ -953,18 +940,13 @@ function EditEmployeeFormContent({
                         }
                       }}
                     />
-                    <Button
-                      type="button"
-                      className={`h-8 rounded-md px-3 text-xs text-white ${
-                        form.watch(`certificates.${index}.certFileId`)
-                          ? "bg-green-600 hover:bg-green-700"
-                          : "bg-[#3B5CCC] hover:bg-[#2F4FB8]"
-                      }`}
-                      onClick={() => document.getElementById(`cert-pdf-edit-${index}`)?.click()}
-                    >
-                      <Upload className="mr-1 h-3.5 w-3.5" />
-                      {form.watch(`certificates.${index}.certFileId`) ? "Đã tải" : "Tải PDF"}
-                    </Button>
+                    <FileUploadButton
+                      control={form.control}
+                      name={`certificates.${index}.certFileId`}
+                      inputId={`cert-pdf-edit-${index}`}
+                      uploadedLabel="Đã tải"
+                      defaultLabel="Tải PDF"
+                    />
                   </div>
                   <RemoveBtn onClick={() => certFields.remove(index)} />
                 </div>
@@ -1002,143 +984,30 @@ function EditEmployeeFormContent({
   );
 }
 
-/* ══════════════════════════════════════════
-   Reusable form field helpers
-══════════════════════════════════════════ */
-
-function RequiredLabel({ label }: { label: string }) {
-  const isRequired = label.trim().endsWith("*");
-  const text = isRequired ? label.replace(/\s*\*$/, "") : label;
-  return (
-    <span className="text-xs font-medium text-slate-600">
-      {text}
-      {isRequired && <span className="text-red-500"> *</span>}
-    </span>
-  );
-}
-
-function SectionHeader({ title, compact = false }: { title: string; compact?: boolean }) {
-  return (
-    <div className={compact ? "" : "mt-2"}>
-      <div className="flex items-center gap-3">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-          {title}
-        </span>
-        <div className="h-px flex-1 bg-slate-200" />
-      </div>
-    </div>
-  );
-}
-
-function DynamicSection({
-  title,
-  onAdd,
-  children,
+function FileUploadButton({
+  control,
+  name,
+  inputId,
+  uploadedLabel,
+  defaultLabel,
 }: {
-  title: string;
-  onAdd: () => void;
-  children: React.ReactNode;
+  control: Control<FormValues>;
+  name: string;
+  inputId: string;
+  uploadedLabel: string;
+  defaultLabel: string;
 }) {
-  return (
-    <section>
-      <div className="flex items-center justify-between">
-        <SectionHeader title={title} compact />
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 rounded-full bg-[#E9EEFF] text-[#3B5CCC] hover:bg-[#DCE6FF]"
-          onClick={onAdd}
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-      <div className="mt-3 space-y-3">{children}</div>
-    </section>
-  );
-}
-
-function RemoveBtn({ onClick }: { onClick: () => void }) {
+  const value = useWatch({ control, name: name as never });
   return (
     <Button
       type="button"
-      variant="ghost"
-      size="icon"
-      className="h-8 w-8 shrink-0 rounded-full bg-red-50 text-red-500 hover:bg-red-100"
-      onClick={onClick}
+      className={`h-8 rounded-md px-3 text-xs text-white ${
+        value ? "bg-green-600 hover:bg-green-700" : "bg-[#3B5CCC] hover:bg-[#2F4FB8]"
+      }`}
+      onClick={() => document.getElementById(inputId)?.click()}
     >
-      <Minus className="h-4 w-4" />
+      <Upload className="mr-1 h-3.5 w-3.5" />
+      {value ? uploadedLabel : defaultLabel}
     </Button>
-  );
-}
-
-function FI({
-  form,
-  name,
-  label,
-  type = "text",
-}: {
-  form: any;
-  name: string;
-  label: string;
-  type?: string;
-}) {
-  return (
-    <FormField
-      control={form.control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>
-            <RequiredLabel label={label} />
-          </FormLabel>
-          <FormControl>
-            <Input type={type} {...field} value={field.value ?? ""} className="h-9 rounded-md" />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
-}
-
-function FormFieldSelect({
-  form,
-  name,
-  label,
-  items,
-}: {
-  form: any;
-  name: string;
-  label: string;
-  items: { code: string; label: string }[];
-}) {
-  return (
-    <FormField
-      control={form.control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>
-            <RequiredLabel label={label} />
-          </FormLabel>
-          <Select value={field.value ?? ""} onValueChange={field.onChange}>
-            <FormControl>
-              <SelectTrigger className="w-full h-9 rounded-md">
-                <SelectValue placeholder="Chọn..." />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {items.map((item) => (
-                <SelectItem key={item.code} value={item.code}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
   );
 }

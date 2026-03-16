@@ -1,27 +1,30 @@
-import { api } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+  uploadFile,
+  useCreateBankAccount,
+  useCreateCertification,
+  useCreateDegree,
+  useCreateEmployee,
+  useCreateFamilyMember,
+  useCreateForeignWorkPermit,
+  useCreatePartyMembership,
+  useCreatePreviousJob,
+} from "@/features/employees/api";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { uploadFile, useCreateEmployee } from "@/features/employees/api";
+  DynamicSection,
+  FI,
+  FormFieldSelect,
+  RemoveBtn,
+  RequiredLabel,
+  SectionHeader,
+} from "@/features/employees/components/form-helpers";
 import { ApiResponseError, applyFieldErrors } from "@/lib/error-handler";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AcademicRank,
+  type CreateEmployeeInput,
   EducationLevel,
   FamilyRelation,
   Gender,
@@ -29,7 +32,7 @@ import {
   enumToSortedList,
 } from "@hrms/shared";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ChevronDown, Minus, Plus, Upload, UserPlus } from "lucide-react";
+import { ChevronDown, Plus, Upload, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -126,6 +129,13 @@ type FormValues = z.output<typeof formSchema>;
 function NewEmployeePage() {
   const navigate = useNavigate();
   const createMutation = useCreateEmployee();
+  const createFamilyMember = useCreateFamilyMember();
+  const createBankAccount = useCreateBankAccount();
+  const createPreviousJob = useCreatePreviousJob();
+  const createPartyMembership = useCreatePartyMembership();
+  const createDegree = useCreateDegree();
+  const createCertification = useCreateCertification();
+  const createForeignWorkPermit = useCreateForeignWorkPermit();
   const [showForeigner, setShowForeigner] = useState(false);
   const [showPreviousJobs, setShowPreviousJobs] = useState(false);
   const [portraitPreview, setPortraitPreview] = useState<string | null>(null);
@@ -176,10 +186,10 @@ function NewEmployeePage() {
   const onSubmit = async (data: FormValues) => {
     try {
       // Phase 1: Create employee (flat fields only)
-      const employeePayload = {
+      const employeePayload: CreateEmployeeInput = {
         fullName: data.fullName,
         dob: data.dob,
-        gender: data.gender,
+        gender: data.gender as CreateEmployeeInput["gender"],
         nationalId: data.nationalId,
         hometown: data.hometown,
         address: data.address,
@@ -190,12 +200,13 @@ function NewEmployeePage() {
         healthInsuranceNo: data.healthInsuranceNo || undefined,
         portraitFileId: data.portraitFileId || undefined,
         isForeigner: data.isForeigner,
-        educationLevel: data.educationLevel,
-        academicRank: data.academicRank,
+        educationLevel: data.educationLevel as CreateEmployeeInput["educationLevel"],
+        academicRank: data.academicRank as CreateEmployeeInput["academicRank"],
       };
 
-      const result = await createMutation.mutateAsync(employeePayload as any);
-      const employeeId = (result as any).data?.id ?? (result as any).id;
+      const result = await createMutation.mutateAsync(employeePayload);
+      const employeeId =
+        result && typeof result === "object" && "id" in result ? String(result.id) : undefined;
 
       if (!employeeId) {
         toast.error("Không thể tạo nhân sự. Vui lòng thử lại.");
@@ -203,104 +214,125 @@ function NewEmployeePage() {
       }
 
       // Phase 2: Create sub-entities
-      {
-        const promises: Promise<unknown>[] = [];
+      const subEntityErrors: string[] = [];
 
-        for (const fm of data.familyMembers ?? []) {
-          if (!fm.fullName || !fm.relation) continue;
-          promises.push(
-            (api.api.employees({ employeeId })["family-members"] as any).post({
-              relation: fm.relation as any,
-              fullName: fm.fullName,
-            } as any),
-          );
+      for (const fm of data.familyMembers ?? []) {
+        if (!fm.fullName || !fm.relation) continue;
+        try {
+          await createFamilyMember.mutateAsync({
+            employeeId,
+            relation: fm.relation,
+            fullName: fm.fullName,
+          });
+        } catch {
+          subEntityErrors.push("Thành viên gia đình");
         }
-
-        for (const ba of data.bankAccounts ?? []) {
-          if (!ba.accountNo || !ba.bankName) continue;
-          promises.push(
-            (api.api.employees({ employeeId })["bank-accounts"] as any).post({
-              bankName: ba.bankName,
-              accountNo: ba.accountNo,
-            } as any),
-          );
-        }
-
-        for (const pm of data.partyMemberships ?? []) {
-          if (!pm.organizationType || !pm.joinedOn || !pm.details) continue;
-          promises.push(
-            (api.api.employees({ employeeId })["party-memberships"] as any).post({
-              organizationType: pm.organizationType as any,
-              joinedOn: pm.joinedOn,
-              details: pm.details,
-            } as any),
-          );
-        }
-
-        for (const pj of data.previousJobs ?? []) {
-          if (!pj.workplace || !pj.startedOn || !pj.endedOn) continue;
-          promises.push(
-            (api.api.employees({ employeeId })["previous-jobs"] as any).post({
-              workplace: pj.workplace,
-              startedOn: pj.startedOn,
-              endedOn: pj.endedOn,
-            } as any),
-          );
-        }
-
-        // degrees
-        for (const d of data.degrees ?? []) {
-          if (!d.degreeName || !d.school) continue;
-          promises.push(
-            (api.api.employees({ employeeId }).degrees as any).post({
-              degreeName: d.degreeName,
-              school: d.school,
-              degreeFileId: d.degreeFileId || undefined,
-            } as any),
-          );
-        }
-
-        // certificates
-        for (const c of data.certificates ?? []) {
-          if (!c.certName) continue;
-          promises.push(
-            (api.api.employees({ employeeId }).certifications as any).post({
-              certName: c.certName,
-              issuedBy: c.issuedBy || undefined,
-              certFileId: c.certFileId || undefined,
-            } as any),
-          );
-        }
-
-        // foreign work permit
-        if (data.isForeigner) {
-          const hasWorkPermitData =
-            data.visaNumber ||
-            data.visaExpiry ||
-            data.passportNumber ||
-            data.passportExpiry ||
-            data.workPermitNumber ||
-            data.workPermitExpiry ||
-            data.workPermitFileId;
-          if (hasWorkPermitData) {
-            promises.push(
-              (api.api.employees({ employeeId })["foreign-work-permits"] as any).post({
-                visaNo: data.visaNumber || undefined,
-                visaExpiresOn: data.visaExpiry || undefined,
-                passportNo: data.passportNumber || undefined,
-                passportExpiresOn: data.passportExpiry || undefined,
-                workPermitNo: data.workPermitNumber || undefined,
-                workPermitExpiresOn: data.workPermitExpiry || undefined,
-                workPermitFileId: data.workPermitFileId || undefined,
-              } as any),
-            );
-          }
-        }
-
-        await Promise.all(promises);
       }
 
-      toast.success("Thêm nhân sự thành công");
+      for (const ba of data.bankAccounts ?? []) {
+        if (!ba.accountNo || !ba.bankName) continue;
+        try {
+          await createBankAccount.mutateAsync({
+            employeeId,
+            bankName: ba.bankName,
+            accountNo: ba.accountNo,
+          });
+        } catch {
+          subEntityErrors.push("Tài khoản ngân hàng");
+        }
+      }
+
+      for (const pm of data.partyMemberships ?? []) {
+        if (!pm.organizationType || !pm.joinedOn || !pm.details) continue;
+        try {
+          await createPartyMembership.mutateAsync({
+            employeeId,
+            organizationType: pm.organizationType,
+            joinedOn: pm.joinedOn,
+            details: pm.details,
+          });
+        } catch {
+          subEntityErrors.push("Thông tin đoàn/đảng");
+        }
+      }
+
+      for (const pj of data.previousJobs ?? []) {
+        if (!pj.workplace || !pj.startedOn || !pj.endedOn) continue;
+        try {
+          await createPreviousJob.mutateAsync({
+            employeeId,
+            workplace: pj.workplace,
+            startedOn: pj.startedOn,
+            endedOn: pj.endedOn,
+          });
+        } catch {
+          subEntityErrors.push("Lịch sử công tác");
+        }
+      }
+
+      for (const d of data.degrees ?? []) {
+        if (!d.degreeName || !d.school) continue;
+        try {
+          await createDegree.mutateAsync({
+            employeeId,
+            degreeName: d.degreeName,
+            school: d.school,
+            degreeFileId: d.degreeFileId || undefined,
+          });
+        } catch {
+          subEntityErrors.push("Bằng cấp");
+        }
+      }
+
+      for (const c of data.certificates ?? []) {
+        if (!c.certName) continue;
+        try {
+          await createCertification.mutateAsync({
+            employeeId,
+            certName: c.certName,
+            issuedBy: c.issuedBy || undefined,
+            certFileId: c.certFileId || undefined,
+          });
+        } catch {
+          subEntityErrors.push("Chứng chỉ");
+        }
+      }
+
+      if (data.isForeigner) {
+        const hasWorkPermitData =
+          data.visaNumber ||
+          data.visaExpiry ||
+          data.passportNumber ||
+          data.passportExpiry ||
+          data.workPermitNumber ||
+          data.workPermitExpiry ||
+          data.workPermitFileId;
+        if (hasWorkPermitData) {
+          try {
+            await createForeignWorkPermit.mutateAsync({
+              employeeId,
+              visaNo: data.visaNumber || undefined,
+              visaExpiresOn: data.visaExpiry || undefined,
+              passportNo: data.passportNumber || undefined,
+              passportExpiresOn: data.passportExpiry || undefined,
+              workPermitNo: data.workPermitNumber || undefined,
+              workPermitExpiresOn: data.workPermitExpiry || undefined,
+              workPermitFileId: data.workPermitFileId || undefined,
+            });
+          } catch {
+            subEntityErrors.push("Giấy phép lao động");
+          }
+        }
+      }
+
+      if (subEntityErrors.length > 0) {
+        toast.warning(
+          `Đã tạo nhân sự nhưng một số thông tin bổ sung lỗi: ${[...new Set(subEntityErrors)].join(", ")}`,
+        );
+      } else {
+        toast.success("Thêm nhân sự thành công");
+      }
+
       navigate({ to: "/employees" });
     } catch (error: unknown) {
       applyFieldErrors(form.setError, error);
@@ -759,150 +791,5 @@ function NewEmployeePage() {
         </Form>
       </div>
     </div>
-  );
-}
-
-/* ══════════════════════════════════════════
-   Reusable helpers
-   ══════════════════════════════════════════ */
-
-function SectionHeader({ title, compact = false }: { title: string; compact?: boolean }) {
-  return (
-    <div className={compact ? "" : "mt-2"}>
-      <div className="flex items-center gap-3">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-          {title}
-        </span>
-        <div className="h-px flex-1 bg-slate-200" />
-      </div>
-    </div>
-  );
-}
-
-function RequiredLabel({ label }: { label: string }) {
-  const isRequired = label.trim().endsWith("*");
-  const text = isRequired ? label.replace(/\s*\*$/, "") : label;
-  return (
-    <span className="text-xs font-medium text-slate-600">
-      {text}
-      {isRequired && <span className="text-red-500"> *</span>}
-    </span>
-  );
-}
-
-/** Form Input shorthand */
-function FI({
-  form,
-  name,
-  label,
-  type = "text",
-}: {
-  form: any;
-  name: string;
-  label: string;
-  type?: string;
-}) {
-  return (
-    <FormField
-      control={form.control}
-      name={name}
-      render={({ field }: any) => (
-        <FormItem>
-          <FormLabel>
-            <RequiredLabel label={label} />
-          </FormLabel>
-          <FormControl>
-            <Input type={type} {...field} value={field.value ?? ""} className="h-9 rounded-md" />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
-}
-
-/** Form Select shorthand */
-function FormFieldSelect({
-  form,
-  name,
-  label,
-  items,
-}: {
-  form: any;
-  name: string;
-  label: string;
-  items: { code: string; label: string }[];
-}) {
-  return (
-    <FormField
-      control={form.control}
-      name={name}
-      render={({ field }: any) => (
-        <FormItem>
-          <FormLabel>
-            <RequiredLabel label={label} />
-          </FormLabel>
-          <Select value={field.value ?? ""} onValueChange={field.onChange}>
-            <FormControl>
-              <SelectTrigger className="w-full h-9 rounded-md">
-                <SelectValue placeholder="Chọn..." />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {items.map((item) => (
-                <SelectItem key={item.code} value={item.code}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
-}
-
-/** Section with title and add button */
-function DynamicSection({
-  title,
-  onAdd,
-  children,
-}: {
-  title: string;
-  onAdd: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <section>
-      <div className="flex items-center justify-between">
-        <SectionHeader title={title} compact />
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 rounded-full bg-[#E9EEFF] text-[#3B5CCC] hover:bg-[#DCE6FF]"
-          onClick={onAdd}
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-      <div className="mt-3 space-y-3">{children}</div>
-    </section>
-  );
-}
-
-/** Remove row button */
-function RemoveBtn({ onClick }: { onClick: () => void }) {
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon"
-      className="h-8 w-8 shrink-0 rounded-full bg-red-50 text-red-500 hover:bg-red-100"
-      onClick={onClick}
-    >
-      <Minus className="h-4 w-4" />
-    </Button>
   );
 }

@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/features/auth/hooks";
 import { employeeDetailOptions, useMarkResigned } from "@/features/employees/api";
+import type { EmployeeAggregate } from "@/features/employees/types";
 import { ApiResponseError } from "@/lib/error-handler";
 import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -46,7 +47,7 @@ function EmployeeDetailLayout() {
   const markResigned = useMarkResigned();
 
   const { data, isLoading } = useQuery(employeeDetailOptions(employeeId));
-  const aggregate = data?.data as any;
+  const aggregate = data?.data as EmployeeAggregate | undefined;
   const emp = aggregate?.employee;
 
   // Determine active tab from current path
@@ -118,10 +119,10 @@ function EmployeeDetailLayout() {
         onValueChange={(val) => {
           const tab = TAB_ITEMS.find((t) => t.value === val);
           if (tab) {
-            navigate({
+            void navigate({
               to: `/employees/$employeeId${tab.path}`,
               params: { employeeId },
-            } as any);
+            } as Parameters<typeof navigate>[0]);
           }
         }}
         className="mb-6"
