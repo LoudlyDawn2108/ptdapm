@@ -4,7 +4,9 @@ import {
   ACADEMIC_TITLE_CODES,
   type AcademicRankCode,
   type AcademicTitleCode,
+  CONTRACT_DOC_STATUS_CODES,
   CONTRACT_STATUS_CODES,
+  type ContractDocStatusCode,
   type ContractStatusCode,
   EDUCATION_LEVEL_CODES,
   type EducationLevelCode,
@@ -249,6 +251,88 @@ export type CreateEmployeeAllowanceFormInput = z.input<typeof createEmployeeAllo
 export const updateEmployeeAllowanceSchema = createEmployeeAllowanceSchema.partial();
 
 export type UpdateEmployeeAllowanceInput = z.infer<typeof updateEmployeeAllowanceSchema>;
+
+const contractFieldsSchema = z.object({
+  contractTypeId: z.uuid({ error: "Loại hợp đồng không được để trống" }),
+  contractNo: z
+    .string({ error: "Số hợp đồng không được để trống" })
+    .min(1, "Số hợp đồng không được để trống"),
+  signedOn: requiredDate("Ngày ký không được để trống"),
+  effectiveFrom: requiredDate("Ngày hiệu lực không được để trống"),
+  effectiveTo: requiredDate("Ngày hết hạn không được để trống"),
+  orgUnitId: z.uuid({ error: "Đơn vị không được để trống" }),
+  status: z
+    .enum(CONTRACT_DOC_STATUS_CODES as [ContractDocStatusCode, ...ContractDocStatusCode[]])
+    .optional(),
+  contentHtml: z.string().nullish(),
+  contractFileId: z.string().uuid().nullish(),
+});
+
+export const createEmployeeContractSchema = contractFieldsSchema.superRefine((data, ctx) => {
+  const from = new Date(data.effectiveFrom);
+  const to = new Date(data.effectiveTo);
+  if (!Number.isNaN(from.getTime()) && !Number.isNaN(to.getTime()) && to <= from) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Ngày hết hạn phải sau ngày hiệu lực",
+      path: ["effectiveTo"],
+    });
+  }
+  const signed = new Date(data.signedOn);
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  if (!Number.isNaN(signed.getTime()) && signed > today) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Ngày ký không được trong tương lai",
+      path: ["signedOn"],
+    });
+  }
+});
+export type CreateEmployeeContractInput = z.infer<typeof createEmployeeContractSchema>;
+
+export const updateEmployeeContractSchema = contractFieldsSchema
+  .partial()
+  .superRefine((data, ctx) => {
+    if (data.effectiveFrom != null && data.effectiveTo != null) {
+      const from = new Date(data.effectiveFrom);
+      const to = new Date(data.effectiveTo);
+      if (!Number.isNaN(from.getTime()) && !Number.isNaN(to.getTime()) && to <= from) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Ngày hết hạn phải sau ngày hiệu lực",
+          path: ["effectiveTo"],
+        });
+      }
+    }
+    if (data.signedOn != null) {
+      const signed = new Date(data.signedOn);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      if (!Number.isNaN(signed.getTime()) && signed > today) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Ngày ký không được trong tương lai",
+          path: ["signedOn"],
+        });
+      }
+    }
+  });
+export type UpdateEmployeeContractInput = z.infer<typeof updateEmployeeContractSchema>;
+
+export const createContractAppendixSchema = z.object({
+  appendixNo: z.string().nullish(),
+  effectiveOn: requiredDate("Ngày hiệu lực không được để trống"),
+  terms: z
+    .string({ error: "Nội dung điều khoản không được để trống" })
+    .min(1, "Nội dung điều khoản không được để trống"),
+  notes: z.string().nullish(),
+  appendixFileId: z.string().uuid().nullish(),
+});
+export type CreateContractAppendixInput = z.infer<typeof createContractAppendixSchema>;
+
+export const updateContractAppendixSchema = createContractAppendixSchema.partial();
+export type UpdateContractAppendixInput = z.infer<typeof updateContractAppendixSchema>;
 
 export const importEmployeeRowSchema = z.object({
   fullName: z.string().min(1, "Họ tên không được để trống"),

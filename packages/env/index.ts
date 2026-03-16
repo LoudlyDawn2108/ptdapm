@@ -14,6 +14,7 @@ export const env = createEnv({
     SMTP_USER: z.string().default(""),
     SMTP_PASS: z.string().default(""),
     SMTP_FROM: z.string().default("noreply@hrms.local"),
+    UPLOAD_DIR: z.string().default("./uploads"),
   },
   runtimeEnv: process.env,
 });

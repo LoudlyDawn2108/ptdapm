@@ -15,10 +15,12 @@ import { bankAccountRoutes } from "./modules/bank-accounts";
 import { allowanceTypeRoutes } from "./modules/config/allowance-types";
 import { contractTypeRoutes } from "./modules/config/contract-types";
 import { salaryGradeRoutes } from "./modules/config/salary-grades";
+import { contractAppendixRoutes, contractRoutes } from "./modules/contracts";
 import { dashboardRoutes } from "./modules/dashboard";
 import { employeeRoutes } from "./modules/employees";
 import { employeeExportRoutes } from "./modules/employees-export";
 import { familyMemberRoutes } from "./modules/family-members";
+import { fileRoutes } from "./modules/files";
 import { orgUnitRoutes } from "./modules/org-units";
 import { partyMembershipRoutes } from "./modules/party-memberships";
 import { previousJobRoutes } from "./modules/previous-jobs";
@@ -55,6 +57,7 @@ const app = new Elysia()
   .use(allowanceRoutes)
   .use(employeeExportRoutes)
   .use(employeeRoutes)
+  .use(fileRoutes)
   .use(familyMemberRoutes)
   .use(bankAccountRoutes)
   .use(contractTypeRoutes)
@@ -66,6 +69,8 @@ const app = new Elysia()
   .use(previousJobRoutes)
   .use(partyMembershipRoutes)
   .use(accountRoutes)
+  .use(contractRoutes)
+  .use(contractAppendixRoutes)
   .use(terminationRoutes)
   .use(evaluationRoutes)
   .use(trainingCourseRoutes)

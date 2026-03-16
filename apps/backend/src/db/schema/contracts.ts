@@ -1,5 +1,7 @@
 import type { CatalogStatusCode, ContractDocStatusCode } from "@hrms/shared";
 import { date, integer, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+// Circular import with employees.ts is safe — Drizzle's .references() callback is lazy-evaluated
+import { employees } from "./employees";
 import { files } from "./files";
 import { orgUnits } from "./organization";
 
@@ -31,7 +33,9 @@ export type NewContractType = typeof contractTypes.$inferInsert;
 
 export const employmentContracts = pgTable("employment_contracts", {
   id: uuid("id").primaryKey().defaultRandom(),
-  employeeId: uuid("employee_id").notNull(),
+  employeeId: uuid("employee_id")
+    .notNull()
+    .references(() => employees.id, { onDelete: "cascade" }),
   contractTypeId: uuid("contract_type_id")
     .notNull()
     .references(() => contractTypes.id, { onDelete: "restrict" }),
