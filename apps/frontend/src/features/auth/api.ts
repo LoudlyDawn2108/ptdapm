@@ -19,10 +19,14 @@ export const sessionOptions = () =>
     queryFn: async () => {
       const { data, error } = await api.auth.session.get();
       if (error) throw new Error("Not authenticated");
-      // Backend returns { data: { user, session } }
-      // Eden unwraps to { data: { data: { user, session } } }
-      const payload = (data as any)?.data ?? data;
-      return payload as SessionInfo; // { user, session: { expiresAt } }
+      // Better-Auth returns { data: { user, session } } inside Eden's { data, error } envelope,
+      // so after destructuring Eden's wrapper the actual session lives at data.data.
+      // We narrow the type without `as any` — if the shape changes, the 'in' check fails safely.
+      const payload =
+        data && typeof data === "object" && "data" in data
+          ? (data as { data: SessionInfo }).data
+          : (data as SessionInfo);
+      return payload;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes — session doesn't change often
     retry: false, // Don't retry auth — redirect on failure

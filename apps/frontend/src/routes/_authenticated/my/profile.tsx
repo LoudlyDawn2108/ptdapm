@@ -9,7 +9,6 @@ import type { EmployeeAggregate } from "@/features/employees/types";
 import { formatDate } from "@/lib/date-utils";
 import {
   AcademicRank,
-  ContractDocStatus,
   ContractStatus,
   EducationLevel,
   FamilyRelation,

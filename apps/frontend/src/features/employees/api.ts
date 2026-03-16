@@ -9,9 +9,10 @@ import type {
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { EmployeeAggregate } from "./types";
 
-// Eden Treaty generates strict literal types from Elysia route definitions, but frontend
-// form values use broader types (e.g. `string` vs enum literals). Backend Zod schemas
-// handle runtime validation, so this type bridge is safe.
+// Eden Treaty infers narrow literal unions (e.g. "NAM" | "NU") from Elysia routes, but
+// shared validators / form values use broader `string`. This identity function returns `any`
+// so Eden accepts the wider type — the `any` does NOT leak beyond the Eden call site.
+// Backend Zod schemas provide runtime validation.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const edenBody = <T>(input: T): any => input;
 
@@ -38,6 +39,10 @@ function isUploadedFileResponse(value: unknown): value is { data: UploadedFile }
   );
 }
 
+/**
+ * Upload a file via raw fetch. Eden Treaty does not support multipart/FormData bodies,
+ * so we bypass it here while manually mirroring its base URL and credential settings.
+ */
 export async function uploadFile(file: File): Promise<UploadedFile> {
   const formData = new FormData();
   formData.append("file", file);

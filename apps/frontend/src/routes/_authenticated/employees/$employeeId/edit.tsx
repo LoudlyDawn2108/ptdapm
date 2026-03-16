@@ -171,6 +171,52 @@ type FormValues = Omit<
   certificates?: SubmitValues["certificates"];
 };
 
+function syncSubEntities<T extends { id?: string }>(opts: {
+  items: T[];
+  initialIds: Set<string>;
+  label: string;
+  create: (body: Omit<T, "id">) => Promise<unknown>;
+  update: (id: string, body: Omit<T, "id">) => Promise<unknown>;
+  remove: (id: string) => Promise<unknown>;
+  promises: Promise<void>[];
+  errors: string[];
+}): void {
+  const { items, initialIds, label, create, update, remove, promises, errors } = opts;
+  const currentIds = new Set(items.filter((x) => x.id).map((x) => x.id!));
+
+  const collectError = (err: unknown) => {
+    errors.push(`${label}: ${err instanceof Error ? err.message : "Lỗi không xác định"}`);
+  };
+
+  for (const id of initialIds) {
+    if (!currentIds.has(id)) {
+      promises.push(
+        remove(id)
+          .then(() => {})
+          .catch(collectError),
+      );
+    }
+  }
+
+  for (const item of items) {
+    const { id, ...body } = item;
+    const payload = body as Omit<T, "id">;
+    if (id) {
+      promises.push(
+        update(id, payload)
+          .then(() => {})
+          .catch(collectError),
+      );
+    } else {
+      promises.push(
+        create(payload)
+          .then(() => {})
+          .catch(collectError),
+      );
+    }
+  }
+}
+
 export const Route = createFileRoute("/_authenticated/employees/$employeeId/edit")({
   component: EditEmployeePage,
 });
@@ -399,274 +445,91 @@ function EditEmployeeFormContent({
       const promises: Promise<void>[] = [];
 
       // --- Family Members ---
-      const currentFmIds = new Set(familyMembers.filter((x) => x.id).map((x) => x.id!));
-      for (const id of initialIds.familyMembers) {
-        if (!currentFmIds.has(id)) {
-          promises.push(
-            deleteFamilyMemberMutation
-              .mutateAsync({ employeeId, id })
-              .then(() => {})
-              .catch((err: unknown) => {
-                subEntityErrors.push(
-                  `Thành viên gia đình: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
-                );
-              }),
-          );
-        }
-      }
-      for (const fm of familyMembers) {
-        const { id, ...body } = fm;
-        if (id) {
-          promises.push(
-            updateFamilyMemberMutation
-              .mutateAsync({ employeeId, id, ...body })
-              .then(() => {})
-              .catch((err: unknown) => {
-                subEntityErrors.push(
-                  `Thành viên gia đình: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
-                );
-              }),
-          );
-        } else {
-          promises.push(
-            createFamilyMemberMutation
-              .mutateAsync({ employeeId, ...body })
-              .then(() => {})
-              .catch((err: unknown) => {
-                subEntityErrors.push(
-                  `Thành viên gia đình: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
-                );
-              }),
-          );
-        }
-      }
+      syncSubEntities({
+        items: familyMembers,
+        initialIds: initialIds.familyMembers,
+        label: "Thành viên gia đình",
+        create: (body) => createFamilyMemberMutation.mutateAsync({ employeeId, ...body }),
+        update: (id, body) => updateFamilyMemberMutation.mutateAsync({ employeeId, id, ...body }),
+        remove: (id) => deleteFamilyMemberMutation.mutateAsync({ employeeId, id }),
+        promises,
+        errors: subEntityErrors,
+      });
 
       // --- Bank Accounts ---
-      const currentBaIds = new Set(bankAccounts.filter((x) => x.id).map((x) => x.id!));
-      for (const id of initialIds.bankAccounts) {
-        if (!currentBaIds.has(id)) {
-          promises.push(
-            deleteBankAccountMutation
-              .mutateAsync({ employeeId, id })
-              .then(() => {})
-              .catch((err: unknown) => {
-                subEntityErrors.push(
-                  `Tài khoản ngân hàng: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
-                );
-              }),
-          );
-        }
-      }
-      for (const ba of bankAccounts) {
-        const { id, ...body } = ba;
-        if (id) {
-          promises.push(
-            updateBankAccountMutation
-              .mutateAsync({ employeeId, id, ...body })
-              .then(() => {})
-              .catch((err: unknown) => {
-                subEntityErrors.push(
-                  `Tài khoản ngân hàng: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
-                );
-              }),
-          );
-        } else {
-          promises.push(
-            createBankAccountMutation
-              .mutateAsync({ employeeId, ...body })
-              .then(() => {})
-              .catch((err: unknown) => {
-                subEntityErrors.push(
-                  `Tài khoản ngân hàng: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
-                );
-              }),
-          );
-        }
-      }
+      syncSubEntities({
+        items: bankAccounts,
+        initialIds: initialIds.bankAccounts,
+        label: "Tài khoản ngân hàng",
+        create: (body) => createBankAccountMutation.mutateAsync({ employeeId, ...body }),
+        update: (id, body) => updateBankAccountMutation.mutateAsync({ employeeId, id, ...body }),
+        remove: (id) => deleteBankAccountMutation.mutateAsync({ employeeId, id }),
+        promises,
+        errors: subEntityErrors,
+      });
 
       // --- Previous Jobs ---
-      const currentPjIds = new Set(previousJobs.filter((x) => x.id).map((x) => x.id!));
-      for (const id of initialIds.previousJobs) {
-        if (!currentPjIds.has(id)) {
-          promises.push(
-            deletePreviousJobMutation
-              .mutateAsync({ employeeId, id })
-              .then(() => {})
-              .catch((err: unknown) => {
-                subEntityErrors.push(
-                  `Lịch sử công tác: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
-                );
-              }),
-          );
-        }
-      }
-      for (const pj of previousJobs) {
-        const { id, ...body } = pj;
-        if (id) {
-          promises.push(
-            updatePreviousJobMutation
-              .mutateAsync({ employeeId, id, ...body })
-              .then(() => {})
-              .catch((err: unknown) => {
-                subEntityErrors.push(
-                  `Lịch sử công tác: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
-                );
-              }),
-          );
-        } else {
-          promises.push(
-            createPreviousJobMutation
-              .mutateAsync({ employeeId, ...body })
-              .then(() => {})
-              .catch((err: unknown) => {
-                subEntityErrors.push(
-                  `Lịch sử công tác: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
-                );
-              }),
-          );
-        }
-      }
+      syncSubEntities({
+        items: previousJobs,
+        initialIds: initialIds.previousJobs,
+        label: "Lịch sử công tác",
+        create: (body) => createPreviousJobMutation.mutateAsync({ employeeId, ...body }),
+        update: (id, body) => updatePreviousJobMutation.mutateAsync({ employeeId, id, ...body }),
+        remove: (id) => deletePreviousJobMutation.mutateAsync({ employeeId, id }),
+        promises,
+        errors: subEntityErrors,
+      });
 
       // --- Party Memberships ---
-      const currentPmIds = new Set(partyMemberships.filter((x) => x.id).map((x) => x.id!));
-      for (const id of initialIds.partyMemberships) {
-        if (!currentPmIds.has(id)) {
-          promises.push(
-            deletePartyMembershipMutation
-              .mutateAsync({ employeeId, id })
-              .then(() => {})
-              .catch((err: unknown) => {
-                subEntityErrors.push(
-                  `Đoàn/Đảng: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
-                );
-              }),
-          );
-        }
-      }
-      for (const pm of partyMemberships) {
-        const { id, ...body } = pm;
-        if (id) {
-          promises.push(
-            updatePartyMembershipMutation
-              .mutateAsync({ employeeId, id, ...body })
-              .then(() => {})
-              .catch((err: unknown) => {
-                subEntityErrors.push(
-                  `Đoàn/Đảng: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
-                );
-              }),
-          );
-        } else {
-          promises.push(
-            createPartyMembershipMutation
-              .mutateAsync({ employeeId, ...body })
-              .then(() => {})
-              .catch((err: unknown) => {
-                subEntityErrors.push(
-                  `Đoàn/Đảng: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
-                );
-              }),
-          );
-        }
-      }
+      syncSubEntities({
+        items: partyMemberships,
+        initialIds: initialIds.partyMemberships,
+        label: "Đoàn/Đảng",
+        create: (body) => createPartyMembershipMutation.mutateAsync({ employeeId, ...body }),
+        update: (id, body) =>
+          updatePartyMembershipMutation.mutateAsync({ employeeId, id, ...body }),
+        remove: (id) => deletePartyMembershipMutation.mutateAsync({ employeeId, id }),
+        promises,
+        errors: subEntityErrors,
+      });
 
       // --- Degrees ---
-      const currentDegreeIds = new Set(degrees.filter((x) => x.id).map((x) => x.id!));
-      for (const id of initialIds.degrees) {
-        if (!currentDegreeIds.has(id)) {
-          promises.push(
-            deleteDegreeMutation
-              .mutateAsync({ employeeId, id })
-              .then(() => {})
-              .catch((err: unknown) => {
-                subEntityErrors.push(
-                  `Bằng cấp: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
-                );
-              }),
-          );
-        }
-      }
-      for (const d of degrees) {
-        if (d.id) {
-          promises.push(
-            updateDegreeMutation
-              .mutateAsync({
-                employeeId,
-                id: d.id,
-                degreeName: d.degreeName,
-                school: d.school,
-                degreeFileId: d.degreeFileId || undefined,
-              })
-              .then(() => {})
-              .catch((err: unknown) => {
-                subEntityErrors.push(
-                  `Bằng cấp: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
-                );
-              }),
-          );
-        } else {
-          const { id: _id, ...body } = d;
-          promises.push(
-            createDegreeMutation
-              .mutateAsync({ employeeId, ...body })
-              .then(() => {})
-              .catch((err: unknown) => {
-                subEntityErrors.push(
-                  `Bằng cấp: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
-                );
-              }),
-          );
-        }
-      }
+      syncSubEntities({
+        items: degrees,
+        initialIds: initialIds.degrees,
+        label: "Bằng cấp",
+        create: (body) => createDegreeMutation.mutateAsync({ employeeId, ...body }),
+        update: (id, body) =>
+          updateDegreeMutation.mutateAsync({
+            employeeId,
+            id,
+            degreeName: body.degreeName,
+            school: body.school,
+            degreeFileId: body.degreeFileId || undefined,
+          }),
+        remove: (id) => deleteDegreeMutation.mutateAsync({ employeeId, id }),
+        promises,
+        errors: subEntityErrors,
+      });
 
       // --- Certifications ---
-      const currentCertIds = new Set(certificates.filter((x) => x.id).map((x) => x.id!));
-      for (const id of initialIds.certifications) {
-        if (!currentCertIds.has(id)) {
-          promises.push(
-            deleteCertificationMutation
-              .mutateAsync({ employeeId, id })
-              .then(() => {})
-              .catch((err: unknown) => {
-                subEntityErrors.push(
-                  `Chứng chỉ: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
-                );
-              }),
-          );
-        }
-      }
-      for (const c of certificates) {
-        if (c.id) {
-          promises.push(
-            updateCertificationMutation
-              .mutateAsync({
-                employeeId,
-                id: c.id,
-                certName: c.certName,
-                issuedBy: c.issuedBy || undefined,
-                certFileId: c.certFileId || undefined,
-              })
-              .then(() => {})
-              .catch((err: unknown) => {
-                subEntityErrors.push(
-                  `Chứng chỉ: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
-                );
-              }),
-          );
-        } else {
-          const { id: _id, ...body } = c;
-          promises.push(
-            createCertificationMutation
-              .mutateAsync({ employeeId, ...body })
-              .then(() => {})
-              .catch((err: unknown) => {
-                subEntityErrors.push(
-                  `Chứng chỉ: ${err instanceof Error ? err.message : "Lỗi không xác định"}`,
-                );
-              }),
-          );
-        }
-      }
+      syncSubEntities({
+        items: certificates,
+        initialIds: initialIds.certifications,
+        label: "Chứng chỉ",
+        create: (body) => createCertificationMutation.mutateAsync({ employeeId, ...body }),
+        update: (id, body) =>
+          updateCertificationMutation.mutateAsync({
+            employeeId,
+            id,
+            certName: body.certName,
+            issuedBy: body.issuedBy || undefined,
+            certFileId: body.certFileId || undefined,
+          }),
+        remove: (id) => deleteCertificationMutation.mutateAsync({ employeeId, id }),
+        promises,
+        errors: subEntityErrors,
+      });
 
       // --- Foreign Work Permits ---
       if (formData.isForeigner) {
@@ -778,6 +641,9 @@ function EditEmployeeFormContent({
                     className="hidden"
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
+                      if (portraitPreview?.startsWith("blob:")) {
+                        URL.revokeObjectURL(portraitPreview);
+                      }
                       setPortraitPreview(file ? URL.createObjectURL(file) : null);
 
                       if (!file) {

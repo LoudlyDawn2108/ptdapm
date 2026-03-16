@@ -440,6 +440,9 @@ function NewEmployeePage() {
                     className="hidden"
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
+                      if (portraitPreview?.startsWith("blob:")) {
+                        URL.revokeObjectURL(portraitPreview);
+                      }
                       setPortraitPreview(file ? URL.createObjectURL(file) : null);
 
                       if (!file) {

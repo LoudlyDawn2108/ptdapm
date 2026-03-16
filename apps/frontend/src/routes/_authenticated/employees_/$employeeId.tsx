@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/features/auth/hooks";
 import { useEmployeeDetail, useMarkResigned } from "@/features/employees/api";
 import { ApiResponseError } from "@/lib/error-handler";
+import { authorizeRoute } from "@/lib/permissions";
 import { Link, Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useRouterState } from "@tanstack/react-router";
 import { Pencil, UserX } from "lucide-react";
@@ -31,6 +32,7 @@ const TAB_ITEMS = [
 ] as const;
 
 export const Route = createFileRoute("/_authenticated/employees_/$employeeId")({
+  beforeLoad: authorizeRoute("/employees"),
   component: EmployeeDetailLayout,
 });
 
