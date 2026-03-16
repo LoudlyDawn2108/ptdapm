@@ -22,7 +22,7 @@ import { z } from "zod";
 
 const searchSchema = z.object({
   page: z.number().default(1),
-  pageSize: z.number().default(20),
+  pageSize: z.number().default(10),
   search: z.string().optional(),
   workStatus: z.string().optional(),
   gender: z.string().optional(),
@@ -334,10 +334,10 @@ function EmployeesLayout() {
             <DataTable
               columns={columns}
               data={result?.items ?? []}
-              pageCount={result?.totalPages ?? 0}
+              pageCount={result?.total ? Math.ceil(result.total / (search.pageSize ?? 10)) : 0}
               pagination={{
                 pageIndex: (search.page ?? 1) - 1,
-                pageSize: search.pageSize ?? 20,
+                pageSize: search.pageSize ?? 10,
               }}
               onPaginationChange={(updater) => {
                 const next =

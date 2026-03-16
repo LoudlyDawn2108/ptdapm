@@ -149,6 +149,9 @@ export function DataTable<TData, TValue>({
               <ChevronLeft className="h-4 w-4" />
               Trước
             </Button>
+            <span className="text-sm text-slate-700 min-w-[80px] text-center">
+              Trang {pagination.pageIndex + 1} / {pageCount}
+            </span>
             <Button
               variant="outline"
               size="sm"

@@ -1,4 +1,4 @@
-export const DEFAULT_PAGE_SIZE = 20;
+export const DEFAULT_PAGE_SIZE = 10;
 
 export const ORG_TREE_INDENT_PX = 24;
 export const ORG_TREE_BASE_PADDING_PX = 8;
