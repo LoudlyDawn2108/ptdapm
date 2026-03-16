@@ -26,7 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import {
   trainingCourseListOptions,
   trainingTypeDropdownOptions,
@@ -52,7 +51,7 @@ import {
 } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, GraduationCap, Save } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { type UseFormSetError, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -120,7 +119,10 @@ function TrainingCoursesPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setEditingCourse(row.original)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditingCourse(row.original);
+            }}
           >
             <Pencil className="h-4 w-4" />
           </Button>
@@ -217,6 +219,9 @@ function TrainingCoursesPage() {
         onPaginationChange={listPage.onPaginationChange}
         isLoading={isLoading}
         emptyMessage="Không có khóa đào tạo nào"
+        onRowClick={(row) =>
+          navigate({ to: "/training/$courseId", params: { courseId: row.id } })
+        }
       />
 
       <TrainingCourseFormDialog
@@ -343,14 +348,21 @@ function TrainingCourseFormDialog({
       ? "Nhập thông tin để tạo khóa đào tạo mới."
       : "Cập nhật thông tin khóa đào tạo.";
   const submitLabel =
-    mode === "create" ? "Thêm khóa đào tạo" : "Lưu thay đổi";
+    mode === "create" ? "Lưu khóa đào tạo" : "Lưu thay đổi";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+        <DialogHeader className="pb-2">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shrink-0">
+              <GraduationCap className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <DialogTitle className="text-lg">{title}</DialogTitle>
+              <DialogDescription>{description}</DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
         <Form {...form}>
@@ -358,64 +370,60 @@ function TrainingCourseFormDialog({
             onSubmit={form.handleSubmit((values) =>
               onSubmit(values, form.setError),
             )}
-            className="space-y-5"
+            className="space-y-4"
           >
-            {/* ── Thông tin cơ bản ── */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                Thông tin cơ bản
+            {/* ── Thông tin khóa đào tạo ── */}
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-primary inline-block" />
+                Thông tin khóa đào tạo
               </h3>
 
-              <FormField
-                control={form.control}
-                name="courseName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Tên khóa đào tạo{" "}
-                      <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Nhập tên khóa đào tạo"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="courseTypeId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Loại khóa đào tạo{" "}
-                      <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="courseName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Tên khóa đào tạo{" "}
+                        <span className="text-destructive">*</span>
+                      </FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Chọn loại khóa đào tạo" />
-                        </SelectTrigger>
+                        <Input {...field} placeholder="Nhập tên khóa đào tạo" />
                       </FormControl>
-                      <SelectContent>
-                        {trainingTypes.map((t) => (
-                          <SelectItem key={t.value} value={t.value}>
-                            {t.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="courseTypeId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Loại khóa đào tạo{" "}
+                        <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Chọn loại" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {trainingTypes.map((t) => (
+                            <SelectItem key={t.value} value={t.value}>
+                              {t.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <FormField
@@ -424,15 +432,11 @@ function TrainingCourseFormDialog({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Ngày bắt đầu{" "}
+                        Thời gian đào tạo từ ngày{" "}
                         <span className="text-destructive">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          type="date"
-                          {...field}
-                          value={field.value ?? ""}
-                        />
+                        <Input type="date" {...field} value={field.value ?? ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -444,15 +448,11 @@ function TrainingCourseFormDialog({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Ngày kết thúc{" "}
+                        Đến ngày{" "}
                         <span className="text-destructive">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          type="date"
-                          {...field}
-                          value={field.value ?? ""}
-                        />
+                        <Input type="date" {...field} value={field.value ?? ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -460,57 +460,57 @@ function TrainingCourseFormDialog({
                 />
               </div>
 
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Địa điểm</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        value={field.value ?? ""}
-                        placeholder="Nhập địa điểm đào tạo"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Địa điểm</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value ?? ""}
+                          placeholder="Nhập địa điểm đào tạo"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="cost"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Kinh phí</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value ?? ""}
+                          placeholder="VD: 3.500.000"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
-            <Separator />
-
-            {/* ── Chi phí & Cam kết ── */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                Chi phí &amp; Cam kết
+            {/* ── Cam kết & Chứng chỉ ── */}
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-amber-500 inline-block" />
+                Cam kết &amp; Chứng chỉ
               </h3>
-
-              <FormField
-                control={form.control}
-                name="cost"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Chi phí</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        value={field.value ?? ""}
-                        placeholder="VD: 5000000"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               <FormField
                 control={form.control}
                 name="commitment"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cam kết</FormLabel>
+                    <FormLabel>Cam kết sau đào tạo</FormLabel>
                     <FormControl>
                       <Textarea
                         {...field}
@@ -523,15 +523,6 @@ function TrainingCourseFormDialog({
                   </FormItem>
                 )}
               />
-            </div>
-
-            <Separator />
-
-            {/* ── Chứng chỉ ── */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                Chứng chỉ
-              </h3>
 
               <div className="grid grid-cols-2 gap-4">
                 <FormField
@@ -571,11 +562,10 @@ function TrainingCourseFormDialog({
               </div>
             </div>
 
-            <Separator />
-
-            {/* ── Đăng ký ── */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            {/* ── Thông tin đăng ký ── */}
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-green-500 inline-block" />
                 Thông tin đăng ký
               </h3>
 
@@ -585,7 +575,7 @@ function TrainingCourseFormDialog({
                   name="registrationFrom"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Ngày mở đăng ký</FormLabel>
+                      <FormLabel>Mở đăng ký từ ngày</FormLabel>
                       <FormControl>
                         <Input
                           type="date"
@@ -602,7 +592,7 @@ function TrainingCourseFormDialog({
                   name="registrationTo"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Ngày đóng đăng ký</FormLabel>
+                      <FormLabel>Đến ngày</FormLabel>
                       <FormControl>
                         <Input
                           type="date"
@@ -621,18 +611,16 @@ function TrainingCourseFormDialog({
                 name="registrationLimit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Giới hạn đăng ký</FormLabel>
+                    <FormLabel>Số lượng đăng ký tối đa</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         min={1}
-                        placeholder="Số lượng tối đa (để trống nếu không giới hạn)"
+                        placeholder="Để trống nếu không giới hạn"
                         value={field.value ?? ""}
                         onChange={(e) => {
                           const val = e.target.value;
-                          field.onChange(
-                            val === "" ? undefined : Number(val),
-                          );
+                          field.onChange(val === "" ? undefined : Number(val));
                         }}
                       />
                     </FormControl>
@@ -651,7 +639,14 @@ function TrainingCourseFormDialog({
                 Hủy
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Đang lưu..." : submitLabel}
+                {isSubmitting ? (
+                  "Đang lưu..."
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-1.5" />
+                    {submitLabel}
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </form>
