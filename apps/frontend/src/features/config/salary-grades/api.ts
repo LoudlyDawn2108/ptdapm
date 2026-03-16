@@ -1,6 +1,11 @@
 import { api } from "@/api/client";
 import { handleApiError } from "@/lib/error-handler";
-import type { CreateSalaryGradeInput, UpdateSalaryGradeInput } from "@hrms/shared";
+import type {
+  CreateSalaryGradeInput,
+  CreateSalaryGradeStepInput,
+  UpdateSalaryGradeInput,
+  UpdateSalaryGradeStepInput,
+} from "@hrms/shared";
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const salaryGradeKeys = {
@@ -103,5 +108,64 @@ export function useDeleteSalaryGrade() {
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: salaryGradeKeys.lists() }),
+  });
+}
+
+// ── Step Mutations ────────────────────────────────────────────────────────
+export function useCreateSalaryGradeStep() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      gradeId,
+      ...input
+    }: CreateSalaryGradeStepInput & { gradeId: string }) => {
+      const { data, error } = await api.api.config["salary-grades"]({ id: gradeId }).steps.post(
+        input as Record<string, unknown>,
+      );
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: salaryGradeKeys.steps(vars.gradeId) });
+      qc.invalidateQueries({ queryKey: salaryGradeKeys.lists() });
+    },
+  });
+}
+
+export function useUpdateSalaryGradeStep() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      gradeId,
+      stepId,
+      ...input
+    }: UpdateSalaryGradeStepInput & { gradeId: string; stepId: string }) => {
+      const { data, error } = await (api.api.config["salary-grades"]({ id: gradeId }).steps as any)({
+        stepId,
+      }).put(input as Record<string, unknown>);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: salaryGradeKeys.steps(vars.gradeId) });
+      qc.invalidateQueries({ queryKey: salaryGradeKeys.lists() });
+    },
+  });
+}
+
+export function useDeleteSalaryGradeStep() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ gradeId, stepId }: { gradeId: string; stepId: string }) => {
+      const { data, error } = await (api.api.config["salary-grades"]({ id: gradeId }).steps as any)({
+        stepId,
+      }).delete();
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: salaryGradeKeys.steps(vars.gradeId) });
+      qc.invalidateQueries({ queryKey: salaryGradeKeys.lists() });
+    },
   });
 }

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import type { UseMutationResult, UseQueryOptions } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import type { ColumnDef, OnChangeFn, PaginationState } from "@tanstack/react-table";
-import { Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -42,6 +42,8 @@ interface CatalogListPageProps<TData> {
   pagination: PaginationState;
   onPaginationChange: OnChangeFn<PaginationState>;
   headerActions?: ReactNode;
+  onAddClick?: () => void;
+  onEditClick?: (item: TData) => void;
 }
 
 export function CatalogListPage<TData extends { id: string }>({
@@ -59,6 +61,8 @@ export function CatalogListPage<TData extends { id: string }>({
   pagination,
   onPaginationChange,
   headerActions,
+  onAddClick,
+  onEditClick,
 }: CatalogListPageProps<TData>) {
   const { data, isLoading, isError, error, refetch } = useQuery(qOpts);
   const result = (data as CatalogApiResult<TData> | undefined)?.data;
@@ -74,27 +78,38 @@ export function CatalogListPage<TData extends { id: string }>({
 
   const actionsColumn: ColumnDef<TData, unknown> = {
     id: "actions",
-    header: "",
+    header: "Thao tác",
     cell: ({ row }) => {
       const item = row.original;
       const name = (item as Record<string, unknown>)[deleteConfig.nameAccessor] as string;
       return (
-        <ConfirmDialog
-          trigger={
-            <Button variant="ghost" size="sm">
-              <Trash2 className="h-4 w-4 text-destructive" />
+        <div className="flex items-center gap-1">
+          {onEditClick && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onEditClick(item)}
+            >
+              <Pencil className="h-4 w-4 text-muted-foreground" />
             </Button>
-          }
-          title={deleteConfig.title}
-          description={`Bạn có chắc muốn xóa "${name}"?`}
-          confirmLabel="Xóa"
-          variant="destructive"
-          onConfirm={() =>
-            deleteMutation.mutate(item.id, {
-              onSuccess: () => toast.success(deleteConfig.successMessage),
-            })
-          }
-        />
+          )}
+          <ConfirmDialog
+            trigger={
+              <Button variant="ghost" size="sm">
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            }
+            title={deleteConfig.title}
+            description={`Bạn có chắc muốn xóa "${name}"?`}
+            confirmLabel="Xóa"
+            variant="destructive"
+            onConfirm={() =>
+              deleteMutation.mutate(item.id, {
+                onSuccess: () => toast.success(deleteConfig.successMessage),
+              })
+            }
+          />
+        </div>
       );
     },
   };
@@ -108,7 +123,7 @@ export function CatalogListPage<TData extends { id: string }>({
         description={description}
         actions={
           headerActions ?? (
-            <Button>
+            <Button onClick={onAddClick}>
               <Plus className="mr-2 h-4 w-4" />
               {addButtonLabel}
             </Button>
