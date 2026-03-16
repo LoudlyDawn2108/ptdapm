@@ -45,8 +45,8 @@ export const createAllowanceTypeSchema = z.object({
     allowanceName: z
         .string({error: "Tên loại phụ cấp không được để trống"})
         .min(1, "Tên loại phụ cấp không được để trống"),
-    description: z.string().nullish(),
-    calcMethod: z.string().nullish(),
+    description: z.string().optional(),
+    calcMethod: z.string().optional(),
 });
 
 export type CreateAllowanceTypeInput = z.infer<

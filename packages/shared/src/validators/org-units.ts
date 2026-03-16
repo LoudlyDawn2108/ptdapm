@@ -18,7 +18,7 @@ const orgEventReasonSchema = z.enum(
 // Org Units
 // ---------------------------------------------------------------------------
 export const createOrgUnitSchema = z.object({
-  parentId: z.uuid().nullable().optional(),
+  parentId: z.string().uuid().nullable().optional(),
   unitCode: z
     .string({ error: "Mã đơn vị không được để trống" })
     .min(1, "Mã đơn vị không được để trống")
@@ -28,12 +28,12 @@ export const createOrgUnitSchema = z.object({
     .min(1, "Tên đơn vị không được để trống")
     .max(255, "Tên đơn vị không được vượt quá 255 ký tự"),
   unitType: orgUnitTypeSchema,
-  foundedOn: z.string().nullish(),
-  address: z.string().nullish(),
-  officeAddress: z.string().nullish(),
-  email: z.string().email("Email không hợp lệ").nullish().or(z.literal("")),
-  phone: z.string().nullish(),
-  website: z.string().nullish(),
+  foundedOn: z.string().optional(),
+  address: z.string().optional(),
+  officeAddress: z.string().optional(),
+  email: z.string().email("Email không hợp lệ").optional().or(z.literal("")),
+  phone: z.string().optional(),
+  website: z.string().optional(),
   isLeafConfirmed: z.boolean().default(false),
 });
 
@@ -46,12 +46,12 @@ export const updateOrgUnitSchema = z.object({
     .max(255, "Tên đơn vị không được vượt quá 255 ký tự")
     .optional(),
   unitType: orgUnitTypeSchema.optional(),
-  foundedOn: z.string().nullish(),
-  address: z.string().nullish(),
-  officeAddress: z.string().nullish(),
-  email: z.string().email("Email không hợp lệ").nullish().or(z.literal("")),
-  phone: z.string().nullish(),
-  website: z.string().nullish(),
+  foundedOn: z.string().optional(),
+  address: z.string().optional(),
+  officeAddress: z.string().optional(),
+  email: z.string().email("Email không hợp lệ").optional().or(z.literal("")),
+  phone: z.string().optional(),
+  website: z.string().optional(),
   isLeafConfirmed: z.boolean().optional(),
 });
 

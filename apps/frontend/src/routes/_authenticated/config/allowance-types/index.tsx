@@ -1,13 +1,16 @@
-import { CatalogListPage } from "@/components/shared/catalog-list-page";
+import { AllowanceTypeFormDialog } from "@/features/config/allowance-types/AllowanceTypeFormDialog";
 import {
   allowanceTypeListOptions,
   useDeleteAllowanceType,
 } from "@/features/config/allowance-types/api";
+import type { AllowanceTypeRow } from "@/features/config/allowance-types/columns";
 import { allowanceTypeColumns } from "@/features/config/allowance-types/columns";
+import { CatalogListPage } from "@/components/shared/catalog-list-page";
 import { useListPage } from "@/hooks/use-list-page";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { authorizeRoute } from "@/lib/permissions";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { z } from "zod";
 
 const searchSchema = z.object({
@@ -31,26 +34,44 @@ function AllowanceTypesPage() {
   });
   const deleteMutation = useDeleteAllowanceType();
 
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [editingItem, setEditingItem] = useState<AllowanceTypeRow | null>(null);
+
   return (
-    <CatalogListPage
-      title="Loại phụ cấp"
-      description="Quản lý danh mục loại phụ cấp"
-      addButtonLabel="Thêm loại phụ cấp"
-      columns={allowanceTypeColumns}
-      queryOptions={allowanceTypeListOptions({
-        page: search.page,
-        pageSize: search.pageSize,
-        search: listPage.debouncedSearch,
-      })}
-      deleteMutation={deleteMutation}
-      deleteConfig={{
-        title: "Xóa loại phụ cấp",
-        nameAccessor: "allowanceName",
-        successMessage: "Đã xóa loại phụ cấp",
-      }}
-      searchPlaceholder="Tìm kiếm theo tên..."
-      emptyMessage="Không có loại phụ cấp nào"
-      {...listPage}
-    />
+    <>
+      <CatalogListPage
+        title="Loại phụ cấp"
+        description="Quản lý danh mục loại phụ cấp"
+        addButtonLabel="Thêm danh mục phụ cấp"
+        columns={allowanceTypeColumns}
+        queryOptions={allowanceTypeListOptions({
+          page: search.page,
+          pageSize: search.pageSize,
+          search: listPage.debouncedSearch,
+        })}
+        deleteMutation={deleteMutation}
+        deleteConfig={{
+          title: "Xóa loại phụ cấp",
+          nameAccessor: "allowanceName",
+          successMessage: "Đã xóa loại phụ cấp",
+        }}
+        searchPlaceholder="Tìm kiếm theo tên..."
+        emptyMessage="Không có loại phụ cấp nào"
+        onAddClick={() => setShowCreateDialog(true)}
+        onEditClick={(item) => setEditingItem(item as AllowanceTypeRow)}
+        {...listPage}
+      />
+
+      <AllowanceTypeFormDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+      />
+
+      <AllowanceTypeFormDialog
+        open={!!editingItem}
+        onOpenChange={(open) => { if (!open) setEditingItem(null); }}
+        editingItem={editingItem}
+      />
+    </>
   );
 }
