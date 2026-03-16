@@ -24,7 +24,7 @@ function GeneralInfoTab() {
   const genderLabel = Gender[emp.gender as keyof typeof Gender]?.label ?? emp.gender;
 
   const party = partyMemberships?.[0];
-  const bank = bankAccounts?.[0];
+  const bank = bankAccounts?.find((x) => x.isPrimary) ?? bankAccounts?.[0];
   const permit = foreignWorkPermits?.[0];
 
   return (

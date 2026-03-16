@@ -187,3 +187,16 @@ export type EmployeeAggregate = {
   contracts: EmploymentContract[];
   evaluations: EmployeeEvaluation[];
 };
+
+export function isEmployeeAggregate(value: unknown): value is EmployeeAggregate {
+  if (!value || typeof value !== "object") return false;
+  const obj = value as Record<string, unknown>;
+  return (
+    obj.employee != null &&
+    typeof obj.employee === "object" &&
+    "id" in obj.employee &&
+    "fullName" in obj.employee &&
+    Array.isArray(obj.bankAccounts) &&
+    Array.isArray(obj.familyMembers)
+  );
+}

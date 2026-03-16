@@ -130,7 +130,7 @@ export const createEmployeeSchema = z.object({
   educationLevel: requiredEnum(educationLevelSchema, "Trình độ văn hóa không được để trống"),
   trainingLevel: optionalField(trainingLevelSchema),
   academicTitle: optionalField(academicTitleSchema),
-  academicRank: requiredEnum(academicRankSchema, "Học hàm không được để trống"),
+  academicRank: optionalField(academicRankSchema),
   // NOTE: workStatus, contractStatus, and salaryGradeStepId are optional at creation time.
   // The DB schema defines defaults: workStatus='pending', contractStatus='none'.
   // Backend does NOT need explicit values — Postgres defaults apply on INSERT.

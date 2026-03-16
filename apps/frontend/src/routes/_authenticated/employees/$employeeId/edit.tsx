@@ -36,6 +36,7 @@ import {
   SectionHeader,
 } from "@/features/employees/components/form-helpers";
 import type { EmployeeAggregate } from "@/features/employees/types";
+import { isEmployeeAggregate } from "@/features/employees/types";
 import { formatForInput } from "@/lib/date-utils";
 import { ApiResponseError, applyFieldErrors } from "@/lib/error-handler";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -234,7 +235,7 @@ function EditEmployeePage() {
     );
   }
 
-  const agg = data?.data as EmployeeAggregate | undefined;
+  const agg = isEmployeeAggregate(data?.data) ? data.data : undefined;
   const emp = agg?.employee;
 
   if (!agg || !emp) {

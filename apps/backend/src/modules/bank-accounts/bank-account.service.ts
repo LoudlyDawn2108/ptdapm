@@ -42,7 +42,14 @@ export async function create(
   employeeId: string,
   data: CreateEmployeeBankAccountInput,
 ): Promise<EmployeeBankAccount> {
-  if (data.isPrimary) {
+  // Auto-set isPrimary if this is the first bank account for the employee
+  const existingCount = await countRows(
+    employeeBankAccounts,
+    eq(employeeBankAccounts.employeeId, employeeId),
+  );
+  const shouldBePrimary = data.isPrimary || existingCount === 0;
+
+  if (shouldBePrimary) {
     return db.transaction(async (tx) => {
       await tx
         .update(employeeBankAccounts)
@@ -51,7 +58,7 @@ export async function create(
 
       const [created] = await tx
         .insert(employeeBankAccounts)
-        .values({ ...data, employeeId })
+        .values({ ...data, employeeId, isPrimary: true })
         .returning();
 
       if (!created) throw new BadRequestError("Không thể tạo tài khoản ngân hàng");

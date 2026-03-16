@@ -8,6 +8,7 @@ import type {
 } from "@hrms/shared";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { EmployeeAggregate } from "./types";
+import { isEmployeeAggregate } from "./types";
 
 // Eden Treaty infers narrow literal unions (e.g. "NAM" | "NU") from Elysia routes, but
 // shared validators / form values use broader `string`. This identity function returns `any`
@@ -135,9 +136,8 @@ export const myEmployeeOptions = () =>
 
 export function useEmployeeDetail(employeeId: string) {
   const { data, isLoading } = useQuery(employeeDetailOptions(employeeId));
-  // TODO: Replace unsafe cast with runtime validation (e.g. zod parse) or type guard
-  // to detect API response shape changes at runtime instead of silently crashing.
-  const aggregate = data?.data as EmployeeAggregate | undefined;
+  const raw = data?.data;
+  const aggregate = isEmployeeAggregate(raw) ? raw : undefined;
   return { aggregate, employee: aggregate?.employee, isLoading };
 }
 

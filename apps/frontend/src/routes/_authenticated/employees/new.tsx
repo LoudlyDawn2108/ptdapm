@@ -228,7 +228,7 @@ function NewEmployeePage() {
         portraitFileId: data.portraitFileId || undefined,
         isForeigner: data.isForeigner,
         educationLevel: data.educationLevel as CreateEmployeeInput["educationLevel"],
-        academicRank: data.academicRank as CreateEmployeeInput["academicRank"],
+        academicRank: (data.academicRank || undefined) as CreateEmployeeInput["academicRank"],
       };
 
       const result = await createMutation.mutateAsync(employeePayload);
@@ -713,7 +713,7 @@ function NewEmployeePage() {
                 <FormFieldSelect
                   form={form}
                   name="academicRank"
-                  label="Học hàm/Học vị *"
+                  label="Học hàm/Học vị"
                   items={enumToSortedList(AcademicRank)}
                 />
               </div>
