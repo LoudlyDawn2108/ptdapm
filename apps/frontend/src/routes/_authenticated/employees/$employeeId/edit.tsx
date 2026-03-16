@@ -50,7 +50,7 @@ import {
 } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ChevronDown, Pencil, Plus, Save, Upload } from "lucide-react";
+import { Pencil, Plus, Save, Upload } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   type Control,
@@ -743,66 +743,36 @@ function EditEmployeeFormContent({
             </DynamicSection>
 
             {/* ── LỊCH SỬ CÔNG TÁC ── */}
-            <section>
-              <div className="flex items-center justify-between">
-                <SectionHeader title="LỊCH SỬ CÔNG TÁC" compact />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 gap-1 rounded-full bg-[#E9EEFF] px-2 text-[11px] text-[#3B5CCC] hover:bg-[#DCE6FF]"
-                  onClick={() => {
-                    if (jobFields.fields.length === 0) {
-                      jobFields.append({ workplace: "", startedOn: "", endedOn: "" });
-                    }
-                  }}
+            <DynamicSection
+              title="LỊCH SỬ CÔNG TÁC"
+              onAdd={() => jobFields.append({ workplace: "", startedOn: "", endedOn: "" })}
+            >
+              {jobFields.fields.map((field, index) => (
+                <div
+                  key={field.id}
+                  className="grid grid-cols-[1fr_140px_140px_auto] items-end gap-3"
                 >
-                  <ChevronDown
-                    className={`h-3 w-3 transition-transform ${jobFields.fields.length > 0 ? "rotate-180" : ""}`}
+                  <FI
+                    form={form}
+                    name={`previousJobs.${index}.workplace`}
+                    label="Tên nơi công tác *"
                   />
-                  {jobFields.fields.length > 0 ? "Đang hiển thị" : "Mở rộng"}
-                </Button>
-              </div>
-              {jobFields.fields.length > 0 && (
-                <div className="mt-3 space-y-3">
-                  {jobFields.fields.map((field, index) => (
-                    <div
-                      key={field.id}
-                      className="grid grid-cols-[1fr_140px_140px_auto] items-end gap-3"
-                    >
-                      <FI
-                        form={form}
-                        name={`previousJobs.${index}.workplace`}
-                        label="Tên nơi công tác *"
-                      />
-                      <FI
-                        form={form}
-                        name={`previousJobs.${index}.startedOn`}
-                        label="Từ ngày *"
-                        type="date"
-                      />
-                      <FI
-                        form={form}
-                        name={`previousJobs.${index}.endedOn`}
-                        label="Đến ngày *"
-                        type="date"
-                      />
-                      <RemoveBtn onClick={() => jobFields.remove(index)} />
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 gap-1 rounded-md text-xs text-[#3B5CCC] hover:bg-[#E9EEFF]"
-                    onClick={() => jobFields.append({ workplace: "", startedOn: "", endedOn: "" })}
-                  >
-                    <Plus className="h-3 w-3" />
-                    Thêm dòng
-                  </Button>
+                  <FI
+                    form={form}
+                    name={`previousJobs.${index}.startedOn`}
+                    label="Từ ngày *"
+                    type="date"
+                  />
+                  <FI
+                    form={form}
+                    name={`previousJobs.${index}.endedOn`}
+                    label="Đến ngày *"
+                    type="date"
+                  />
+                  <RemoveBtn onClick={() => jobFields.remove(index)} />
                 </div>
-              )}
-            </section>
+              ))}
+            </DynamicSection>
 
             {/* ── THÔNG TIN NGÂN HÀNG ── */}
             <DynamicSection

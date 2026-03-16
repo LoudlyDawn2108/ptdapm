@@ -32,7 +32,7 @@ import {
   enumToSortedList,
 } from "@hrms/shared";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ChevronDown, Plus, Upload, UserPlus } from "lucide-react";
+import { Plus, Upload, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -137,7 +137,6 @@ function NewEmployeePage() {
   const createCertification = useCreateCertification();
   const createForeignWorkPermit = useCreateForeignWorkPermit();
   const [showForeigner, setShowForeigner] = useState(false);
-  const [showPreviousJobs, setShowPreviousJobs] = useState(false);
   const [portraitPreview, setPortraitPreview] = useState<string | null>(null);
 
   const form = useForm<FormInput, unknown, FormValues>({
@@ -171,8 +170,7 @@ function NewEmployeePage() {
       partyMemberships: [{ organizationType: "", joinedOn: "", details: "" }],
       degrees: [{ degreeName: "", school: "", degreeFileId: "" }],
       certificates: [{ certName: "", issuedBy: "", certFileId: "" }],
-      // Optional sections — start empty (hidden)
-      previousJobs: [],
+      previousJobs: [{ workplace: "", startedOn: "", endedOn: "" }],
     },
   });
 
@@ -205,8 +203,10 @@ function NewEmployeePage() {
       };
 
       const result = await createMutation.mutateAsync(employeePayload);
+      const created =
+        result && typeof result === "object" && "data" in result ? result.data : result;
       const employeeId =
-        result && typeof result === "object" && "id" in result ? String(result.id) : undefined;
+        created && typeof created === "object" && "id" in created ? String(created.id) : undefined;
 
       if (!employeeId) {
         toast.error("Không thể tạo nhân sự. Vui lòng thử lại.");
@@ -538,72 +538,37 @@ function NewEmployeePage() {
               ))}
             </DynamicSection>
 
-            {/* ═══════ LỊCH SỬ CÔNG TÁC (optional — hidden by default) ═══════ */}
-            <section>
-              <div className="flex items-center justify-between">
-                <SectionHeader title="LỊCH SỬ CÔNG TÁC" compact />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 gap-1 rounded-full bg-[#E9EEFF] px-2 text-[11px] text-[#3B5CCC] hover:bg-[#DCE6FF]"
-                  onClick={() => {
-                    if (!showPreviousJobs) {
-                      setShowPreviousJobs(true);
-                      if (jobFields.fields.length === 0) {
-                        jobFields.append({ workplace: "", startedOn: "", endedOn: "" });
-                      }
-                    } else {
-                      setShowPreviousJobs(false);
-                    }
-                  }}
+            {/* ═══════ LỊCH SỬ CÔNG TÁC ═══════ */}
+            <DynamicSection
+              title="LỊCH SỬ CÔNG TÁC"
+              onAdd={() => jobFields.append({ workplace: "", startedOn: "", endedOn: "" })}
+            >
+              {jobFields.fields.map((field, index) => (
+                <div
+                  key={field.id}
+                  className="grid grid-cols-[1fr_140px_140px_auto] items-end gap-3"
                 >
-                  <ChevronDown
-                    className={`h-3 w-3 transition-transform ${showPreviousJobs ? "rotate-180" : ""}`}
+                  <FI
+                    form={form}
+                    name={`previousJobs.${index}.workplace`}
+                    label="Tên nơi công tác *"
                   />
-                  {showPreviousJobs ? "Thu gọn" : "Mở rộng"}
-                </Button>
-              </div>
-              {showPreviousJobs && (
-                <div className="mt-3 space-y-3">
-                  {jobFields.fields.map((field, index) => (
-                    <div
-                      key={field.id}
-                      className="grid grid-cols-[1fr_140px_140px_auto] items-end gap-3"
-                    >
-                      <FI
-                        form={form}
-                        name={`previousJobs.${index}.workplace`}
-                        label="Tên nơi công tác *"
-                      />
-                      <FI
-                        form={form}
-                        name={`previousJobs.${index}.startedOn`}
-                        label="Từ ngày *"
-                        type="date"
-                      />
-                      <FI
-                        form={form}
-                        name={`previousJobs.${index}.endedOn`}
-                        label="Đến ngày *"
-                        type="date"
-                      />
-                      <RemoveBtn onClick={() => jobFields.remove(index)} />
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 gap-1 rounded-md text-xs text-[#3B5CCC] hover:bg-[#E9EEFF]"
-                    onClick={() => jobFields.append({ workplace: "", startedOn: "", endedOn: "" })}
-                  >
-                    <Plus className="h-3 w-3" />
-                    Thêm dòng
-                  </Button>
+                  <FI
+                    form={form}
+                    name={`previousJobs.${index}.startedOn`}
+                    label="Từ ngày *"
+                    type="date"
+                  />
+                  <FI
+                    form={form}
+                    name={`previousJobs.${index}.endedOn`}
+                    label="Đến ngày *"
+                    type="date"
+                  />
+                  <RemoveBtn onClick={() => jobFields.remove(index)} />
                 </div>
-              )}
-            </section>
+              ))}
+            </DynamicSection>
 
             {/* ═══════ THÔNG TIN NGÂN HÀNG ═══════ */}
             <DynamicSection
