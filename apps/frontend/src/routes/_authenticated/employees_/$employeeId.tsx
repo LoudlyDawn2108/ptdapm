@@ -11,10 +11,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/features/auth/hooks";
-import { employeeDetailOptions, useMarkResigned } from "@/features/employees/api";
-import type { EmployeeAggregate } from "@/features/employees/types";
+import { useEmployeeDetail, useMarkResigned } from "@/features/employees/api";
 import { ApiResponseError } from "@/lib/error-handler";
-import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useRouterState } from "@tanstack/react-router";
 import { Pencil, UserX } from "lucide-react";
@@ -46,9 +44,7 @@ function EmployeeDetailLayout() {
   const [resignReason, setResignReason] = useState("");
   const markResigned = useMarkResigned();
 
-  const { data, isLoading } = useQuery(employeeDetailOptions(employeeId));
-  const aggregate = data?.data as EmployeeAggregate | undefined;
-  const emp = aggregate?.employee;
+  const { aggregate, employee: emp, isLoading } = useEmployeeDetail(employeeId);
 
   // Determine active tab from current path
   const basePath = `/employees/${employeeId}`;
@@ -127,9 +123,9 @@ function EmployeeDetailLayout() {
         }}
         className="mb-6"
       >
-        <TabsList className="w-full justify-start overflow-x-auto">
+        <TabsList className="w-full justify-start overflow-x-auto" aria-label="Chi tiết nhân sự">
           {TAB_ITEMS.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
+            <TabsTrigger key={tab.value} value={tab.value} aria-label={`Tab ${tab.label}`}>
               {tab.label}
             </TabsTrigger>
           ))}

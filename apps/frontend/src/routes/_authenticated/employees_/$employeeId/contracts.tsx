@@ -25,12 +25,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { contractTypeListOptions } from "@/features/config/contract-types/api";
-import {
-  employeeDetailOptions,
-  useCreateContract,
-  useUpdateContract,
-} from "@/features/employees/api";
-import type { EmployeeAggregate, EmploymentContract } from "@/features/employees/types";
+import { useCreateContract, useEmployeeDetail, useUpdateContract } from "@/features/employees/api";
+import type { EmploymentContract } from "@/features/employees/types";
 
 /** Contract with optional joined display names from the API */
 type ContractRow = EmploymentContract & {
@@ -81,7 +77,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function ContractsTab() {
   const { employeeId } = Route.useParams();
-  const { data, isLoading } = useQuery(employeeDetailOptions(employeeId));
+  const { aggregate, isLoading } = useEmployeeDetail(employeeId);
   const { data: contractTypesData } = useQuery(
     contractTypeListOptions({ page: 1, pageSize: 100, search: undefined }),
   );
@@ -91,7 +87,6 @@ function ContractsTab() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingContract, setEditingContract] = useState<ContractRow | null>(null);
   const [viewingContract, setViewingContract] = useState<ContractRow | null>(null);
-  const aggregate = data?.data as EmployeeAggregate | undefined;
   const contracts = aggregate?.contracts as ContractRow[] | undefined;
   const contractTypes = (contractTypesData?.data?.items ?? []) as Array<{
     id: string;

@@ -1,9 +1,7 @@
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { ReadOnlyField } from "@/components/shared/read-only-field";
-import { employeeDetailOptions } from "@/features/employees/api";
-import type { EmployeeAggregate } from "@/features/employees/types";
+import { useEmployeeDetail } from "@/features/employees/api";
 import { formatDate } from "@/lib/date-utils";
-import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/employees_/$employeeId/work-history")({
@@ -12,8 +10,7 @@ export const Route = createFileRoute("/_authenticated/employees_/$employeeId/wor
 
 function WorkHistoryTab() {
   const { employeeId } = Route.useParams();
-  const { data, isLoading } = useQuery(employeeDetailOptions(employeeId));
-  const aggregate = data?.data as EmployeeAggregate | undefined;
+  const { aggregate, isLoading } = useEmployeeDetail(employeeId);
   const previousJobs = aggregate?.previousJobs;
 
   if (isLoading) return <FormSkeleton fields={3} />;

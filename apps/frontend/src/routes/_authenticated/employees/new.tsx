@@ -14,7 +14,7 @@ import {
 } from "@/features/employees/api";
 import {
   DynamicSection,
-  FI,
+  FieldInput,
   FormFieldSelect,
   RemoveBtn,
   RequiredLabel,
@@ -144,7 +144,7 @@ function FileUploadButton({
     <Button
       type="button"
       className={`h-8 rounded-md px-3 text-xs text-white ${
-        value ? "bg-green-600 hover:bg-green-700" : "bg-[#3B5CCC] hover:bg-[#2F4FB8]"
+        value ? "bg-green-600 hover:bg-green-700" : "bg-primary hover:bg-primary/90"
       }`}
       onClick={() => document.getElementById(inputId)?.click()}
     >
@@ -166,6 +166,7 @@ function NewEmployeePage() {
   const createForeignWorkPermit = useCreateForeignWorkPermit();
   const [showForeigner, setShowForeigner] = useState(false);
   const [portraitPreview, setPortraitPreview] = useState<string | null>(null);
+  const [uploadingCount, setUploadingCount] = useState(0);
 
   const form = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
@@ -390,7 +391,7 @@ function NewEmployeePage() {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center gap-2 border-b border-slate-200 px-6 py-4">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E9EEFF] text-[#3B5CCC]">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <UserPlus className="h-4 w-4" />
         </div>
         <h1 className="text-sm font-semibold text-slate-800">Thêm hồ sơ nhân sự</h1>
@@ -435,6 +436,7 @@ function NewEmployeePage() {
                         return;
                       }
 
+                      setUploadingCount((c) => c + 1);
                       try {
                         const uploadedFile = await uploadFile(file);
                         form.setValue("portraitFileId", uploadedFile.id, {
@@ -446,37 +448,39 @@ function NewEmployeePage() {
                           shouldDirty: true,
                           shouldValidate: true,
                         });
+                      } finally {
+                        setUploadingCount((c) => c - 1);
                       }
                     }}
                   />
                 </div>
                 <div className="grid flex-1 grid-cols-2 gap-4">
-                  <FI form={form} name="fullName" label="Họ tên *" />
+                  <FieldInput form={form} name="fullName" label="Họ tên *" />
                   <FormFieldSelect
                     form={form}
                     name="gender"
                     label="Giới tính *"
                     items={enumToSortedList(Gender)}
                   />
-                  <FI form={form} name="dob" label="Ngày sinh *" type="date" />
-                  <FI form={form} name="hometown" label="Quê quán *" />
+                  <FieldInput form={form} name="dob" label="Ngày sinh *" type="date" />
+                  <FieldInput form={form} name="hometown" label="Quê quán *" />
                 </div>
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-4">
-                <FI form={form} name="email" label="Email *" type="email" />
-                <FI form={form} name="phone" label="Số điện thoại *" />
+                <FieldInput form={form} name="email" label="Email *" type="email" />
+                <FieldInput form={form} name="phone" label="Số điện thoại *" />
               </div>
 
               <div className="mt-4 grid grid-cols-1 gap-4">
-                <FI form={form} name="address" label="Địa chỉ *" />
+                <FieldInput form={form} name="address" label="Địa chỉ *" />
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-4">
-                <FI form={form} name="nationalId" label="CCCD *" />
-                <FI form={form} name="taxCode" label="Mã số thuế" />
-                <FI form={form} name="socialInsuranceNo" label="Số bảo hiểm xã hội" />
-                <FI form={form} name="healthInsuranceNo" label="Số bảo hiểm y tế" />
+                <FieldInput form={form} name="nationalId" label="CCCD *" />
+                <FieldInput form={form} name="taxCode" label="Mã số thuế" />
+                <FieldInput form={form} name="socialInsuranceNo" label="Số bảo hiểm xã hội" />
+                <FieldInput form={form} name="healthInsuranceNo" label="Số bảo hiểm y tế" />
               </div>
             </section>
 
@@ -504,17 +508,22 @@ function NewEmployeePage() {
               </div>
               {showForeigner && (
                 <div className="mt-4 grid grid-cols-2 gap-4">
-                  <FI form={form} name="visaNumber" label="Số Visa *" />
-                  <FI form={form} name="visaExpiry" label="Ngày hết hạn Visa *" type="date" />
-                  <FI form={form} name="passportNumber" label="Số Hộ chiếu *" />
-                  <FI
+                  <FieldInput form={form} name="visaNumber" label="Số Visa *" />
+                  <FieldInput
+                    form={form}
+                    name="visaExpiry"
+                    label="Ngày hết hạn Visa *"
+                    type="date"
+                  />
+                  <FieldInput form={form} name="passportNumber" label="Số Hộ chiếu *" />
+                  <FieldInput
                     form={form}
                     name="passportExpiry"
                     label="Ngày hết hạn Hộ chiếu *"
                     type="date"
                   />
-                  <FI form={form} name="workPermitNumber" label="Số giấy phép lao động *" />
-                  <FI
+                  <FieldInput form={form} name="workPermitNumber" label="Số giấy phép lao động *" />
+                  <FieldInput
                     form={form}
                     name="workPermitExpiry"
                     label="Ngày hết hạn giấy phép lao động *"
@@ -529,6 +538,7 @@ function NewEmployeePage() {
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
+                        setUploadingCount((c) => c + 1);
                         try {
                           const uploaded = await uploadFile(file);
                           form.setValue("workPermitFileId", uploaded.id, {
@@ -537,6 +547,8 @@ function NewEmployeePage() {
                           toast.success("Tải PDF giấy phép lao động thành công");
                         } catch {
                           toast.error("Tải PDF thất bại");
+                        } finally {
+                          setUploadingCount((c) => c - 1);
                         }
                       }}
                     />
@@ -570,7 +582,11 @@ function NewEmployeePage() {
                     label="Mối quan hệ *"
                     items={enumToSortedList(FamilyRelation)}
                   />
-                  <FI form={form} name={`familyMembers.${index}.fullName`} label="Họ tên *" />
+                  <FieldInput
+                    form={form}
+                    name={`familyMembers.${index}.fullName`}
+                    label="Họ tên *"
+                  />
                   <RemoveBtn onClick={() => familyFields.remove(index)} />
                 </div>
               ))}
@@ -586,18 +602,18 @@ function NewEmployeePage() {
                   key={field.id}
                   className="grid grid-cols-[1fr_140px_140px_auto] items-end gap-3"
                 >
-                  <FI
+                  <FieldInput
                     form={form}
                     name={`previousJobs.${index}.workplace`}
                     label="Tên nơi công tác *"
                   />
-                  <FI
+                  <FieldInput
                     form={form}
                     name={`previousJobs.${index}.startedOn`}
                     label="Từ ngày *"
                     type="date"
                   />
-                  <FI
+                  <FieldInput
                     form={form}
                     name={`previousJobs.${index}.endedOn`}
                     label="Đến ngày *"
@@ -620,8 +636,16 @@ function NewEmployeePage() {
             >
               {bankFields.fields.map((field, index) => (
                 <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] items-end gap-3">
-                  <FI form={form} name={`bankAccounts.${index}.bankName`} label="Tên ngân hàng *" />
-                  <FI form={form} name={`bankAccounts.${index}.accountNo`} label="Số tài khoản *" />
+                  <FieldInput
+                    form={form}
+                    name={`bankAccounts.${index}.bankName`}
+                    label="Tên ngân hàng *"
+                  />
+                  <FieldInput
+                    form={form}
+                    name={`bankAccounts.${index}.accountNo`}
+                    label="Số tài khoản *"
+                  />
                   <RemoveBtn onClick={() => bankFields.remove(index)} />
                 </div>
               ))}
@@ -643,13 +667,13 @@ function NewEmployeePage() {
                     label="Loại tổ chức *"
                     items={enumToSortedList(PartyOrgType)}
                   />
-                  <FI
+                  <FieldInput
                     form={form}
                     name={`partyMemberships.${index}.joinedOn`}
                     label="Ngày gia nhập *"
                     type="date"
                   />
-                  <FI
+                  <FieldInput
                     form={form}
                     name={`partyMemberships.${index}.details`}
                     label="Thông tin chi tiết *"
@@ -685,8 +709,12 @@ function NewEmployeePage() {
             >
               {degreeFields.fields.map((field, index) => (
                 <div key={field.id} className="grid grid-cols-[1fr_1fr_auto_auto] items-end gap-3">
-                  <FI form={form} name={`degrees.${index}.degreeName`} label="Tên bằng *" />
-                  <FI form={form} name={`degrees.${index}.school`} label="Trường/Nơi cấp *" />
+                  <FieldInput form={form} name={`degrees.${index}.degreeName`} label="Tên bằng *" />
+                  <FieldInput
+                    form={form}
+                    name={`degrees.${index}.school`}
+                    label="Trường/Nơi cấp *"
+                  />
                   <div>
                     <input
                       type="file"
@@ -696,6 +724,7 @@ function NewEmployeePage() {
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
+                        setUploadingCount((c) => c + 1);
                         try {
                           const uploaded = await uploadFile(file);
                           form.setValue(`degrees.${index}.degreeFileId`, uploaded.id, {
@@ -704,6 +733,8 @@ function NewEmployeePage() {
                           toast.success("Tải PDF bằng cấp thành công");
                         } catch {
                           toast.error("Tải PDF thất bại");
+                        } finally {
+                          setUploadingCount((c) => c - 1);
                         }
                       }}
                     />
@@ -727,8 +758,12 @@ function NewEmployeePage() {
             >
               {certFields.fields.map((field, index) => (
                 <div key={field.id} className="grid grid-cols-[1fr_1fr_auto_auto] items-end gap-3">
-                  <FI form={form} name={`certificates.${index}.certName`} label="Tên chứng chỉ *" />
-                  <FI form={form} name={`certificates.${index}.issuedBy`} label="Nơi cấp" />
+                  <FieldInput
+                    form={form}
+                    name={`certificates.${index}.certName`}
+                    label="Tên chứng chỉ *"
+                  />
+                  <FieldInput form={form} name={`certificates.${index}.issuedBy`} label="Nơi cấp" />
                   <div>
                     <input
                       type="file"
@@ -738,6 +773,7 @@ function NewEmployeePage() {
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
+                        setUploadingCount((c) => c + 1);
                         try {
                           const uploaded = await uploadFile(file);
                           form.setValue(`certificates.${index}.certFileId`, uploaded.id, {
@@ -746,6 +782,8 @@ function NewEmployeePage() {
                           toast.success("Tải PDF chứng chỉ thành công");
                         } catch {
                           toast.error("Tải PDF thất bại");
+                        } finally {
+                          setUploadingCount((c) => c - 1);
                         }
                       }}
                     />
@@ -774,10 +812,14 @@ function NewEmployeePage() {
               </Button>
               <Button
                 type="submit"
-                disabled={createMutation.isPending}
-                className="h-9 rounded-md bg-[#3B5CCC] px-4 text-white hover:bg-[#2F4FB8]"
+                disabled={createMutation.isPending || uploadingCount > 0}
+                className="h-9 rounded-md bg-primary px-4 text-white hover:bg-primary/90"
               >
-                {createMutation.isPending ? "Đang lưu..." : "Lưu hồ sơ nhân sự"}
+                {uploadingCount > 0
+                  ? "Đang tải file..."
+                  : createMutation.isPending
+                    ? "Đang lưu..."
+                    : "Lưu hồ sơ nhân sự"}
               </Button>
             </div>
           </form>

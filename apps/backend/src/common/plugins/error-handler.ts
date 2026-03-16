@@ -65,8 +65,16 @@ export const errorPlugin = new Elysia({ name: "error-handler" }).onError(
     if (code === "NOT_FOUND") {
       return toastError(404, "Không tìm thấy route");
     }
-    if (isPostgresError(error) && error.code === "23505") {
-      return toastError(409, "Dữ liệu đã tồn tại");
+    if (isPostgresError(error)) {
+      if (error.code === "23505") {
+        return toastError(409, "Dữ liệu đã tồn tại");
+      }
+      if (error.code === "23503") {
+        return toastError(409, "Không thể xoá vì dữ liệu đang được tham chiếu");
+      }
+      if (error.code === "23502") {
+        return toastError(400, "Thiếu dữ liệu bắt buộc");
+      }
     }
     console.error("Unhandled error:", error);
     return toastError(500, "Lỗi hệ thống");

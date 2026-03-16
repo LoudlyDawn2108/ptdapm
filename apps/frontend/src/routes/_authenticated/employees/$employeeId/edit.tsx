@@ -30,7 +30,7 @@ import {
 } from "@/features/employees/api";
 import {
   DynamicSection,
-  FI,
+  FieldInput,
   FormFieldSelect,
   RemoveBtn,
   SectionHeader,
@@ -245,6 +245,7 @@ function EditEmployeeFormContent({
   const createForeignWorkPermitMutation = useCreateForeignWorkPermit();
   const updateForeignWorkPermitMutation = useUpdateForeignWorkPermit();
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadingCount, setUploadingCount] = useState(0);
 
   const emp = aggregate.employee;
 
@@ -271,8 +272,14 @@ function EditEmployeeFormContent({
       degrees: new Set<string>(degreesData.map((x) => x.id)),
       certifications: new Set<string>(certificationsData.map((x) => x.id)),
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [
+      familyMembersData,
+      bankAccountsData,
+      previousJobsData,
+      partyMembershipsData,
+      degreesData,
+      certificationsData,
+    ],
   );
 
   const form = useForm<FormValues>({
@@ -388,21 +395,43 @@ function EditEmployeeFormContent({
       });
 
       // Phase 2: Create / Update / Delete sub-entities
-      const promises: Promise<unknown>[] = [];
+      const subEntityErrors: string[] = [];
+      const promises: Promise<void>[] = [];
 
       // --- Family Members ---
       const currentFmIds = new Set(familyMembers.filter((x) => x.id).map((x) => x.id!));
       for (const id of initialIds.familyMembers) {
         if (!currentFmIds.has(id)) {
-          promises.push(deleteFamilyMemberMutation.mutateAsync({ employeeId, id }));
+          promises.push(
+            deleteFamilyMemberMutation
+              .mutateAsync({ employeeId, id })
+              .then(() => {})
+              .catch(() => {
+                subEntityErrors.push("Thành viên gia đình");
+              }),
+          );
         }
       }
       for (const fm of familyMembers) {
         const { id, ...body } = fm;
         if (id) {
-          promises.push(updateFamilyMemberMutation.mutateAsync({ employeeId, id, ...body }));
+          promises.push(
+            updateFamilyMemberMutation
+              .mutateAsync({ employeeId, id, ...body })
+              .then(() => {})
+              .catch(() => {
+                subEntityErrors.push("Thành viên gia đình");
+              }),
+          );
         } else {
-          promises.push(createFamilyMemberMutation.mutateAsync({ employeeId, ...body }));
+          promises.push(
+            createFamilyMemberMutation
+              .mutateAsync({ employeeId, ...body })
+              .then(() => {})
+              .catch(() => {
+                subEntityErrors.push("Thành viên gia đình");
+              }),
+          );
         }
       }
 
@@ -410,15 +439,36 @@ function EditEmployeeFormContent({
       const currentBaIds = new Set(bankAccounts.filter((x) => x.id).map((x) => x.id!));
       for (const id of initialIds.bankAccounts) {
         if (!currentBaIds.has(id)) {
-          promises.push(deleteBankAccountMutation.mutateAsync({ employeeId, id }));
+          promises.push(
+            deleteBankAccountMutation
+              .mutateAsync({ employeeId, id })
+              .then(() => {})
+              .catch(() => {
+                subEntityErrors.push("Tài khoản ngân hàng");
+              }),
+          );
         }
       }
       for (const ba of bankAccounts) {
         const { id, ...body } = ba;
         if (id) {
-          promises.push(updateBankAccountMutation.mutateAsync({ employeeId, id, ...body }));
+          promises.push(
+            updateBankAccountMutation
+              .mutateAsync({ employeeId, id, ...body })
+              .then(() => {})
+              .catch(() => {
+                subEntityErrors.push("Tài khoản ngân hàng");
+              }),
+          );
         } else {
-          promises.push(createBankAccountMutation.mutateAsync({ employeeId, ...body }));
+          promises.push(
+            createBankAccountMutation
+              .mutateAsync({ employeeId, ...body })
+              .then(() => {})
+              .catch(() => {
+                subEntityErrors.push("Tài khoản ngân hàng");
+              }),
+          );
         }
       }
 
@@ -426,15 +476,36 @@ function EditEmployeeFormContent({
       const currentPjIds = new Set(previousJobs.filter((x) => x.id).map((x) => x.id!));
       for (const id of initialIds.previousJobs) {
         if (!currentPjIds.has(id)) {
-          promises.push(deletePreviousJobMutation.mutateAsync({ employeeId, id }));
+          promises.push(
+            deletePreviousJobMutation
+              .mutateAsync({ employeeId, id })
+              .then(() => {})
+              .catch(() => {
+                subEntityErrors.push("Lịch sử công tác");
+              }),
+          );
         }
       }
       for (const pj of previousJobs) {
         const { id, ...body } = pj;
         if (id) {
-          promises.push(updatePreviousJobMutation.mutateAsync({ employeeId, id, ...body }));
+          promises.push(
+            updatePreviousJobMutation
+              .mutateAsync({ employeeId, id, ...body })
+              .then(() => {})
+              .catch(() => {
+                subEntityErrors.push("Lịch sử công tác");
+              }),
+          );
         } else {
-          promises.push(createPreviousJobMutation.mutateAsync({ employeeId, ...body }));
+          promises.push(
+            createPreviousJobMutation
+              .mutateAsync({ employeeId, ...body })
+              .then(() => {})
+              .catch(() => {
+                subEntityErrors.push("Lịch sử công tác");
+              }),
+          );
         }
       }
 
@@ -442,15 +513,36 @@ function EditEmployeeFormContent({
       const currentPmIds = new Set(partyMemberships.filter((x) => x.id).map((x) => x.id!));
       for (const id of initialIds.partyMemberships) {
         if (!currentPmIds.has(id)) {
-          promises.push(deletePartyMembershipMutation.mutateAsync({ employeeId, id }));
+          promises.push(
+            deletePartyMembershipMutation
+              .mutateAsync({ employeeId, id })
+              .then(() => {})
+              .catch(() => {
+                subEntityErrors.push("Đoàn/Đảng");
+              }),
+          );
         }
       }
       for (const pm of partyMemberships) {
         const { id, ...body } = pm;
         if (id) {
-          promises.push(updatePartyMembershipMutation.mutateAsync({ employeeId, id, ...body }));
+          promises.push(
+            updatePartyMembershipMutation
+              .mutateAsync({ employeeId, id, ...body })
+              .then(() => {})
+              .catch(() => {
+                subEntityErrors.push("Đoàn/Đảng");
+              }),
+          );
         } else {
-          promises.push(createPartyMembershipMutation.mutateAsync({ employeeId, ...body }));
+          promises.push(
+            createPartyMembershipMutation
+              .mutateAsync({ employeeId, ...body })
+              .then(() => {})
+              .catch(() => {
+                subEntityErrors.push("Đoàn/Đảng");
+              }),
+          );
         }
       }
 
@@ -458,23 +550,42 @@ function EditEmployeeFormContent({
       const currentDegreeIds = new Set(degrees.filter((x) => x.id).map((x) => x.id!));
       for (const id of initialIds.degrees) {
         if (!currentDegreeIds.has(id)) {
-          promises.push(deleteDegreeMutation.mutateAsync({ employeeId, id }));
+          promises.push(
+            deleteDegreeMutation
+              .mutateAsync({ employeeId, id })
+              .then(() => {})
+              .catch(() => {
+                subEntityErrors.push("Bằng cấp");
+              }),
+          );
         }
       }
       for (const d of degrees) {
         if (d.id) {
           promises.push(
-            updateDegreeMutation.mutateAsync({
-              employeeId,
-              id: d.id,
-              degreeName: d.degreeName,
-              school: d.school,
-              degreeFileId: d.degreeFileId || undefined,
-            }),
+            updateDegreeMutation
+              .mutateAsync({
+                employeeId,
+                id: d.id,
+                degreeName: d.degreeName,
+                school: d.school,
+                degreeFileId: d.degreeFileId || undefined,
+              })
+              .then(() => {})
+              .catch(() => {
+                subEntityErrors.push("Bằng cấp");
+              }),
           );
         } else {
           const { id: _id, ...body } = d;
-          promises.push(createDegreeMutation.mutateAsync({ employeeId, ...body }));
+          promises.push(
+            createDegreeMutation
+              .mutateAsync({ employeeId, ...body })
+              .then(() => {})
+              .catch(() => {
+                subEntityErrors.push("Bằng cấp");
+              }),
+          );
         }
       }
 
@@ -482,23 +593,42 @@ function EditEmployeeFormContent({
       const currentCertIds = new Set(certificates.filter((x) => x.id).map((x) => x.id!));
       for (const id of initialIds.certifications) {
         if (!currentCertIds.has(id)) {
-          promises.push(deleteCertificationMutation.mutateAsync({ employeeId, id }));
+          promises.push(
+            deleteCertificationMutation
+              .mutateAsync({ employeeId, id })
+              .then(() => {})
+              .catch(() => {
+                subEntityErrors.push("Chứng chỉ");
+              }),
+          );
         }
       }
       for (const c of certificates) {
         if (c.id) {
           promises.push(
-            updateCertificationMutation.mutateAsync({
-              employeeId,
-              id: c.id,
-              certName: c.certName,
-              issuedBy: c.issuedBy || undefined,
-              certFileId: c.certFileId || undefined,
-            }),
+            updateCertificationMutation
+              .mutateAsync({
+                employeeId,
+                id: c.id,
+                certName: c.certName,
+                issuedBy: c.issuedBy || undefined,
+                certFileId: c.certFileId || undefined,
+              })
+              .then(() => {})
+              .catch(() => {
+                subEntityErrors.push("Chứng chỉ");
+              }),
           );
         } else {
           const { id: _id, ...body } = c;
-          promises.push(createCertificationMutation.mutateAsync({ employeeId, ...body }));
+          promises.push(
+            createCertificationMutation
+              .mutateAsync({ employeeId, ...body })
+              .then(() => {})
+              .catch(() => {
+                subEntityErrors.push("Chứng chỉ");
+              }),
+          );
         }
       }
 
@@ -525,20 +655,37 @@ function EditEmployeeFormContent({
           };
           if (foreignWorkPermitsData[0]?.id) {
             promises.push(
-              updateForeignWorkPermitMutation.mutateAsync({
-                ...permitPayload,
-                id: foreignWorkPermitsData[0].id,
-              }),
+              updateForeignWorkPermitMutation
+                .mutateAsync({
+                  ...permitPayload,
+                  id: foreignWorkPermitsData[0].id,
+                })
+                .then(() => {})
+                .catch(() => {
+                  subEntityErrors.push("Giấy phép lao động");
+                }),
             );
           } else {
-            promises.push(createForeignWorkPermitMutation.mutateAsync(permitPayload));
+            promises.push(
+              createForeignWorkPermitMutation
+                .mutateAsync(permitPayload)
+                .then(() => {})
+                .catch(() => {
+                  subEntityErrors.push("Giấy phép lao động");
+                }),
+            );
           }
         }
       }
 
       await Promise.all(promises);
 
-      toast.success("Cập nhật hồ sơ thành công");
+      if (subEntityErrors.length > 0) {
+        const unique = [...new Set(subEntityErrors)];
+        toast.warning(`Đã lưu thông tin chính nhưng lỗi: ${unique.join(", ")}`);
+      } else {
+        toast.success("Cập nhật hồ sơ thành công");
+      }
       navigate({
         to: "/employees/$employeeId",
         params: { employeeId },
@@ -556,7 +703,7 @@ function EditEmployeeFormContent({
   return (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center gap-2 border-b border-slate-200 px-6 py-4">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E9EEFF] text-[#3B5CCC]">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <Pencil className="h-4 w-4" />
         </div>
         <h1 className="text-sm font-semibold text-slate-800">Cập nhật hồ sơ nhân sự</h1>
@@ -601,6 +748,7 @@ function EditEmployeeFormContent({
                         return;
                       }
 
+                      setUploadingCount((c) => c + 1);
                       try {
                         const uploadedFile = await uploadFile(file);
                         form.setValue("portraitFileId", uploadedFile.id, {
@@ -612,37 +760,39 @@ function EditEmployeeFormContent({
                           shouldDirty: true,
                           shouldValidate: true,
                         });
+                      } finally {
+                        setUploadingCount((c) => c - 1);
                       }
                     }}
                   />
                 </div>
                 <div className="grid flex-1 grid-cols-2 gap-4">
-                  <FI form={form} name="fullName" label="Họ tên *" />
+                  <FieldInput form={form} name="fullName" label="Họ tên *" />
                   <FormFieldSelect
                     form={form}
                     name="gender"
                     label="Giới tính *"
                     items={enumToSortedList(Gender)}
                   />
-                  <FI form={form} name="dob" label="Ngày sinh *" type="date" />
-                  <FI form={form} name="hometown" label="Quê quán *" />
+                  <FieldInput form={form} name="dob" label="Ngày sinh *" type="date" />
+                  <FieldInput form={form} name="hometown" label="Quê quán *" />
                 </div>
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-4">
-                <FI form={form} name="email" label="Email *" type="email" />
-                <FI form={form} name="phone" label="Số điện thoại *" />
+                <FieldInput form={form} name="email" label="Email *" type="email" />
+                <FieldInput form={form} name="phone" label="Số điện thoại *" />
               </div>
 
               <div className="mt-4 grid grid-cols-1 gap-4">
-                <FI form={form} name="address" label="Địa chỉ *" />
+                <FieldInput form={form} name="address" label="Địa chỉ *" />
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-4">
-                <FI form={form} name="nationalId" label="CCCD *" />
-                <FI form={form} name="taxCode" label="Mã số thuế" />
-                <FI form={form} name="socialInsuranceNo" label="Số bảo hiểm xã hội" />
-                <FI form={form} name="healthInsuranceNo" label="Số bảo hiểm y tế" />
+                <FieldInput form={form} name="nationalId" label="CCCD *" />
+                <FieldInput form={form} name="taxCode" label="Mã số thuế" />
+                <FieldInput form={form} name="socialInsuranceNo" label="Số bảo hiểm xã hội" />
+                <FieldInput form={form} name="healthInsuranceNo" label="Số bảo hiểm y tế" />
               </div>
             </section>
 
@@ -670,17 +820,22 @@ function EditEmployeeFormContent({
               </div>
               {showForeigner && (
                 <div className="mt-4 grid grid-cols-2 gap-4">
-                  <FI form={form} name="visaNumber" label="Số Visa *" />
-                  <FI form={form} name="visaExpiry" label="Ngày hết hạn Visa *" type="date" />
-                  <FI form={form} name="passportNumber" label="Số Hộ chiếu *" />
-                  <FI
+                  <FieldInput form={form} name="visaNumber" label="Số Visa *" />
+                  <FieldInput
+                    form={form}
+                    name="visaExpiry"
+                    label="Ngày hết hạn Visa *"
+                    type="date"
+                  />
+                  <FieldInput form={form} name="passportNumber" label="Số Hộ chiếu *" />
+                  <FieldInput
                     form={form}
                     name="passportExpiry"
                     label="Ngày hết hạn Hộ chiếu *"
                     type="date"
                   />
-                  <FI form={form} name="workPermitNumber" label="Số giấy phép lao động *" />
-                  <FI
+                  <FieldInput form={form} name="workPermitNumber" label="Số giấy phép lao động *" />
+                  <FieldInput
                     form={form}
                     name="workPermitExpiry"
                     label="Ngày hết hạn giấy phép lao động *"
@@ -695,6 +850,7 @@ function EditEmployeeFormContent({
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
+                        setUploadingCount((c) => c + 1);
                         try {
                           const uploaded = await uploadFile(file);
                           form.setValue("workPermitFileId", uploaded.id, {
@@ -703,6 +859,8 @@ function EditEmployeeFormContent({
                           toast.success("Tải PDF giấy phép lao động thành công");
                         } catch {
                           toast.error("Tải PDF thất bại");
+                        } finally {
+                          setUploadingCount((c) => c - 1);
                         }
                       }}
                     />
@@ -736,7 +894,11 @@ function EditEmployeeFormContent({
                     label="Mối quan hệ *"
                     items={enumToSortedList(FamilyRelation)}
                   />
-                  <FI form={form} name={`familyMembers.${index}.fullName`} label="Họ tên *" />
+                  <FieldInput
+                    form={form}
+                    name={`familyMembers.${index}.fullName`}
+                    label="Họ tên *"
+                  />
                   <RemoveBtn onClick={() => familyFields.remove(index)} />
                 </div>
               ))}
@@ -752,18 +914,18 @@ function EditEmployeeFormContent({
                   key={field.id}
                   className="grid grid-cols-[1fr_140px_140px_auto] items-end gap-3"
                 >
-                  <FI
+                  <FieldInput
                     form={form}
                     name={`previousJobs.${index}.workplace`}
                     label="Tên nơi công tác *"
                   />
-                  <FI
+                  <FieldInput
                     form={form}
                     name={`previousJobs.${index}.startedOn`}
                     label="Từ ngày *"
                     type="date"
                   />
-                  <FI
+                  <FieldInput
                     form={form}
                     name={`previousJobs.${index}.endedOn`}
                     label="Đến ngày *"
@@ -781,8 +943,16 @@ function EditEmployeeFormContent({
             >
               {bankFields.fields.map((field, index) => (
                 <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] items-end gap-3">
-                  <FI form={form} name={`bankAccounts.${index}.bankName`} label="Tên ngân hàng *" />
-                  <FI form={form} name={`bankAccounts.${index}.accountNo`} label="Số tài khoản *" />
+                  <FieldInput
+                    form={form}
+                    name={`bankAccounts.${index}.bankName`}
+                    label="Tên ngân hàng *"
+                  />
+                  <FieldInput
+                    form={form}
+                    name={`bankAccounts.${index}.accountNo`}
+                    label="Số tài khoản *"
+                  />
                   <RemoveBtn onClick={() => bankFields.remove(index)} />
                 </div>
               ))}
@@ -804,13 +974,13 @@ function EditEmployeeFormContent({
                     label="Loại tổ chức *"
                     items={enumToSortedList(PartyOrgType)}
                   />
-                  <FI
+                  <FieldInput
                     form={form}
                     name={`partyMemberships.${index}.joinedOn`}
                     label="Ngày gia nhập *"
                     type="date"
                   />
-                  <FI
+                  <FieldInput
                     form={form}
                     name={`partyMemberships.${index}.details`}
                     label="Thông tin chi tiết *"
@@ -846,8 +1016,12 @@ function EditEmployeeFormContent({
             >
               {degreeFields.fields.map((field, index) => (
                 <div key={field.id} className="grid grid-cols-[1fr_1fr_auto_auto] items-end gap-3">
-                  <FI form={form} name={`degrees.${index}.degreeName`} label="Tên bằng *" />
-                  <FI form={form} name={`degrees.${index}.school`} label="Trường/Nơi cấp *" />
+                  <FieldInput form={form} name={`degrees.${index}.degreeName`} label="Tên bằng *" />
+                  <FieldInput
+                    form={form}
+                    name={`degrees.${index}.school`}
+                    label="Trường/Nơi cấp *"
+                  />
                   <div>
                     <input
                       type="file"
@@ -857,6 +1031,7 @@ function EditEmployeeFormContent({
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
+                        setUploadingCount((c) => c + 1);
                         try {
                           const uploaded = await uploadFile(file);
                           form.setValue(`degrees.${index}.degreeFileId`, uploaded.id, {
@@ -865,6 +1040,8 @@ function EditEmployeeFormContent({
                           toast.success("Tải PDF bằng cấp thành công");
                         } catch {
                           toast.error("Tải PDF thất bại");
+                        } finally {
+                          setUploadingCount((c) => c - 1);
                         }
                       }}
                     />
@@ -888,8 +1065,12 @@ function EditEmployeeFormContent({
             >
               {certFields.fields.map((field, index) => (
                 <div key={field.id} className="grid grid-cols-[1fr_1fr_auto_auto] items-end gap-3">
-                  <FI form={form} name={`certificates.${index}.certName`} label="Tên chứng chỉ *" />
-                  <FI form={form} name={`certificates.${index}.issuedBy`} label="Nơi cấp" />
+                  <FieldInput
+                    form={form}
+                    name={`certificates.${index}.certName`}
+                    label="Tên chứng chỉ *"
+                  />
+                  <FieldInput form={form} name={`certificates.${index}.issuedBy`} label="Nơi cấp" />
                   <div>
                     <input
                       type="file"
@@ -899,6 +1080,7 @@ function EditEmployeeFormContent({
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
+                        setUploadingCount((c) => c + 1);
                         try {
                           const uploaded = await uploadFile(file);
                           form.setValue(`certificates.${index}.certFileId`, uploaded.id, {
@@ -907,6 +1089,8 @@ function EditEmployeeFormContent({
                           toast.success("Tải PDF chứng chỉ thành công");
                         } catch {
                           toast.error("Tải PDF thất bại");
+                        } finally {
+                          setUploadingCount((c) => c - 1);
                         }
                       }}
                     />
@@ -940,11 +1124,15 @@ function EditEmployeeFormContent({
               </Button>
               <Button
                 type="submit"
-                disabled={updateMutation.isPending || isSaving}
-                className="h-9 rounded-md bg-[#3B5CCC] px-4 text-white hover:bg-[#2F4FB8]"
+                disabled={updateMutation.isPending || isSaving || uploadingCount > 0}
+                className="h-9 rounded-md bg-primary px-4 text-white hover:bg-primary/90"
               >
                 <Save className="mr-2 h-4 w-4" />
-                {updateMutation.isPending || isSaving ? "Đang lưu..." : "Lưu thay đổi"}
+                {uploadingCount > 0
+                  ? "Đang tải file..."
+                  : updateMutation.isPending || isSaving
+                    ? "Đang lưu..."
+                    : "Lưu thay đổi"}
               </Button>
             </div>
           </form>
@@ -972,7 +1160,7 @@ function FileUploadButton({
     <Button
       type="button"
       className={`h-8 rounded-md px-3 text-xs text-white ${
-        value ? "bg-green-600 hover:bg-green-700" : "bg-[#3B5CCC] hover:bg-[#2F4FB8]"
+        value ? "bg-green-600 hover:bg-green-700" : "bg-primary hover:bg-primary/90"
       }`}
       onClick={() => document.getElementById(inputId)?.click()}
     >

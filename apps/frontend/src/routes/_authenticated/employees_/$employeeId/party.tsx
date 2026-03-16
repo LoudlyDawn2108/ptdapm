@@ -1,10 +1,8 @@
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { employeeDetailOptions } from "@/features/employees/api";
-import type { EmployeeAggregate } from "@/features/employees/types";
+import { useEmployeeDetail } from "@/features/employees/api";
 import { formatDate } from "@/lib/date-utils";
 import { PartyOrgType } from "@hrms/shared";
-import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/employees_/$employeeId/party")({
@@ -13,8 +11,7 @@ export const Route = createFileRoute("/_authenticated/employees_/$employeeId/par
 
 function PartyTab() {
   const { employeeId } = Route.useParams();
-  const { data, isLoading } = useQuery(employeeDetailOptions(employeeId));
-  const aggregate = data?.data as EmployeeAggregate | undefined;
+  const { aggregate, isLoading } = useEmployeeDetail(employeeId);
 
   if (isLoading) return <FormSkeleton fields={3} />;
   if (!aggregate) return null;

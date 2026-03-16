@@ -35,7 +35,7 @@ export function RequiredLabel({ label }: { label: string }) {
   );
 }
 
-export function FI<T extends FieldValues>({
+export function FieldInput<T extends FieldValues>({
   form,
   name,
   label,
@@ -128,7 +128,7 @@ export function DynamicSection({
           type="button"
           variant="ghost"
           size="icon"
-          className="h-6 w-6 rounded-full bg-[#E9EEFF] text-[#3B5CCC] hover:bg-[#DCE6FF]"
+          className="h-6 w-6 rounded-full bg-primary/10 text-primary hover:bg-primary/15"
           onClick={onAdd}
         >
           <Plus className="h-3.5 w-3.5" />

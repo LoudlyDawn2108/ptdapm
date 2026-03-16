@@ -6,7 +6,8 @@ import type {
   UpdateEmployeeInput,
   UpdateEmploymentContractInput,
 } from "@hrms/shared";
-import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { EmployeeAggregate } from "./types";
 
 export type UploadedFile = {
   id: string;
@@ -118,6 +119,12 @@ export const myEmployeeOptions = () =>
       return data;
     },
   });
+
+export function useEmployeeDetail(employeeId: string) {
+  const { data, isLoading } = useQuery(employeeDetailOptions(employeeId));
+  const aggregate = data?.data as EmployeeAggregate | undefined;
+  return { aggregate, employee: aggregate?.employee, isLoading };
+}
 
 // ──────────────────────────────────────────
 // Mutations

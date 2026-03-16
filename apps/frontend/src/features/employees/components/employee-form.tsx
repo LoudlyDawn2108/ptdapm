@@ -14,27 +14,25 @@ import {
 import { fetchOrgUnitDropdown, fetchSalaryGradeDropdown } from "@/lib/api/config-dropdowns";
 import { applyFieldErrors } from "@/lib/error-handler";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { CreateEmployeeInput } from "@hrms/shared";
+import type { CreateEmployeeFormInput, CreateEmployeeInput } from "@hrms/shared";
 import {
   AcademicRank,
-  AcademicTitle,
   ContractStatus,
-  type CreateEmployeeFormInput,
   EducationLevel,
   Gender,
-  TrainingLevel,
   WorkStatus,
   createEmployeeSchema,
   enumToSortedList,
 } from "@hrms/shared";
 import { Loader2, Save } from "lucide-react";
-import { Controller, type Path, type Resolver, useForm } from "react-hook-form";
+import { Controller, type Path, useForm } from "react-hook-form";
 
-type FormValues = CreateEmployeeFormInput;
+type FormInput = CreateEmployeeFormInput;
+type FormOutput = CreateEmployeeInput;
 
 interface EmployeeFormProps {
-  defaultValues?: Partial<FormValues>;
-  onSubmitAction: (values: CreateEmployeeInput) => Promise<void>;
+  defaultValues?: Partial<FormInput>;
+  onSubmitAction: (values: FormOutput) => Promise<void>;
   isPending: boolean;
   submitLabel?: string;
   pendingLabel?: string;
@@ -47,8 +45,8 @@ export function EmployeeForm({
   submitLabel = "Lưu nhân sự",
   pendingLabel = "Đang lưu...",
 }: EmployeeFormProps) {
-  const form = useForm<FormValues>({
-    resolver: zodResolver(createEmployeeSchema) as unknown as Resolver<FormValues>,
+  const form = useForm<FormInput, unknown, FormOutput>({
+    resolver: zodResolver(createEmployeeSchema),
     defaultValues: {
       fullName: "",
       dob: "",
@@ -60,8 +58,6 @@ export function EmployeeForm({
       phone: "",
       isForeigner: false,
       educationLevel: "",
-      trainingLevel: "",
-      academicTitle: "",
       academicRank: "",
       workStatus: "pending",
       contractStatus: "none",
@@ -74,14 +70,14 @@ export function EmployeeForm({
 
   const onSubmit = form.handleSubmit(async (values) => {
     try {
-      await onSubmitAction(values as unknown as CreateEmployeeInput);
+      await onSubmitAction(values);
     } catch (error) {
       applyFieldErrors(form.setError, error);
     }
   });
 
   const renderSelect = (
-    name: Path<FormValues>,
+    name: Path<FormInput>,
     label: string,
     items: { code: string; label: string }[],
   ) => (
@@ -109,7 +105,7 @@ export function EmployeeForm({
   );
 
   const renderInput = (
-    name: Path<FormValues>,
+    name: Path<FormInput>,
     label: string,
     type = "text",
     placeholder?: string,
@@ -214,12 +210,6 @@ export function EmployeeForm({
               enumToSortedList(ContractStatus),
             )}
             {renderSelect("educationLevel", "Trình độ văn hóa", enumToSortedList(EducationLevel))}
-            {renderSelect("trainingLevel", "Trình độ đào tạo", enumToSortedList(TrainingLevel))}
-            {renderSelect(
-              "academicTitle",
-              "Chức danh nghề nghiệp",
-              enumToSortedList(AcademicTitle),
-            )}
             {renderSelect("academicRank", "Học hàm", enumToSortedList(AcademicRank))}
           </CardContent>
         </Card>

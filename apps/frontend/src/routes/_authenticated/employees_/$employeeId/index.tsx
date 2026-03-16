@@ -1,11 +1,9 @@
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { ReadOnlyField } from "@/components/shared/read-only-field";
 import { Button } from "@/components/ui/button";
-import { employeeDetailOptions, getFileUrl } from "@/features/employees/api";
-import type { EmployeeAggregate } from "@/features/employees/types";
+import { getFileUrl, useEmployeeDetail } from "@/features/employees/api";
 import { formatDate } from "@/lib/date-utils";
 import { Gender } from "@hrms/shared";
-import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Eye, Plus } from "lucide-react";
 
@@ -15,10 +13,7 @@ export const Route = createFileRoute("/_authenticated/employees_/$employeeId/")(
 
 function GeneralInfoTab() {
   const { employeeId } = Route.useParams();
-  const { data, isLoading } = useQuery(employeeDetailOptions(employeeId));
-
-  const aggregate = data?.data as EmployeeAggregate | undefined;
-  const emp = aggregate?.employee;
+  const { aggregate, employee: emp, isLoading } = useEmployeeDetail(employeeId);
   const partyMemberships = aggregate?.partyMemberships;
   const bankAccounts = aggregate?.bankAccounts;
   const foreignWorkPermits = aggregate?.foreignWorkPermits;
