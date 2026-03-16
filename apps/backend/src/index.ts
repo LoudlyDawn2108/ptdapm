@@ -28,6 +28,7 @@ import { orgUnitRoutes } from "./modules/org-units";
 import { partyMembershipRoutes } from "./modules/party-memberships";
 import { previousJobRoutes } from "./modules/previous-jobs";
 import { terminationRoutes } from "./modules/terminations";
+import { trainingTypeConfigRoutes } from "./modules/config/training-types";
 import { trainingCourseRoutes } from "./modules/training-courses";
 import { trainingRegistrationRoutes } from "./modules/training-registrations";
 import { trainingResultRoutes } from "./modules/training-results";
@@ -67,6 +68,7 @@ const app = new Elysia()
   .use(contractTypeRoutes)
   .use(salaryGradeRoutes)
   .use(allowanceTypeRoutes)
+  .use(trainingTypeConfigRoutes)
   .use(orgUnitRoutes)
   .use(assignmentRoutes)
   .use(dashboardRoutes)
