@@ -21,6 +21,9 @@ export const ROUTE_PERMISSIONS: Record<string, RoleCode[]> = {
   "/config/salary-grades": ["ADMIN", "TCCB"],
   "/config/allowance-types": ["ADMIN", "TCCB"],
   "/config/contract-types": ["ADMIN", "TCCB"],
+
+  // --- Đào tạo ---
+  "/training": ["ADMIN", "TCCB"],
 };
 
 export function canAccessRoute(role: RoleCode, path: string): boolean {

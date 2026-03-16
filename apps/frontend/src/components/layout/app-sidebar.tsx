@@ -17,6 +17,7 @@ import {
   Building2,
   CircleUserRound,
   ClipboardList,
+  GraduationCap,
   type LucideIcon,
   Settings,
   UsersRound,
@@ -77,6 +78,16 @@ const navGroups: NavGroupConfig[] = [
         title: "Hợp đồng",
         to: "/config/contract-types",
         icon: ClipboardList,
+      },
+    ],
+  },
+  {
+    label: "Đào tạo",
+    items: [
+      {
+        title: "Khóa đào tạo",
+        to: "/training",
+        icon: GraduationCap,
       },
     ],
   },
