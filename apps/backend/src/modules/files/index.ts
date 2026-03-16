@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 import { z } from "zod";
 import { authPlugin } from "../../common/plugins/auth";
+import { ForbiddenError } from "../../common/utils/errors";
 import { requireRole } from "../../common/utils/role-guard";
 import * as fileService from "./files.service";
 
@@ -26,8 +27,16 @@ export const fileRoutes = new Elysia({ prefix: "/api/files" })
   )
   .get(
     "/:id",
-    async ({ params }) => {
+    async ({ params, user }) => {
       const { fileRecord, bunFile } = await fileService.getFileById(params.id);
+
+      // ADMIN/TCCB can download any file; other roles only their own uploads
+      if (user.role !== "ADMIN" && user.role !== "TCCB") {
+        if (fileRecord.uploadedByUserId !== user.id) {
+          throw new ForbiddenError("Không có quyền tải file này");
+        }
+      }
+
       const encoded = encodeURIComponent(fileRecord.originalName);
       const contentType = fileRecord.mimeType || "application/octet-stream";
       const disposition = INLINE_MIME_TYPES.has(contentType) ? "inline" : "attachment";
