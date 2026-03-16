@@ -25,7 +25,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { contractTypeListOptions } from "@/features/config/contract-types/api";
-import { useCreateContract, useEmployeeDetail, useUpdateContract } from "@/features/employees/api";
+import {
+  uploadFile,
+  useCreateContract,
+  useEmployeeDetail,
+  useUpdateContract,
+} from "@/features/employees/api";
 import type { EmploymentContract } from "@/features/employees/types";
 
 /** Contract with optional joined display names from the API */
@@ -46,8 +51,8 @@ import {
 } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Eye, Pencil, Plus } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Eye, Pencil, Plus, Save, Upload } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { type UseFormSetError, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -88,6 +93,7 @@ function ContractsTab() {
   const [editingContract, setEditingContract] = useState<ContractRow | null>(null);
   const [viewingContract, setViewingContract] = useState<ContractRow | null>(null);
   const contracts = aggregate?.contracts as ContractRow[] | undefined;
+  const staffCode = aggregate?.employee?.staffCode ?? "";
   const contractTypes = (contractTypesData?.data?.items ?? []) as Array<{
     id: string;
     contractTypeName: string;
@@ -217,8 +223,8 @@ function ContractsTab() {
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         title="Thêm hợp đồng"
-        description="Nhập thông tin hợp đồng lao động cho nhân sự."
-        submitLabel="Thêm hợp đồng"
+        submitLabel="Lưu hợp đồng"
+        staffCode={staffCode}
         contractTypes={contractTypes}
         orgUnits={orgUnitOptions}
         isSubmitting={createContract.isPending}
@@ -231,8 +237,8 @@ function ContractsTab() {
           if (!open) setEditingContract(null);
         }}
         title="Chỉnh sửa hợp đồng"
-        description="Cập nhật thông tin hợp đồng lao động."
-        submitLabel="Lưu thay đổi"
+        submitLabel="Lưu hợp đồng"
+        staffCode={staffCode}
         contract={editingContract}
         contractTypes={contractTypes}
         orgUnits={orgUnitOptions}
@@ -265,8 +271,8 @@ function ContractFormDialog({
   open,
   onOpenChange,
   title,
-  description,
   submitLabel,
+  staffCode,
   contract,
   contractTypes,
   orgUnits,
@@ -276,8 +282,8 @@ function ContractFormDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  description: string;
   submitLabel: string;
+  staffCode?: string;
   contract?: ContractRow | null;
   contractTypes: Array<{ id: string; contractTypeName: string }>;
   orgUnits: Array<{ id: string; unitName: string }>;
@@ -287,11 +293,14 @@ function ContractFormDialog({
     setError: UseFormSetError<CreateEmploymentContractInput>,
   ) => Promise<void>;
 }) {
+  const isEditing = !!contract;
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const form = useForm<CreateEmploymentContractInput>({
     resolver: zodResolver(createEmploymentContractSchema),
     defaultValues: {
       contractTypeId: "",
-      contractNo: "",
+      contractNo: undefined,
       signedOn: "",
       effectiveFrom: "",
       effectiveTo: "",
@@ -306,7 +315,7 @@ function ContractFormDialog({
 
     form.reset({
       contractTypeId: contract?.contractTypeId ?? "",
-      contractNo: contract?.contractNo ?? "",
+      contractNo: contract?.contractNo ?? undefined,
       signedOn: formatForInput(contract?.signedOn),
       effectiveFrom: formatForInput(contract?.effectiveFrom),
       effectiveTo: formatForInput(contract?.effectiveTo),
@@ -318,10 +327,28 @@ function ContractFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent showCloseButton={false} className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              {isEditing ? (
+                <Pencil className="h-4 w-4" />
+              ) : (
+                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-50 text-blue-700">
+                  <Plus className="h-4 w-4" />
+                </span>
+              )}
+              {title}
+            </DialogTitle>
+            {staffCode && (
+              <span className="rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+                Mã nhân sự: {staffCode}
+              </span>
+            )}
+          </div>
+          <DialogDescription className="sr-only">
+            Nhập thông tin hợp đồng lao động.
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -329,55 +356,29 @@ function ContractFormDialog({
             onSubmit={form.handleSubmit((values) => onSubmit(values, form.setError))}
             className="space-y-4"
           >
-            <FormField
-              control={form.control}
-              name="contractTypeId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Loại hợp đồng</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn loại hợp đồng" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {contractTypes.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.contractTypeName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="contractNo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Số hợp đồng</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value ?? ""} placeholder="Nhập số hợp đồng" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
-                name="signedOn"
+                name="contractTypeId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Ngày ký</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} value={field.value ?? ""} />
-                    </FormControl>
+                    <FormLabel>
+                      Loại hợp đồng <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Chọn loại hợp đồng" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {contractTypes.map((item) => (
+                          <SelectItem key={item.id} value={item.id}>
+                            {item.contractTypeName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -385,10 +386,30 @@ function ContractFormDialog({
 
               <FormField
                 control={form.control}
+                name="signedOn"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Ngày ký <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
                 name="effectiveFrom"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Ngày hiệu lực</FormLabel>
+                    <FormLabel>
+                      Ngày hiệu lực <span className="text-red-500">*</span>
+                    </FormLabel>
                     <FormControl>
                       <Input type="date" {...field} value={field.value ?? ""} />
                     </FormControl>
@@ -402,7 +423,9 @@ function ContractFormDialog({
                 name="effectiveTo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Ngày hết hạn</FormLabel>
+                    <FormLabel>
+                      Ngày hết hạn <span className="text-red-500">*</span>
+                    </FormLabel>
                     <FormControl>
                       <Input type="date" {...field} value={field.value ?? ""} />
                     </FormControl>
@@ -412,36 +435,75 @@ function ContractFormDialog({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="orgUnitId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Đơn vị công tác</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn đơn vị công tác" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {orgUnits.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.unitName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-[1fr_auto] gap-4 items-end">
+              <FormField
+                control={form.control}
+                name="orgUnitId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Đơn vị công tác theo hợp đồng <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Chọn đơn vị công tác" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {orgUnits.map((item) => (
+                          <SelectItem key={item.id} value={item.id}>
+                            {item.unitName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                type="button"
+                disabled={isUploading}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="mr-1.5 h-3.5 w-3.5" />
+                {isUploading
+                  ? "Đang tải..."
+                  : form.watch("contractFileId")
+                    ? "Đã tải PDF"
+                    : "Tải PDF"}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setIsUploading(true);
+                  try {
+                    const uploaded = await uploadFile(file);
+                    form.setValue("contractFileId", uploaded.id, { shouldDirty: true });
+                    toast.success("Tải PDF hợp đồng thành công");
+                  } catch {
+                    toast.error("Tải PDF thất bại");
+                  } finally {
+                    setIsUploading(false);
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                  }
+                }}
+              />
+            </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Hủy
               </Button>
               <Button type="submit" disabled={isSubmitting}>
+                <Save className="mr-1.5 h-3.5 w-3.5" />
                 {isSubmitting ? "Đang lưu..." : submitLabel}
               </Button>
             </DialogFooter>
