@@ -27,6 +27,12 @@ import { foreignWorkPermitRoutes } from "./modules/foreign-work-permits";
 import { orgUnitRoutes } from "./modules/org-units";
 import { partyMembershipRoutes } from "./modules/party-memberships";
 import { previousJobRoutes } from "./modules/previous-jobs";
+import { terminationRoutes } from "./modules/terminations";
+import { trainingCourseRoutes } from "./modules/training-courses";
+import { trainingRegistrationRoutes } from "./modules/training-registrations";
+import { trainingResultRoutes } from "./modules/training-results";
+import { myTrainingRoutes } from "./modules/training";
+import { evaluationRoutes } from "./modules/evaluations";
 
 const app = new Elysia()
   .use(cors({ origin: env.FRONTEND_URL, credentials: true }))
@@ -71,6 +77,12 @@ const app = new Elysia()
   .use(foreignWorkPermitRoutes)
   .use(accountRoutes)
   .use(contractAppendixRoutes)
+  .use(terminationRoutes)
+  .use(evaluationRoutes)
+  .use(trainingCourseRoutes)
+  .use(trainingRegistrationRoutes)
+  .use(trainingResultRoutes)
+  .use(myTrainingRoutes)
   .listen(env.PORT);
 
 console.log(`🦊 Server running at http://localhost:${app.server?.port}`);
