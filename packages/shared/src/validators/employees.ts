@@ -352,15 +352,33 @@ export type CreateEmployeeDegreeInput = z.infer<typeof createEmployeeDegreeSchem
 export const updateEmployeeDegreeSchema = createEmployeeDegreeSchema.partial();
 export type UpdateEmployeeDegreeInput = z.infer<typeof updateEmployeeDegreeSchema>;
 
-export const createEmployeeCertificationSchema = z.object({
+const certificationFieldsSchema = z.object({
   certName: z
     .string({ error: "Tên chứng chỉ không được để trống" })
     .min(1, "Tên chứng chỉ không được để trống"),
   issuedBy: optionalText(),
+  issuedOn: optionalDate(),
+  expiresOn: optionalDate(),
   certFileId: optionalUuid("File chứng chỉ không hợp lệ"),
 });
+
+export const createEmployeeCertificationSchema = certificationFieldsSchema.superRefine(
+  (data, ctx) => {
+    if (data.issuedOn && data.expiresOn) {
+      const issued = new Date(data.issuedOn);
+      const expires = new Date(data.expiresOn);
+      if (!Number.isNaN(issued.getTime()) && !Number.isNaN(expires.getTime()) && expires < issued) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Ngày hết hạn phải sau ngày cấp",
+          path: ["expiresOn"],
+        });
+      }
+    }
+  },
+);
 export type CreateEmployeeCertificationInput = z.infer<typeof createEmployeeCertificationSchema>;
-export const updateEmployeeCertificationSchema = createEmployeeCertificationSchema.partial();
+export const updateEmployeeCertificationSchema = certificationFieldsSchema.partial();
 export type UpdateEmployeeCertificationInput = z.infer<typeof updateEmployeeCertificationSchema>;
 
 export const createForeignWorkPermitSchema = z.object({

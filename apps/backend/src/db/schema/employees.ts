@@ -186,10 +186,8 @@ export type NewEmployeeDegree = typeof employeeDegrees.$inferInsert;
 /**
  * Employee certifications table.
  *
- * NOTE: `issuedOn` and `expiresOn` date columns were intentionally omitted from this schema.
- * The current design stores only the cert name, issuer, and an optional file attachment.
- * If date tracking is needed in the future, these columns can be added via a new migration.
- * Current data is test-only — no production data migration required.
+ * NOTE: `issuedOn` and `expiresOn` are optional date columns that track the
+ * certification validity period (issue date and expiration date).
  */
 export const employeeCertifications = pgTable("employee_certifications", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -198,6 +196,8 @@ export const employeeCertifications = pgTable("employee_certifications", {
     .references(() => employees.id, { onDelete: "cascade" }),
   certName: varchar("cert_name", { length: 255 }).notNull(),
   issuedBy: varchar("issued_by", { length: 255 }),
+  issuedOn: date("issued_on"),
+  expiresOn: date("expires_on"),
   certFileId: uuid("cert_file_id").references(() => files.id, {
     onDelete: "set null",
   }),
