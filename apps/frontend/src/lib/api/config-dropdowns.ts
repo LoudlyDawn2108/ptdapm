@@ -6,7 +6,9 @@ import type { DropdownOption } from "@/components/ui/combobox";
  * Each returns DropdownOption[] = { value, label }[].
  */
 
-export async function fetchContractTypeDropdown(search: string): Promise<DropdownOption[]> {
+export async function fetchContractTypeDropdown(
+  search: string,
+): Promise<DropdownOption[]> {
   const { data, error } = await api.api.config["contract-types"].dropdown.get({
     query: { search: search || undefined, limit: 20 },
   });
@@ -14,7 +16,9 @@ export async function fetchContractTypeDropdown(search: string): Promise<Dropdow
   return (data as any)?.data ?? [];
 }
 
-export async function fetchAllowanceTypeDropdown(search: string): Promise<DropdownOption[]> {
+export async function fetchAllowanceTypeDropdown(
+  search: string,
+): Promise<DropdownOption[]> {
   const { data, error } = await api.api.config["allowance-types"].dropdown.get({
     query: { search: search || undefined, limit: 20 },
   });
@@ -22,7 +26,9 @@ export async function fetchAllowanceTypeDropdown(search: string): Promise<Dropdo
   return (data as any)?.data ?? [];
 }
 
-export async function fetchSalaryGradeDropdown(search: string): Promise<DropdownOption[]> {
+export async function fetchSalaryGradeDropdown(
+  search: string,
+): Promise<DropdownOption[]> {
   const { data, error } = await api.api.config["salary-grades"].dropdown.get({
     query: { search: search || undefined, limit: 50 },
   });
@@ -30,9 +36,23 @@ export async function fetchSalaryGradeDropdown(search: string): Promise<Dropdown
   return (data as any)?.data ?? [];
 }
 
-export async function fetchOrgUnitDropdown(search: string): Promise<DropdownOption[]> {
+export async function fetchOrgUnitDropdown(
+  search: string,
+): Promise<DropdownOption[]> {
   const { data, error } = await api.api["org-units"].dropdown.get({
     query: { search: search || undefined, limit: 20 },
+  });
+  if (error) throw error;
+  return (data as any)?.data ?? [];
+}
+
+export async function fetchTrainingTypeDropdown(
+  search: string,
+): Promise<DropdownOption[]> {
+  const { data, error } = await (api.api.config as any)[
+    "training-types"
+  ].dropdown.get({
+    query: { search: search || undefined, limit: 50 },
   });
   if (error) throw error;
   return (data as any)?.data ?? [];

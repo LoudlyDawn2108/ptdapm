@@ -213,6 +213,13 @@ function GradeAccordion({
 
 // ── Main page ───────────────────────────────────────────────────────────
 function SalaryGradesPage() {
+  const navigate = useNavigate({ from: "/config/salary-grades/" });
+  const search = Route.useSearch();
+  const listPage = useListPage({
+    search,
+    onNavigate: (update) => navigate({ search: (prev) => ({ ...prev, ...update }) }),
+  });
+  const deleteMutation = useDeleteSalaryGrade();
   const [searchText, setSearchText] = useState("");
   const debouncedSearch = useDebounce(searchText);
   const { data, isLoading, isError, error, refetch } = useQuery(

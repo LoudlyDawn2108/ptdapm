@@ -4,9 +4,6 @@
   "workspaces": {
     "": {
       "name": "ptdapm",
-      "dependencies": {
-        "recharts": "^3.8.0",
-      },
       "devDependencies": {
         "@biomejs/biome": "1.9.4",
         "turbo": "2.3.3",
