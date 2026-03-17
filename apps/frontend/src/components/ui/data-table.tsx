@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/table";
 import { SKELETON_ROW_COUNT } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { cn } from "@/lib/utils";
 import {
   type ColumnDef,
   type OnChangeFn,
@@ -101,14 +100,9 @@ export function DataTable<TData, TValue>({
       <div className={cn("rounded-md border", tableWrapperClassName)}>
         <Table className={tableClassName}>
           <TableHeader className={headerClassName}>
-      <div className={cn("rounded-md border", tableWrapperClassName)}>
-        <Table className={tableClassName}>
-          <TableHeader className={headerClassName}>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className={headerRowClassName}>
-              <TableRow key={headerGroup.id} className={headerRowClassName}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className={headerCellClassName}>
                   <TableHead key={header.id} className={headerCellClassName}>
                     {header.isPlaceholder
                       ? null
@@ -127,7 +121,6 @@ export function DataTable<TData, TValue>({
                   onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className={cellClassName}>
                     <TableCell key={cell.id} className={cellClassName}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
@@ -150,9 +143,6 @@ export function DataTable<TData, TValue>({
         <div className={cn("flex items-center justify-between px-2", paginationClassName)}>
           <p className={cn("text-sm text-muted-foreground", paginationInfoClassName)}>
             {paginationLabel ?? `Trang ${pagination.pageIndex + 1} / ${pageCount}`}
-        <div className={cn("flex items-center justify-between px-2", paginationClassName)}>
-          <p className={cn("text-sm text-muted-foreground", paginationInfoClassName)}>
-            {paginationLabel ?? `Trang ${pagination.pageIndex + 1} / ${pageCount}`}
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -160,7 +150,6 @@ export function DataTable<TData, TValue>({
               size="sm"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
-              className={paginationButtonClassName}
               className={paginationButtonClassName}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -174,7 +163,6 @@ export function DataTable<TData, TValue>({
               size="sm"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
-              className={paginationButtonClassName}
               className={paginationButtonClassName}
             >
               Sau
