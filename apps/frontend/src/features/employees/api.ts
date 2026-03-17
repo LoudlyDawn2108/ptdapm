@@ -447,7 +447,14 @@ export function useCreateCertification() {
     mutationFn: async ({
       employeeId,
       ...input
-    }: { employeeId: string; certName: string; issuedBy?: string; certFileId?: string }) => {
+    }: {
+      employeeId: string;
+      certName: string;
+      issuedBy?: string;
+      issuedOn?: string;
+      expiresOn?: string;
+      certFileId?: string;
+    }) => {
       const { data, error } = await api.api
         .employees({ employeeId })
         .certifications.post(edenBody(input));
@@ -471,6 +478,8 @@ export function useUpdateCertification() {
       id: string;
       certName?: string;
       issuedBy?: string;
+      issuedOn?: string;
+      expiresOn?: string;
       certFileId?: string;
     }) => {
       const { data, error } = await api.api
