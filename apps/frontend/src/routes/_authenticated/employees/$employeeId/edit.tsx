@@ -606,11 +606,16 @@ function EditEmployeeFormContent({
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center gap-2 border-b border-slate-200 px-6 py-4">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Pencil className="h-4 w-4" />
+      <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Pencil className="h-4 w-4" />
+          </div>
+          <h1 className="text-sm font-semibold text-slate-800">Cập nhật hồ sơ nhân sự</h1>
         </div>
-        <h1 className="text-sm font-semibold text-slate-800">Cập nhật hồ sơ nhân sự</h1>
+        <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-600">
+          Mã nhân sự: {emp.staffCode}
+        </span>
       </div>
 
       <div className="px-6 pb-6 pt-4">

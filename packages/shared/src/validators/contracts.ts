@@ -7,7 +7,7 @@ const contractDocStatusSchema = z.enum(
 
 export const createEmploymentContractSchema = z.object({
   contractTypeId: z.string().uuid("Loại hợp đồng không hợp lệ"),
-  contractNo: z.string().min(1, "Số hợp đồng không được để trống"),
+  contractNo: z.string().optional(),
   signedOn: z.string().min(1, "Ngày ký không được để trống"),
   effectiveFrom: z.string().min(1, "Ngày hiệu lực không được để trống"),
   effectiveTo: z.string().min(1, "Ngày hết hạn không được để trống"),

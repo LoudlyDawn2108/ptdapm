@@ -28,6 +28,7 @@ const TAB_ITEMS = [
   { value: "party", label: "Đảng/Đoàn", path: "/party" },
   { value: "salary", label: "Lương và phụ cấp", path: "/salary" },
   { value: "contracts", label: "Hợp đồng", path: "/contracts" },
+  { value: "assignments", label: "Bổ nhiệm", path: "/assignments" },
   { value: "rewards", label: "Khen thưởng/Kỷ luật", path: "/rewards" },
 ] as const;
 

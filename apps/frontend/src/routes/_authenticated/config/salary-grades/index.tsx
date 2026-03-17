@@ -1,24 +1,217 @@
-import { CatalogListPage } from "@/components/shared/catalog-list-page";
-import { salaryGradeListOptions, useDeleteSalaryGrade } from "@/features/config/salary-grades/api";
-import { salaryGradeColumns } from "@/features/config/salary-grades/columns";
-import { useListPage } from "@/hooks/use-list-page";
-import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { PageHeader } from "@/components/layout/page-header";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { EmptyState } from "@/components/shared/empty-state";
+import { QueryError } from "@/components/shared/query-error";
+import { StatusBadgeFromCode } from "@/components/shared/status-badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  salaryGradeListOptions,
+  salaryGradeStepsOptions,
+  useDeleteSalaryGrade,
+  useDeleteSalaryGradeStep,
+} from "@/features/config/salary-grades/api";
+import {
+  SalaryGradeFormDialog,
+  type GradeRow,
+} from "@/features/config/salary-grades/SalaryGradeFormDialog";
+import {
+  SalaryGradeStepFormDialog,
+  type StepRow,
+} from "@/features/config/salary-grades/SalaryGradeStepFormDialog";
+import { useDebounce } from "@/hooks/use-debounce";
+import { SKELETON_ROW_COUNT } from "@/lib/constants";
 import { authorizeRoute } from "@/lib/permissions";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { z } from "zod";
-
-const searchSchema = z.object({
-  page: z.number().default(1),
-  pageSize: z.number().default(DEFAULT_PAGE_SIZE),
-  search: z.string().optional(),
-});
+import { CatalogStatus, type CatalogStatusCode } from "@hrms/shared";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/config/salary-grades/")({
   beforeLoad: authorizeRoute("/config/salary-grades"),
-  validateSearch: searchSchema,
   component: SalaryGradesPage,
 });
 
+// ── Step table for a single grade ───────────────────────────────────────
+function GradeStepsTable({
+  grade,
+  onEditStep,
+}: {
+  grade: GradeRow;
+  onEditStep: (step: StepRow) => void;
+}) {
+  const { data, isLoading } = useQuery(salaryGradeStepsOptions(grade.id));
+  const deleteStepMutation = useDeleteSalaryGradeStep();
+  const steps = (data?.data ?? []) as StepRow[];
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2 px-4 pb-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={`sk-${i}`} className="h-8 w-full" />
+        ))}
+      </div>
+    );
+  }
+
+  if (steps.length === 0) {
+    return (
+      <p className="px-4 pb-4 text-sm text-muted-foreground">
+        Chưa có bậc lương nào trong ngạch này.
+      </p>
+    );
+  }
+
+  return (
+    <div className="overflow-auto px-4 pb-4">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="bg-blue-50 text-sm font-semibold text-gray-700">
+            <th className="rounded-l-lg px-4 py-2.5 text-left font-medium">MÃ HSL</th>
+            <th className="px-4 py-2.5 text-left font-medium">BẬC LƯƠNG</th>
+            <th className="px-4 py-2.5 text-left font-medium">HỆ SỐ LƯƠNG</th>
+            <th className="px-4 py-2.5 text-left font-medium">TRẠNG THÁI</th>
+            <th className="rounded-r-lg px-4 py-2.5 text-right font-medium">THAO TÁC</th>
+          </tr>
+        </thead>
+        <tbody>
+          {steps.map((step) => {
+            const s = CatalogStatus[step.status as keyof typeof CatalogStatus];
+            return (
+              <tr key={step.id} className="border-b border-gray-100 last:border-0">
+                <td className="px-4 py-2.5 font-mono text-xs">
+                  HSL{grade.gradeCode}{String(step.stepNo).padStart(2, "0")}
+                </td>
+                <td className="px-4 py-2.5">Bậc {step.stepNo}</td>
+                <td className="px-4 py-2.5">{step.coefficient}</td>
+                <td className="px-4 py-2.5">
+                  <StatusBadgeFromCode
+                    code={step.status}
+                    label={s?.label ?? step.status}
+                  />
+                </td>
+                <td className="px-4 py-2.5">
+                  <div className="flex items-center justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        onEditStep({ ...step, gradeId: grade.id })
+                      }
+                    >
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                    <ConfirmDialog
+                      trigger={
+                        <Button variant="ghost" size="sm">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      }
+                      title="Xóa bậc lương"
+                      description={`Bạn có chắc muốn xóa bậc ${step.stepNo}?`}
+                      confirmLabel="Xóa"
+                      variant="destructive"
+                      onConfirm={() =>
+                        deleteStepMutation.mutate(
+                          { gradeId: grade.id, stepId: step.id },
+                          { onSuccess: () => toast.success("Đã xóa bậc lương") },
+                        )
+                      }
+                    />
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ── Accordion section for a single grade ────────────────────────────────
+function GradeAccordion({
+  grade,
+  onAddStep,
+  onEditStep,
+  onEditGrade,
+  onDeleteGrade,
+}: {
+  grade: GradeRow;
+  onAddStep: (gradeId: string, gradeName: string) => void;
+  onEditStep: (step: StepRow) => void;
+  onEditGrade: (grade: GradeRow) => void;
+  onDeleteGrade: (grade: GradeRow) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="rounded-lg border bg-card">
+      <div className="flex w-full items-center justify-between px-4 py-3">
+        <button
+          type="button"
+          className="flex flex-1 items-center gap-2 text-left hover:opacity-70"
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? (
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          )}
+          <span className="font-semibold text-primary">{grade.gradeName}</span>
+          <span className="text-xs text-muted-foreground">({grade.gradeCode})</span>
+        </button>
+        <div className="flex items-center gap-2">
+          <StatusBadgeFromCode
+            code={grade.status}
+            label={
+              CatalogStatus[grade.status as keyof typeof CatalogStatus]?.label ??
+              grade.status
+            }
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); onAddStep(grade.id, grade.gradeName); }}
+            title="Thêm bậc lương"
+          >
+            <Plus className="h-4 w-4 text-primary" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); onEditGrade(grade); }}
+            title="Sửa ngạch lương"
+          >
+            <Pencil className="h-4 w-4 text-muted-foreground" />
+          </Button>
+          <ConfirmDialog
+            trigger={
+              <Button variant="ghost" size="sm" title="Xóa ngạch lương">
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            }
+            title="Xóa ngạch lương"
+            description={`Bạn có chắc muốn xóa ngạch "${grade.gradeName}"?`}
+            confirmLabel="Xóa"
+            variant="destructive"
+            onConfirm={() => onDeleteGrade(grade)}
+          />
+        </div>
+      </div>
+      {expanded && (
+        <div>
+          <GradeStepsTable grade={grade} onEditStep={onEditStep} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main page ───────────────────────────────────────────────────────────
 function SalaryGradesPage() {
   const navigate = useNavigate({ from: "/config/salary-grades/" });
   const search = Route.useSearch();
@@ -27,27 +220,124 @@ function SalaryGradesPage() {
     onNavigate: (update) => navigate({ search: (prev) => ({ ...prev, ...update }) }),
   });
   const deleteMutation = useDeleteSalaryGrade();
+  const [searchText, setSearchText] = useState("");
+  const debouncedSearch = useDebounce(searchText);
+  const { data, isLoading, isError, error, refetch } = useQuery(
+    salaryGradeListOptions({ page: 1, pageSize: 100, search: debouncedSearch }),
+  );
+  const grades = ((data as any)?.data?.items ?? []) as GradeRow[];
+  const deleteGradeMutation = useDeleteSalaryGrade();
+
+  // Grade dialog state
+  const [gradeDialogOpen, setGradeDialogOpen] = useState(false);
+  const [editingGrade, setEditingGrade] = useState<GradeRow | null>(null);
+
+  // Step dialog state
+  const [stepDialogOpen, setStepDialogOpen] = useState(false);
+  const [stepGradeId, setStepGradeId] = useState("");
+  const [stepGradeName, setStepGradeName] = useState("");
+  const [editingStep, setEditingStep] = useState<StepRow | null>(null);
+
+  const handleAddGrade = () => {
+    setEditingGrade(null);
+    setGradeDialogOpen(true);
+  };
+
+  const handleEditGrade = (grade: GradeRow) => {
+    setEditingGrade(grade);
+    setGradeDialogOpen(true);
+  };
+
+  const handleDeleteGrade = (grade: GradeRow) => {
+    deleteGradeMutation.mutate(grade.id, {
+      onSuccess: () => toast.success(`Đã xóa ngạch "${grade.gradeName}"`),
+    });
+  };
+
+  const handleAddStep = (gradeId: string, gradeName: string) => {
+    setStepGradeId(gradeId);
+    setStepGradeName(gradeName);
+    setEditingStep(null);
+    setStepDialogOpen(true);
+  };
+
+  const handleEditStep = (step: StepRow) => {
+    setStepGradeId(step.gradeId);
+    const grade = grades.find((g) => g.id === step.gradeId);
+    setStepGradeName(grade?.gradeName ?? "");
+    setEditingStep(step);
+    setStepDialogOpen(true);
+  };
+
+  if (isError) {
+    return (
+      <div>
+        <PageHeader title="Ngạch lương" description="Quản lý hệ thống ngạch lương và bậc lương" />
+        <QueryError error={error} onRetry={refetch} />
+      </div>
+    );
+  }
 
   return (
-    <CatalogListPage
-      title="Ngạch lương"
-      description="Quản lý hệ thống ngạch lương và bậc lương"
-      addButtonLabel="Thêm ngạch"
-      columns={salaryGradeColumns}
-      queryOptions={salaryGradeListOptions({
-        page: search.page,
-        pageSize: search.pageSize,
-        search: listPage.debouncedSearch,
-      })}
-      deleteMutation={deleteMutation}
-      deleteConfig={{
-        title: "Xóa ngạch lương",
-        nameAccessor: "gradeName",
-        successMessage: "Đã xóa ngạch lương",
-      }}
-      searchPlaceholder="Tìm kiếm theo mã ngạch, tên..."
-      emptyMessage="Không có ngạch lương nào"
-      {...listPage}
-    />
+    <div>
+      <PageHeader
+        title="Ngạch lương"
+        description="Quản lý hệ thống ngạch lương và bậc lương"
+        actions={
+          <Button onClick={handleAddGrade}>
+            <Plus className="mr-2 h-4 w-4" />
+            Thêm ngạch lương
+          </Button>
+        }
+      />
+
+      <div className="mb-4">
+        <Input
+          placeholder="Tìm kiếm theo mã ngạch, tên..."
+          className="max-w-sm"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+        />
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: SKELETON_ROW_COUNT }).map((_, i) => (
+            <Skeleton key={`s-${i}`} className="h-12 w-full rounded-lg" />
+          ))}
+        </div>
+      ) : grades.length > 0 ? (
+        <div className="space-y-3">
+          {grades.map((grade) => (
+            <GradeAccordion
+              key={grade.id}
+              grade={grade}
+              onAddStep={handleAddStep}
+              onEditStep={handleEditStep}
+              onEditGrade={handleEditGrade}
+              onDeleteGrade={handleDeleteGrade}
+            />
+          ))}
+        </div>
+      ) : (
+        <EmptyState description="Không có ngạch lương nào" />
+      )}
+
+      {/* Grade Create/Edit Dialog */}
+      <SalaryGradeFormDialog
+        open={gradeDialogOpen}
+        onOpenChange={setGradeDialogOpen}
+        editingItem={editingGrade}
+      />
+
+      {/* Step Create/Edit Dialog */}
+      <SalaryGradeStepFormDialog
+        open={stepDialogOpen}
+        onOpenChange={setStepDialogOpen}
+        gradeId={stepGradeId}
+        gradeName={stepGradeName}
+        editingStep={editingStep}
+      />
+    </div>
   );
 }
