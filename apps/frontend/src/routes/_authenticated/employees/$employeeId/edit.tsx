@@ -65,90 +65,112 @@ import { z } from "zod";
 
 /* ── Local form schema (employee + sub-entities) ── */
 
-const editFormSchema = z.object({
-  // --- Flat employee fields ---
-  fullName: z.string().min(1, "Bắt buộc"),
-  gender: z.string().min(1, "Bắt buộc"),
-  dob: z.string().min(1, "Bắt buộc"),
-  hometown: z.string().min(1, "Bắt buộc"),
-  email: z.string().email("Email không hợp lệ"),
-  phone: z.string().min(1, "Bắt buộc"),
-  address: z.string().min(1, "Bắt buộc"),
-  nationalId: z.string().min(1, "Bắt buộc"),
-  taxCode: z.string().optional(),
-  socialInsuranceNo: z.string().optional(),
-  healthInsuranceNo: z.string().optional(),
-  isForeigner: z.boolean().default(false),
-  visaNumber: z.string().optional(),
-  visaExpiry: z.string().optional(),
-  passportNumber: z.string().optional(),
-  passportExpiry: z.string().optional(),
-  workPermitNumber: z.string().optional(),
-  workPermitExpiry: z.string().optional(),
-  workPermitFileId: z.string().optional(),
-  educationLevel: z.string().min(1, "Bắt buộc"),
-  academicRank: z.string().optional(),
-  portraitFileId: z.string().optional(),
-  // --- Sub-entity arrays ---
-  familyMembers: z
-    .array(
-      z.object({
-        id: z.string().optional(),
-        relation: z.string().min(1, "Bắt buộc"),
-        fullName: z.string().min(1, "Bắt buộc"),
-      }),
-    )
-    .default([]),
-  bankAccounts: z
-    .array(
-      z.object({
-        id: z.string().optional(),
-        bankName: z.string().min(1, "Bắt buộc"),
-        accountNo: z.string().min(1, "Bắt buộc"),
-      }),
-    )
-    .default([]),
-  previousJobs: z
-    .array(
-      z.object({
-        id: z.string().optional(),
-        workplace: z.string().min(1, "Bắt buộc"),
-        startedOn: z.string().min(1, "Bắt buộc"),
-        endedOn: z.string().min(1, "Bắt buộc"),
-      }),
-    )
-    .default([]),
-  partyMemberships: z
-    .array(
-      z.object({
-        id: z.string().optional(),
-        organizationType: z.string().min(1, "Bắt buộc"),
-        joinedOn: z.string().min(1, "Bắt buộc"),
-        details: z.string().min(1, "Bắt buộc"),
-      }),
-    )
-    .default([]),
-  degrees: z
-    .array(
-      z.object({
-        id: z.string().optional(),
-        degreeName: z.string().min(1, "Bắt buộc"),
-        school: z.string().min(1, "Bắt buộc"),
-        degreeFileId: z.string().optional(),
-      }),
-    )
-    .default([]),
-  certificates: z
-    .array(
-      z.object({
-        id: z.string().optional(),
-        certName: z.string().min(1, "Bắt buộc"),
-        issuedBy: z.string().optional(),
-        certFileId: z.string().optional(),
-      }),
-    )
-    .default([]),
-});
+const editFormSchema = z
+  .object({
+    // --- Flat employee fields ---
+    fullName: z.string().min(1, "Bắt buộc"),
+    gender: z.string().min(1, "Bắt buộc"),
+    dob: z.string().min(1, "Bắt buộc"),
+    hometown: z.string().min(1, "Bắt buộc"),
+    email: z.string().email("Email không hợp lệ"),
+    phone: z.string().min(1, "Bắt buộc"),
+    address: z.string().min(1, "Bắt buộc"),
+    nationalId: z.string().min(1, "Bắt buộc"),
+    taxCode: z.string().optional(),
+    socialInsuranceNo: z.string().optional(),
+    healthInsuranceNo: z.string().optional(),
+    isForeigner: z.boolean().default(false),
+    visaNumber: z.string().optional(),
+    visaExpiry: z.string().optional(),
+    passportNumber: z.string().optional(),
+    passportExpiry: z.string().optional(),
+    workPermitNumber: z.string().optional(),
+    workPermitExpiry: z.string().optional(),
+    workPermitFileId: z.string().optional(),
+    educationLevel: z.string().min(1, "Bắt buộc"),
+    academicRank: z.string().optional(),
+    portraitFileId: z.string().min(1, "Ảnh chân dung là bắt buộc"),
+    // --- Sub-entity arrays ---
+    familyMembers: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          relation: z.string().min(1, "Bắt buộc"),
+          fullName: z.string().min(1, "Bắt buộc"),
+        }),
+      )
+      .default([]),
+    bankAccounts: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          bankName: z.string().min(1, "Bắt buộc"),
+          accountNo: z.string().min(1, "Bắt buộc"),
+        }),
+      )
+      .default([]),
+    previousJobs: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          workplace: z.string().min(1, "Bắt buộc"),
+          startedOn: z.string().min(1, "Bắt buộc"),
+          endedOn: z.string().min(1, "Bắt buộc"),
+        }),
+      )
+      .default([]),
+    partyMemberships: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          organizationType: z.string().min(1, "Bắt buộc"),
+          joinedOn: z.string().min(1, "Bắt buộc"),
+          details: z.string().min(1, "Bắt buộc"),
+        }),
+      )
+      .default([]),
+    degrees: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          degreeName: z.string().min(1, "Bắt buộc"),
+          school: z.string().min(1, "Bắt buộc"),
+          degreeFileId: z.string().optional(),
+        }),
+      )
+      .default([]),
+    certificates: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          certName: z.string().min(1, "Bắt buộc"),
+          issuedBy: z.string().optional(),
+          certFileId: z.string().optional(),
+        }),
+      )
+      .default([]),
+  })
+  .superRefine((data, ctx) => {
+    if (data.isForeigner) {
+      const foreignerFields = [
+        { field: "visaNumber", label: "Số visa" },
+        { field: "visaExpiry", label: "Ngày hết hạn visa" },
+        { field: "passportNumber", label: "Số hộ chiếu" },
+        { field: "passportExpiry", label: "Ngày hết hạn hộ chiếu" },
+        { field: "workPermitNumber", label: "Số giấy phép lao động" },
+        { field: "workPermitExpiry", label: "Ngày hết hạn giấy phép" },
+      ] as const;
+      for (const { field, label } of foreignerFields) {
+        if (!data[field]) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `${label} là bắt buộc khi là người nước ngoài`,
+            path: [field],
+          });
+        }
+      }
+    }
+  });
 
 type SubmitValues = z.output<typeof editFormSchema>;
 type FormValues = Omit<
