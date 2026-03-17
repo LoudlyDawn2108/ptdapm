@@ -3,9 +3,10 @@ import { handleApiError } from "@/lib/error-handler";
 import type {
   CreateTrainingCourseInput,
   CreateTrainingResultInput,
+  TrainingStatusCode,
   UpdateTrainingCourseInput,
 } from "@hrms/shared";
-import type { TrainingStatusCode, ParticipationStatusCode } from "@hrms/shared";
+import type { ParticipationStatusCode } from "@hrms/shared";
 import {
   queryOptions,
   useMutation,
@@ -84,6 +85,32 @@ export function useUpdateTrainingCourse() {
   });
 }
 
+export function useChangeTrainingCourseStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      courseId,
+      status,
+    }: {
+      courseId: string;
+      status: TrainingStatusCode;
+    }) => {
+      const res = await (
+        api.api["training-courses"]({ courseId }) as any
+      ).status.patch({ status } as Record<string, unknown>);
+      const { data, error } = res ?? {};
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: trainingCourseKeys.lists() });
+      qc.invalidateQueries({
+        queryKey: trainingCourseKeys.detail(variables.courseId),
+      });
+    },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Detail
 // ---------------------------------------------------------------------------
@@ -146,9 +173,10 @@ export function useCreateTrainingResult(courseId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateTrainingResultInput) => {
-      const { data, error } = await (
+      const res = await (
         api.api["training-courses"]({ courseId }) as any
       ).results.post(input as Record<string, unknown>);
+      const { data, error } = res ?? {};
       if (error) throw handleApiError(error);
       return data;
     },

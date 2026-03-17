@@ -19,8 +19,7 @@ export const trainingCourseRoutes = new Elysia({
   .use(authPlugin)
   .get(
     "/",
-    async ({ query, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+    async ({ query }) => {
       const data = await trainingCoursesService.list(
         query.page,
         query.pageSize,
@@ -33,8 +32,7 @@ export const trainingCourseRoutes = new Elysia({
   )
   .get(
     "/:courseId",
-    async ({ params, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+    async ({ params }) => {
       const data = await trainingCoursesService.getById(params.courseId);
       return { data };
     },

@@ -10,6 +10,12 @@ export interface TrainingCourseRow {
   trainingFrom: string;
   trainingTo: string;
   location?: string | null;
+  cost?: string | null;
+  commitment?: string | null;
+  certificateName?: string | null;
+  certificateType?: string | null;
+  registrationFrom?: string | null;
+  registrationTo?: string | null;
   registrationLimit?: number | null;
   status: TrainingStatusCode;
 }
@@ -20,8 +26,16 @@ export interface TrainingCourseRowWithType extends TrainingCourseRow {
 
 export function buildTrainingCourseColumns(
   typeMap: Map<string, string>,
+  pageIndex: number,
+  pageSize: number,
 ): ColumnDef<TrainingCourseRowWithType, unknown>[] {
   return [
+    {
+      id: "stt",
+      header: "STT",
+      cell: ({ row }) => pageIndex * pageSize + row.index + 1,
+      size: 60,
+    },
     {
       accessorKey: "courseName",
       header: "Tên khóa đào tạo",
@@ -33,7 +47,7 @@ export function buildTrainingCourseColumns(
     },
     {
       id: "courseType",
-      header: "Loại khóa đào tạo",
+      header: "Loại hình đào tạo",
       cell: ({ row }) =>
         typeMap.get(row.original.courseTypeId) ??
         row.original.courseTypeName ??

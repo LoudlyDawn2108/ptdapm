@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -18,7 +16,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -39,6 +36,7 @@ import {
 import { useListPage } from "@/hooks/use-list-page";
 import { applyFieldErrors } from "@/lib/error-handler";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { formatForInput } from "@/lib/date-utils";
 import { authorizeRoute } from "@/lib/permissions";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -51,7 +49,7 @@ import {
 } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Plus, Pencil, GraduationCap, Save } from "lucide-react";
+import { Plus, Pencil, Save } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { type UseFormSetError, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -111,25 +109,31 @@ function TrainingCoursesPage() {
 
   const columns = useMemo(
     () => [
-      ...buildTrainingCourseColumns(typeMap),
+      ...buildTrainingCourseColumns(
+        typeMap,
+        listPage.pagination.pageIndex,
+        listPage.pagination.pageSize,
+      ),
       {
         id: "actions",
         header: "",
         cell: ({ row }: { row: { original: TrainingCourseRowWithType } }) => (
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
+            className="h-8 w-8"
             onClick={(e) => {
               e.stopPropagation();
               setEditingCourse(row.original);
             }}
           >
-            <Pencil className="h-4 w-4" />
+            <Pencil className="h-4 w-4 text-muted-foreground" />
           </Button>
         ),
+        size: 50,
       },
     ],
-    [typeMap],
+    [typeMap, listPage.pagination.pageIndex, listPage.pagination.pageSize],
   );
 
   const handleCreate = async (
@@ -311,17 +315,20 @@ function TrainingCourseFormDialog({
       form.reset({
         courseName: course.courseName,
         courseTypeId: course.courseTypeId,
-        trainingFrom: course.trainingFrom ?? "",
-        trainingTo: course.trainingTo ?? "",
-        location: (course.location as string | undefined) ?? undefined,
-        cost: undefined,
-        commitment: undefined,
-        certificateName: undefined,
-        certificateType: undefined,
-        registrationFrom: undefined,
-        registrationTo: undefined,
-        registrationLimit:
-          course.registrationLimit ?? undefined,
+        trainingFrom: formatForInput(course.trainingFrom) || "",
+        trainingTo: formatForInput(course.trainingTo) || "",
+        location: course.location ?? undefined,
+        cost: course.cost ?? undefined,
+        commitment: course.commitment ?? undefined,
+        certificateName: course.certificateName ?? undefined,
+        certificateType: course.certificateType ?? undefined,
+        registrationFrom: course.registrationFrom
+          ? formatForInput(course.registrationFrom)
+          : undefined,
+        registrationTo: course.registrationTo
+          ? formatForInput(course.registrationTo)
+          : undefined,
+        registrationLimit: course.registrationLimit ?? undefined,
       });
     } else {
       form.reset({
@@ -343,10 +350,6 @@ function TrainingCourseFormDialog({
 
   const title =
     mode === "create" ? "Thêm khóa đào tạo" : "Chỉnh sửa khóa đào tạo";
-  const description =
-    mode === "create"
-      ? "Nhập thông tin để tạo khóa đào tạo mới."
-      : "Cập nhật thông tin khóa đào tạo.";
   const submitLabel =
     mode === "create" ? "Lưu khóa đào tạo" : "Lưu thay đổi";
 
@@ -368,11 +371,23 @@ function TrainingCourseFormDialog({
 
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit((values) =>
-              onSubmit(values, form.setError),
-            )}
+            onSubmit={form.handleSubmit((values) => {
+              // Convert empty strings to undefined for optional fields
+              const cleaned = {
+                ...values,
+                location: values.location || undefined,
+                cost: values.cost || undefined,
+                commitment: values.commitment || undefined,
+                certificateName: values.certificateName || undefined,
+                certificateType: values.certificateType || undefined,
+                registrationFrom: values.registrationFrom || undefined,
+                registrationTo: values.registrationTo || undefined,
+              };
+              return onSubmit(cleaned, form.setError);
+            })}
             className="px-6 py-4 space-y-5"
           >
+            {/* Tên + Loại khóa đào tạo */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -419,6 +434,7 @@ function TrainingCourseFormDialog({
               />
             </div>
 
+            {/* Thời gian đào tạo */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -454,16 +470,14 @@ function TrainingCourseFormDialog({
               />
             </div>
 
+            {/* Địa điểm + Kinh phí */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="location"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      Địa điểm{" "}
-                      <span className="text-destructive">*</span>
-                    </FormLabel>
+                    <FormLabel>Địa điểm</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -494,6 +508,7 @@ function TrainingCourseFormDialog({
               />
             </div>
 
+            {/* Cam kết sau đào tạo */}
             <FormField
               control={form.control}
               name="commitment"
@@ -512,6 +527,7 @@ function TrainingCourseFormDialog({
               )}
             />
 
+            {/* Chứng chỉ */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -549,21 +565,22 @@ function TrainingCourseFormDialog({
               />
             </div>
 
+            {/* Thời gian đăng ký */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="registrationFrom"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      Mở đăng ký từ ngày{" "}
-                      <span className="text-destructive">*</span>
-                    </FormLabel>
+                    <FormLabel>Mở đăng ký từ ngày</FormLabel>
                     <FormControl>
                       <Input
                         type="date"
                         {...field}
                         value={field.value ?? ""}
+                        onChange={(e) =>
+                          field.onChange(e.target.value || undefined)
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -575,15 +592,15 @@ function TrainingCourseFormDialog({
                 name="registrationTo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      Đến ngày{" "}
-                      <span className="text-destructive">*</span>
-                    </FormLabel>
+                    <FormLabel>Đến ngày</FormLabel>
                     <FormControl>
                       <Input
                         type="date"
                         {...field}
                         value={field.value ?? ""}
+                        onChange={(e) =>
+                          field.onChange(e.target.value || undefined)
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -592,6 +609,7 @@ function TrainingCourseFormDialog({
               />
             </div>
 
+            {/* Số lượng đăng ký tối đa */}
             <FormField
               control={form.control}
               name="registrationLimit"
@@ -615,6 +633,7 @@ function TrainingCourseFormDialog({
               )}
             />
 
+            {/* Footer */}
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <Button
                 type="button"
