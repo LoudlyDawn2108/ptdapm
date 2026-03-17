@@ -41,6 +41,18 @@ export const Route = createFileRoute("/_authenticated/employees_/$employeeId/rew
   component: RewardsTab,
 });
 
+/** Convert empty/whitespace-only strings to null so Zod `.nullish()` accepts them. */
+function cleanEvaluationInput(input: CreateEvaluationInput): CreateEvaluationInput {
+  const cleaned = { ...input };
+  for (const key of Object.keys(cleaned) as (keyof typeof cleaned)[]) {
+    const val = cleaned[key];
+    if (typeof val === "string" && val.trim() === "") {
+      (cleaned as Record<string, unknown>)[key] = null;
+    }
+  }
+  return cleaned;
+}
+
 function RewardsTab() {
   const { employeeId } = Route.useParams();
   const { aggregate, isLoading } = useEmployeeDetail(employeeId);
@@ -65,7 +77,7 @@ function RewardsTab() {
     setError: UseFormSetError<CreateEvaluationInput>,
   ) => {
     try {
-      await createEvaluation.mutateAsync({ employeeId, ...input });
+      await createEvaluation.mutateAsync({ employeeId, ...cleanEvaluationInput(input) });
       toast.success("Thêm khen thưởng thành công");
       setShowRewardDialog(false);
     } catch (error) {
@@ -79,7 +91,7 @@ function RewardsTab() {
     setError: UseFormSetError<CreateEvaluationInput>,
   ) => {
     try {
-      await updateEvaluation.mutateAsync({ employeeId, id, ...input });
+      await updateEvaluation.mutateAsync({ employeeId, id, ...cleanEvaluationInput(input) });
       toast.success("Cập nhật khen thưởng thành công");
       setEditingReward(null);
     } catch (error) {
@@ -92,7 +104,7 @@ function RewardsTab() {
     setError: UseFormSetError<CreateEvaluationInput>,
   ) => {
     try {
-      await createEvaluation.mutateAsync({ employeeId, ...input });
+      await createEvaluation.mutateAsync({ employeeId, ...cleanEvaluationInput(input) });
       toast.success("Thêm kỷ luật thành công");
       setShowDisciplineDialog(false);
     } catch (error) {
@@ -106,7 +118,7 @@ function RewardsTab() {
     setError: UseFormSetError<CreateEvaluationInput>,
   ) => {
     try {
-      await updateEvaluation.mutateAsync({ employeeId, id, ...input });
+      await updateEvaluation.mutateAsync({ employeeId, id, ...cleanEvaluationInput(input) });
       toast.success("Cập nhật kỷ luật thành công");
       setEditingDiscipline(null);
     } catch (error) {
