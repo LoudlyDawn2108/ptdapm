@@ -121,7 +121,7 @@ function EmployeeDetailLayout() {
             void navigate({
               to: `/employees/$employeeId${tab.path}`,
               params: { employeeId },
-            } as Parameters<typeof navigate>[0]);
+            } as any);
           }
         }}
         className="mb-6"

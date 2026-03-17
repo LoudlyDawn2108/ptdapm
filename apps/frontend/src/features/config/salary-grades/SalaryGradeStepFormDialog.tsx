@@ -95,7 +95,7 @@ export function SalaryGradeStepFormDialog({
           gradeId,
           stepId: editingStep!.id,
           ...values,
-        });
+        } as any);
         toast.success("Cập nhật hệ số lương thành công");
       } else {
         await createMutation.mutateAsync({ gradeId, ...values });

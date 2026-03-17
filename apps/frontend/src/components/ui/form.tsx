@@ -78,21 +78,17 @@ const FormItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
 );
 FormItem.displayName = "FormItem";
 
-const FormLabel = React.forwardRef<HTMLLabelElement, React.ComponentProps<typeof Label>>(
-  ({ className, ...props }, ref) => {
-    const { error, formItemId } = useFormField();
+function FormLabel({ className, ...props }: React.ComponentProps<typeof Label>) {
+  const { error, formItemId } = useFormField();
 
-    return (
-      <Label
-        ref={ref}
-        className={cn(error && "text-destructive", className)}
-        htmlFor={formItemId}
-        {...props}
-      />
-    );
-  },
-);
-FormLabel.displayName = "FormLabel";
+  return (
+    <Label
+      className={cn(error && "text-destructive", className)}
+      htmlFor={formItemId}
+      {...props}
+    />
+  );
+}
 
 const FormControl = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ ...props }, ref) => {

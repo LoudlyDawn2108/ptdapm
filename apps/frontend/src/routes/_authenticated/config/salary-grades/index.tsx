@@ -45,7 +45,7 @@ function GradeStepsTable({
 }) {
   const { data, isLoading } = useQuery(salaryGradeStepsOptions(grade.id));
   const deleteStepMutation = useDeleteSalaryGradeStep();
-  const steps = (data?.data ?? []) as StepRow[];
+  const steps = (data?.data ?? []) as unknown as StepRow[];
 
   if (isLoading) {
     return (

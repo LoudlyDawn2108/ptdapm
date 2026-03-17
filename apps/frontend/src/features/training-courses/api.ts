@@ -32,7 +32,7 @@ export const trainingCourseListOptions = (params: {
     queryKey: trainingCourseKeys.list(params as Record<string, unknown>),
     queryFn: async () => {
       const { data, error } = await api.api["training-courses"].get({
-        query: params as Record<string, unknown>,
+        query: params as any,
       });
       if (error) throw handleApiError(error);
       return data;
@@ -57,7 +57,7 @@ export function useCreateTrainingCourse() {
   return useMutation({
     mutationFn: async (input: CreateTrainingCourseInput) => {
       const { data, error } = await api.api["training-courses"].post(
-        input as Record<string, unknown>,
+        input as any,
       );
       if (error) throw handleApiError(error);
       return data;
@@ -76,7 +76,7 @@ export function useUpdateTrainingCourse() {
     }: UpdateTrainingCourseInput & { courseId: string }) => {
       const { data, error } = await api.api["training-courses"]({
         courseId,
-      }).put(input as Record<string, unknown>);
+      }).put(input as any);
       if (error) throw handleApiError(error);
       return data;
     },
@@ -97,7 +97,7 @@ export function useChangeTrainingCourseStatus() {
     }) => {
       const res = await (
         api.api["training-courses"]({ courseId }) as any
-      ).status.patch({ status } as Record<string, unknown>);
+      ).status.patch({ status } as any);
       const { data, error } = res ?? {};
       if (error) throw handleApiError(error);
       return data;
@@ -175,7 +175,7 @@ export function useCreateTrainingResult(courseId: string) {
     mutationFn: async (input: CreateTrainingResultInput) => {
       const res = await (
         api.api["training-courses"]({ courseId }) as any
-      ).results.post(input as Record<string, unknown>);
+      ).results.post(input as any);
       const { data, error } = res ?? {};
       if (error) throw handleApiError(error);
       return data;

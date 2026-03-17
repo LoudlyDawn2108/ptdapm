@@ -147,7 +147,7 @@ export function OrgUnitFormDialog({
         });
         toast.success("Cập nhật đơn vị thành công");
       } else {
-        await createMutation.mutateAsync(sanitized);
+        await createMutation.mutateAsync(sanitized as any);
         toast.success("Thêm đơn vị thành công");
       }
       onOpenChange(false);
