@@ -124,3 +124,17 @@ export const listTrainingCoursesQuerySchema = z.object({
 export type ListTrainingCoursesQuery = z.infer<
   typeof listTrainingCoursesQuerySchema
 >;
+
+// ---------------------------------------------------------------------------
+// Change Training Course Status
+// ---------------------------------------------------------------------------
+export const changeTrainingCourseStatusSchema = z.object({
+  status: z.enum(
+    TRAINING_STATUS_CODES as [TrainingStatusCode, ...TrainingStatusCode[]],
+    { error: "Trạng thái khóa đào tạo không hợp lệ" },
+  ),
+});
+
+export type ChangeTrainingCourseStatusInput = z.infer<
+  typeof changeTrainingCourseStatusSchema
+>;

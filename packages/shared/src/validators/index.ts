@@ -132,6 +132,8 @@ export {
   type UpdateTrainingCourseInput,
   listTrainingCoursesQuerySchema,
   type ListTrainingCoursesQuery,
+  changeTrainingCourseStatusSchema,
+  type ChangeTrainingCourseStatusInput,
 } from "./training-courses";
 export {
   createTrainingResultSchema,

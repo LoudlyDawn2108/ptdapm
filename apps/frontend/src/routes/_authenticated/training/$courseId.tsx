@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import {
+  useChangeTrainingCourseStatus,
   useTrainingCourseDetail,
   type TrainingCourseDetail,
 } from "@/features/training-courses/api";
@@ -18,11 +19,14 @@ import { formatDate } from "@/lib/date-utils";
 import { authorizeRoute } from "@/lib/permissions";
 import {
   ParticipationStatus,
+  TrainingStatus,
   type ParticipationStatusCode,
+  type TrainingStatusCode,
 } from "@hrms/shared";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Pencil, FileText } from "lucide-react";
+import { CheckCircle, Pencil, Play, FileText } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/training/$courseId")({
   beforeLoad: authorizeRoute("/training"),

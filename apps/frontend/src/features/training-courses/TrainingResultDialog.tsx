@@ -113,6 +113,13 @@ export function TrainingResultDialog({
       onOpenChange(false);
     } catch (error) {
       applyFieldErrors(setError, error);
+      // Show generic toast if it's not an already-handled API error
+      if (
+        !(error instanceof Error && error.name === "ApiResponseError") &&
+        typeof error !== "string"
+      ) {
+        toast.error("Ghi nhận kết quả thất bại");
+      }
     }
   };
 

@@ -14,6 +14,7 @@ import { useAuth } from "@/features/auth/hooks";
 import { canAccessRoute } from "@/lib/permissions";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
+  BookOpen,
   Building2,
   CircleUserRound,
   ClipboardList,
@@ -88,6 +89,16 @@ const navGroups: NavGroupConfig[] = [
         title: "Khóa đào tạo",
         to: "/training",
         icon: GraduationCap,
+      },
+    ],
+  },
+  {
+    label: "Cá nhân",
+    items: [
+      {
+        title: "Đào tạo của tôi",
+        to: "/my/training",
+        icon: BookOpen,
       },
     ],
   },
