@@ -53,7 +53,6 @@ function EducationTab() {
   const { employeeId } = Route.useParams();
   const { aggregate, employee: emp, isLoading } = useEmployeeDetail(employeeId);
   const degrees = aggregate?.degrees as Degree[] | undefined;
-  const certifications = aggregate?.certifications;
 
   const { user } = useAuth();
   const canEdit =
@@ -213,33 +212,6 @@ function EducationTab() {
           if (editingDegree) await handleUpdate(editingDegree.id, input, setError);
         }}
       />
-
-      {/* ── Chứng chỉ ── */}
-      <SectionTitle title="Thông tin chứng chỉ" />
-      {certifications && certifications.length > 0 ? (
-        <div className="space-y-4">
-          {certifications.map((c, i) => (
-            <div
-              key={c.id ?? i}
-              className="grid grid-cols-1 items-end gap-4 md:grid-cols-[2fr_1fr_auto]"
-            >
-              <ReadOnlyField label="Tên chứng chỉ" value={c.certName} />
-              <ReadOnlyField label="Nơi cấp" value={c.issuedBy} />
-              <Button
-                size="default"
-                className="md:self-end"
-                disabled={!c.certFileId}
-                onClick={() => c.certFileId && window.open(getFileUrl(c.certFileId), "_blank")}
-              >
-                <Eye data-icon="inline-start" />
-                Xem PDF
-              </Button>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">Chưa có chứng chỉ.</p>
-      )}
     </div>
   );
 }
