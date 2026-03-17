@@ -34,6 +34,9 @@ export interface MyTrainingRow {
   courseStatus: string;
   participationStatus: string;
   registeredAt: string;
+  cost: string | null;
+  registrationLimit: number | null;
+  registrationCount: number;
 }
 
 // ---------------------------------------------------------------------------

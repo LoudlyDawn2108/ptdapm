@@ -30,6 +30,9 @@ export async function list(
     courseStatus: string;
     participationStatus: string;
     registeredAt: Date;
+    cost: string | null;
+    registrationLimit: number | null;
+    registrationCount: number;
   }>
 > {
   if (!employeeId) {
@@ -58,6 +61,9 @@ export async function list(
       courseStatus: trainingCourses.status,
       participationStatus: trainingRegistrations.participationStatus,
       registeredAt: trainingRegistrations.registeredAt,
+      cost: trainingCourses.cost,
+      registrationLimit: trainingCourses.registrationLimit,
+      registrationCount: sql<number>`(SELECT count(*) FROM ${trainingRegistrations} tr WHERE tr.course_id = ${trainingCourses.id})`.as("registration_count"),
     })
     .from(trainingRegistrations)
     .innerJoin(
