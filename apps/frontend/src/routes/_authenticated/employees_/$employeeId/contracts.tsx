@@ -1,4 +1,5 @@
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
+import { RoleGuard } from "@/components/shared/role-guard";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAuth } from "@/features/auth/hooks";
 import { contractTypeListOptions } from "@/features/config/contract-types/api";
 import {
   uploadFile,
@@ -47,6 +49,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ContractDocStatus,
   type CreateEmploymentContractInput,
+  EMPLOYEE_PROFILE_MANAGE_ROLES,
   createEmploymentContractSchema,
 } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
@@ -82,6 +85,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function ContractsTab() {
   const { employeeId } = Route.useParams();
+  const { hasRole } = useAuth();
   const { aggregate, isLoading } = useEmployeeDetail(employeeId);
   const { data: contractTypesData } = useQuery(
     contractTypeListOptions({ page: 1, pageSize: 100, search: undefined }),
@@ -122,6 +126,7 @@ function ContractsTab() {
     () => new Map(orgUnitOptions.map((item) => [item.id, item.unitName])),
     [orgUnitOptions],
   );
+  const canManage = hasRole(...EMPLOYEE_PROFILE_MANAGE_ROLES);
 
   if (isLoading) return <FormSkeleton fields={3} />;
 
@@ -156,10 +161,12 @@ function ContractsTab() {
     <div className="rounded-xl border bg-card p-6">
       {/* Top-right button */}
       <div className="mb-4 flex justify-end">
-        <Button size="sm" className="gap-1.5" onClick={() => setShowCreateDialog(true)}>
-          <Plus className="h-4 w-4" />
-          Thêm hợp đồng
-        </Button>
+        <RoleGuard roles={[...EMPLOYEE_PROFILE_MANAGE_ROLES]}>
+          <Button size="sm" className="gap-1.5" onClick={() => setShowCreateDialog(true)}>
+            <Plus className="h-4 w-4" />
+            Thêm hợp đồng
+          </Button>
+        </RoleGuard>
       </div>
 
       {/* Table */}
@@ -194,13 +201,15 @@ function ContractsTab() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-                        onClick={() => setEditingContract(c)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
+                      <RoleGuard roles={[...EMPLOYEE_PROFILE_MANAGE_ROLES]}>
+                        <button
+                          type="button"
+                          className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                          onClick={() => setEditingContract(c)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      </RoleGuard>
                       <button
                         type="button"
                         className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
@@ -220,7 +229,7 @@ function ContractsTab() {
       )}
 
       <ContractFormDialog
-        open={showCreateDialog}
+        open={canManage && showCreateDialog}
         onOpenChange={setShowCreateDialog}
         title="Thêm hợp đồng"
         submitLabel="Lưu hợp đồng"
@@ -232,7 +241,7 @@ function ContractsTab() {
       />
 
       <ContractFormDialog
-        open={!!editingContract}
+        open={canManage && !!editingContract}
         onOpenChange={(open) => {
           if (!open) setEditingContract(null);
         }}

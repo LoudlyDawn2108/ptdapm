@@ -1,3 +1,4 @@
+import { EMPLOYEE_PROFILE_VIEW_ROLES } from "@hrms/shared";
 import { Elysia } from "elysia";
 import { z } from "zod";
 import { authPlugin } from "../../common/plugins/auth";
@@ -16,7 +17,7 @@ export const fileRoutes = new Elysia({ prefix: "/api/files" })
   .post(
     "/upload",
     async ({ body, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+      requireRole(user.role, "TCCB");
       const data = await fileService.uploadFile(body.file, user.id);
       return { data };
     },
@@ -30,8 +31,7 @@ export const fileRoutes = new Elysia({ prefix: "/api/files" })
     async ({ params, user }) => {
       const { fileRecord, bunFile } = await fileService.getFileById(params.id);
 
-      // ADMIN/TCCB can download any file; other roles only their own uploads
-      if (user.role !== "ADMIN" && user.role !== "TCCB") {
+      if (!EMPLOYEE_PROFILE_VIEW_ROLES.includes(user.role)) {
         if (fileRecord.uploadedByUserId !== user.id) {
           throw new ForbiddenError("Không có quyền tải file này");
         }

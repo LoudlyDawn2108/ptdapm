@@ -21,6 +21,7 @@ import {
   SectionHeader,
 } from "@/features/employees/components/form-helpers";
 import { ApiResponseError, applyFieldErrors } from "@/lib/error-handler";
+import { authorizeRoute } from "@/lib/permissions";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AcademicRank,
@@ -39,6 +40,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 export const Route = createFileRoute("/_authenticated/employees/new")({
+  beforeLoad: authorizeRoute("/employees/new"),
   component: NewEmployeePage,
 });
 

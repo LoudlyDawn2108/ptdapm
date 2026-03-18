@@ -1,4 +1,6 @@
 import {
+  EMPLOYEE_PROFILE_MANAGE_ROLES,
+  EMPLOYEE_PROFILE_VIEW_ROLES,
   createEmployeeFamilyMemberSchema,
   employeeIdParamSchema,
   idParamSchema,
@@ -16,7 +18,8 @@ export const familyMemberRoutes = new Elysia({
   .use(authPlugin)
   .get(
     "/",
-    async ({ params, query }) => {
+    async ({ params, query, user }) => {
+      requireRole(user.role, ...EMPLOYEE_PROFILE_VIEW_ROLES);
       const data = await familyMemberService.listByEmployee(
         params.employeeId,
         query.page,
@@ -29,7 +32,7 @@ export const familyMemberRoutes = new Elysia({
   .post(
     "/",
     async ({ params, body, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_MANAGE_ROLES);
       const data = await familyMemberService.create(params.employeeId, body);
       return { data };
     },
@@ -38,7 +41,7 @@ export const familyMemberRoutes = new Elysia({
   .put(
     "/:id",
     async ({ params, body, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_MANAGE_ROLES);
       const data = await familyMemberService.update(params.employeeId, params.id, body);
       return { data };
     },
@@ -51,7 +54,7 @@ export const familyMemberRoutes = new Elysia({
   .delete(
     "/:id",
     async ({ params, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_MANAGE_ROLES);
       const data = await familyMemberService.remove(params.employeeId, params.id);
       return { data };
     },

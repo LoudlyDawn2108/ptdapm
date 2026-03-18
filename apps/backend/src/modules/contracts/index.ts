@@ -1,6 +1,8 @@
 import {
   CONTRACT_DOC_STATUS_CODES,
   type ContractDocStatusCode,
+  EMPLOYEE_PROFILE_MANAGE_ROLES,
+  EMPLOYEE_PROFILE_VIEW_ROLES,
   contractIdParamSchema,
   createContractAppendixSchema,
   createEmployeeContractSchema,
@@ -29,7 +31,8 @@ export const contractRoutes = new Elysia({
   .use(authPlugin)
   .get(
     "/",
-    async ({ params, query }) => {
+    async ({ params, query, user }) => {
+      requireRole(user.role, ...EMPLOYEE_PROFILE_VIEW_ROLES);
       const data = await contractService.listByEmployee(
         params.employeeId,
         query.page,
@@ -42,7 +45,8 @@ export const contractRoutes = new Elysia({
   )
   .get(
     "/:contractId",
-    async ({ params }) => {
+    async ({ params, user }) => {
+      requireRole(user.role, ...EMPLOYEE_PROFILE_VIEW_ROLES);
       const { employeeId, contractId } = params;
       const data = await contractService.getByIdForEmployee(employeeId, contractId);
       return { data };
@@ -55,7 +59,7 @@ export const contractRoutes = new Elysia({
   .post(
     "/",
     async ({ params, body, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_MANAGE_ROLES);
       const data = await contractService.create(params.employeeId, body, user.id);
       return { data };
     },
@@ -64,7 +68,7 @@ export const contractRoutes = new Elysia({
   .put(
     "/:contractId",
     async ({ params, body, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_MANAGE_ROLES);
       const { employeeId, contractId } = params;
       const data = await contractService.update(employeeId, contractId, body);
       return { data };
@@ -78,7 +82,7 @@ export const contractRoutes = new Elysia({
   .delete(
     "/:contractId",
     async ({ params, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_MANAGE_ROLES);
       const { employeeId, contractId } = params;
       const data = await contractService.remove(employeeId, contractId);
       return { data };
@@ -98,7 +102,8 @@ export const contractAppendixRoutes = new Elysia({
   .use(authPlugin)
   .get(
     "/",
-    async ({ params, query }) => {
+    async ({ params, query, user }) => {
+      requireRole(user.role, ...EMPLOYEE_PROFILE_VIEW_ROLES);
       const data = await appendixService.listByContract(
         params.employeeId,
         params.contractId,
@@ -111,7 +116,8 @@ export const contractAppendixRoutes = new Elysia({
   )
   .get(
     "/:id",
-    async ({ params }) => {
+    async ({ params, user }) => {
+      requireRole(user.role, ...EMPLOYEE_PROFILE_VIEW_ROLES);
       const { employeeId, contractId, id } = params;
       const data = await appendixService.getById(employeeId, contractId, id);
       return { data };
@@ -124,7 +130,7 @@ export const contractAppendixRoutes = new Elysia({
   .post(
     "/",
     async ({ params, body, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_MANAGE_ROLES);
       const data = await appendixService.create(
         params.employeeId,
         params.contractId,
@@ -138,7 +144,7 @@ export const contractAppendixRoutes = new Elysia({
   .put(
     "/:id",
     async ({ params, body, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_MANAGE_ROLES);
       const { employeeId, contractId, id } = params;
       const data = await appendixService.update(employeeId, contractId, id, body);
       return { data };
@@ -152,7 +158,7 @@ export const contractAppendixRoutes = new Elysia({
   .delete(
     "/:id",
     async ({ params, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_MANAGE_ROLES);
       const { employeeId, contractId, id } = params;
       const data = await appendixService.remove(employeeId, contractId, id);
       return { data };

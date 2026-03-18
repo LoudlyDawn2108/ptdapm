@@ -1,5 +1,6 @@
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { ReadOnlyField, SectionTitle } from "@/components/shared/read-only-field";
+import { RoleGuard } from "@/components/shared/role-guard";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAuth } from "@/features/auth/hooks";
 import { allowanceTypeListOptions } from "@/features/config/allowance-types/api";
 import {
   salaryGradeDropdownOptions,
@@ -42,6 +44,7 @@ import {
   type CreateEmployeeAllowanceFormInput,
   type CreateEmployeeAllowanceInput,
   type DropdownOption,
+  EMPLOYEE_PROFILE_MANAGE_ROLES,
   createEmployeeAllowanceSchema,
 } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
@@ -126,6 +129,7 @@ function AllowanceStatusBadge({ status }: { status?: string }) {
 
 function SalaryTab() {
   const { employeeId } = Route.useParams();
+  const { hasRole } = useAuth();
   const [showSalaryDialog, setShowSalaryDialog] = useState(false);
   const [selectedGradeId, setSelectedGradeId] = useState("");
   const [selectedStepId, setSelectedStepId] = useState("");
@@ -162,6 +166,7 @@ function SalaryTab() {
   const isAllowanceDialogOpen = showAddAllowanceDialog || editingAllowance !== null;
   const isAllowanceSubmitting =
     createAllowanceMutation.isPending || updateAllowanceMutation.isPending;
+  const canManage = hasRole(...EMPLOYEE_PROFILE_MANAGE_ROLES);
 
   const currentGradeId =
     typeof salary?.salaryGradeId === "string"
@@ -269,10 +274,12 @@ function SalaryTab() {
         <SectionTitle
           title="Thông tin hệ số lương"
           action={
-            <Button size="sm" variant="default" onClick={openSalaryDialog}>
-              <Pencil className="mr-1.5 h-3.5 w-3.5" />
-              Sửa hệ số lương
-            </Button>
+            <RoleGuard roles={[...EMPLOYEE_PROFILE_MANAGE_ROLES]}>
+              <Button size="sm" variant="default" onClick={openSalaryDialog}>
+                <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                Sửa hệ số lương
+              </Button>
+            </RoleGuard>
           }
         />
 
@@ -285,10 +292,12 @@ function SalaryTab() {
         <SectionTitle
           title="Thông tin phụ cấp"
           action={
-            <Button size="sm" variant="default" onClick={openAddAllowanceDialog}>
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
-              Thêm phụ cấp
-            </Button>
+            <RoleGuard roles={[...EMPLOYEE_PROFILE_MANAGE_ROLES]}>
+              <Button size="sm" variant="default" onClick={openAddAllowanceDialog}>
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Thêm phụ cấp
+              </Button>
+            </RoleGuard>
           }
         />
 
@@ -316,14 +325,16 @@ function SalaryTab() {
                       <AllowanceStatusBadge status={a.status ?? undefined} />
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <button
-                        type="button"
-                        className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                        onClick={() => openEditAllowanceDialog(a)}
-                        aria-label="Sửa phụ cấp"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
+                      <RoleGuard roles={[...EMPLOYEE_PROFILE_MANAGE_ROLES]}>
+                        <button
+                          type="button"
+                          className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                          onClick={() => openEditAllowanceDialog(a)}
+                          aria-label="Sửa phụ cấp"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      </RoleGuard>
                     </td>
                   </tr>
                 ))}
@@ -338,7 +349,7 @@ function SalaryTab() {
       </div>
 
       <Dialog
-        open={showSalaryDialog}
+        open={canManage && showSalaryDialog}
         onOpenChange={(open) => {
           if (!open) {
             closeSalaryDialog();
@@ -441,7 +452,7 @@ function SalaryTab() {
       </Dialog>
 
       <Dialog
-        open={isAllowanceDialogOpen}
+        open={canManage && isAllowanceDialogOpen}
         onOpenChange={(open) => {
           if (!open) {
             closeAllowanceDialog();
