@@ -210,32 +210,6 @@ function EducationTab() {
                   <Eye className="mr-1.5 h-3.5 w-3.5" />
                   Xem PDF
                 </Button>
-                {canEdit && (
-                  <>
-                    <button
-                      type="button"
-                      className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-                      onClick={() => setEditingDegree(d)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <ConfirmDialog
-                      trigger={
-                        <button
-                          type="button"
-                          className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-red-600"
-                        >
-                          <Trash className="h-4 w-4" />
-                        </button>
-                      }
-                      title="Xóa bằng cấp"
-                      description={`Bạn có chắc chắn muốn xóa bằng "${d.degreeName}"?`}
-                      confirmLabel="Xóa"
-                      variant="destructive"
-                      onConfirm={() => handleDeleteDegree(d.id)}
-                    />
-                  </>
-                )}
               </div>
             </div>
           ))}
@@ -275,32 +249,6 @@ function EducationTab() {
                   <Eye className="mr-1.5 h-3.5 w-3.5" />
                   Xem PDF
                 </Button>
-                {canEdit && (
-                  <>
-                    <button
-                      type="button"
-                      className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-                      onClick={() => setEditingCert(c)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <ConfirmDialog
-                      trigger={
-                        <button
-                          type="button"
-                          className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-red-600"
-                        >
-                          <Trash className="h-4 w-4" />
-                        </button>
-                      }
-                      title="Xóa chứng chỉ"
-                      description={`Bạn có chắc chắn muốn xóa chứng chỉ "${c.certName}"?`}
-                      confirmLabel="Xóa"
-                      variant="destructive"
-                      onConfirm={() => handleDeleteCert(c.id)}
-                    />
-                  </>
-                )}
               </div>
             </div>
           ))}
