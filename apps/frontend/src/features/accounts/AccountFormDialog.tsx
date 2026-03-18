@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { employeeListOptions } from "@/features/employees/api";
+import { api } from "@/api/client";
+import { handleApiError } from "@/lib/error-handler";
 import { applyFieldErrors } from "@/lib/error-handler";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -31,9 +33,8 @@ import {
   createAccountSchema,
   enumToSortedList,
 } from "@hrms/shared";
-import { useQuery } from "@tanstack/react-query";
 import { Plus, Save } from "lucide-react";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useCreateAccount } from "./api";
@@ -49,11 +50,21 @@ export function AccountFormDialog({
 }: AccountFormDialogProps) {
   const createMutation = useCreateAccount();
 
-  // Load employee list for the dropdown
-  const { data: employeeData } = useQuery(
-    employeeListOptions({ page: 1, pageSize: 100 }),
-  );
-  const employees = (employeeData as any)?.data?.items ?? [];
+  const fetchEmployeeOptions = useCallback(async (search: string) => {
+    const { data, error } = await api.api.employees.get({
+      query: {
+        page: 1,
+        pageSize: 50,
+        ...(search ? { search } : {}),
+      } as any,
+    });
+    if (error) throw handleApiError(error);
+    const items = (data as any)?.data?.items ?? [];
+    return items.map((emp: any) => ({
+      value: emp.employeeId,
+      label: `${emp.fullName} — ${emp.employeeCode}`,
+    }));
+  }, []);
 
   const form = useForm<CreateAccountInput>({
     resolver: zodResolver(createAccountSchema),
@@ -105,23 +116,17 @@ export function AccountFormDialog({
                   <FormLabel>
                     Nhân sự <span className="text-destructive">*</span>
                   </FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn nhân sự" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {employees.map((emp: any) => (
-                        <SelectItem key={emp.employeeId} value={emp.employeeId}>
-                          {emp.fullName} — {emp.employeeCode}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Combobox
+                      queryKey={["employees", "combobox"]}
+                      fetchOptions={fetchEmployeeOptions}
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      placeholder="Tìm kiếm nhân sự..."
+                      emptyMessage="Không tìm thấy nhân sự."
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -196,3 +201,4 @@ export function AccountFormDialog({
     </Dialog>
   );
 }
+
