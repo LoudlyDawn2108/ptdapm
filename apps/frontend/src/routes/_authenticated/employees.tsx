@@ -24,7 +24,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ChevronDown, Pencil, Search, Users } from "lucide-react";
+import { Pencil, Plus, Search, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { z } from "zod";
 
@@ -333,8 +333,8 @@ function EmployeesLayout() {
                   className="h-10 flex-shrink-0 rounded-lg bg-[#3B5CCC] px-4 text-white hover:bg-[#2F4FB8]"
                 >
                   <Link to="/employees/new">
+                    <Plus className="mr-2 h-4 w-4" />
                     Thêm hồ sơ nhân sự
-                    <ChevronDown className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
               </RoleGuard>
