@@ -32,6 +32,7 @@ interface DataTableProps<TData, TValue> {
   onSortingChange?: OnChangeFn<SortingState>;
   isLoading?: boolean;
   emptyMessage?: string;
+  onRowClick?: (row: TData) => void;
   tableWrapperClassName?: string;
   tableClassName?: string;
   headerClassName?: string;
@@ -55,6 +56,7 @@ export function DataTable<TData, TValue>({
   onSortingChange,
   isLoading = false,
   emptyMessage = "Không có dữ liệu",
+  onRowClick,
   tableWrapperClassName,
   tableClassName,
   headerClassName,
@@ -113,7 +115,11 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} className={rowClassName}>
+                <TableRow
+                  key={row.id}
+                  className={cn(rowClassName, onRowClick && "cursor-pointer")}
+                  onClick={() => onRowClick?.(row.original)}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className={cellClassName}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

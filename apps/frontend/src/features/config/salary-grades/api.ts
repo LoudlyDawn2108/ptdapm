@@ -6,15 +6,22 @@ import type {
   UpdateSalaryGradeInput,
   UpdateSalaryGradeStepInput,
 } from "@hrms/shared";
-import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 export const salaryGradeKeys = {
   all: ["salary-grades"] as const,
   lists: () => [...salaryGradeKeys.all, "list"] as const,
-  list: (params: Record<string, unknown>) => [...salaryGradeKeys.lists(), params] as const,
+  list: (params: Record<string, unknown>) =>
+    [...salaryGradeKeys.lists(), params] as const,
   detail: (id: string) => [...salaryGradeKeys.all, "detail", id] as const,
-  dropdown: (search?: string) => [...salaryGradeKeys.all, "dropdown", search ?? ""] as const,
-  steps: (gradeId: string) => [...salaryGradeKeys.all, "steps", gradeId] as const,
+  dropdown: (search?: string) =>
+    [...salaryGradeKeys.all, "dropdown", search ?? ""] as const,
+  steps: (gradeId: string) =>
+    [...salaryGradeKeys.all, "steps", gradeId] as const,
 };
 
 export const salaryGradeListOptions = (params: {
@@ -26,7 +33,7 @@ export const salaryGradeListOptions = (params: {
     queryKey: salaryGradeKeys.list(params),
     queryFn: async () => {
       const { data, error } = await api.api.config["salary-grades"].get({
-        query: params as Record<string, unknown>,
+        query: params as any,
       });
       if (error) throw handleApiError(error);
       return data;
@@ -37,7 +44,9 @@ export const salaryGradeDetailOptions = (id: string) =>
   queryOptions({
     queryKey: salaryGradeKeys.detail(id),
     queryFn: async () => {
-      const { data, error } = await api.api.config["salary-grades"]({ id }).get();
+      const { data, error } = await api.api.config["salary-grades"]({
+        id,
+      }).get();
       if (error) throw handleApiError(error);
       return data;
     },
@@ -48,7 +57,9 @@ export const salaryGradeDropdownOptions = (search?: string) =>
   queryOptions({
     queryKey: salaryGradeKeys.dropdown(search),
     queryFn: async () => {
-      const { data, error } = await api.api.config["salary-grades"].dropdown.get({
+      const { data, error } = await api.api.config[
+        "salary-grades"
+      ].dropdown.get({
         query: { search, limit: 50 },
       });
       if (error) throw handleApiError(error);
@@ -61,7 +72,9 @@ export const salaryGradeStepsOptions = (gradeId: string) =>
   queryOptions({
     queryKey: salaryGradeKeys.steps(gradeId),
     queryFn: async () => {
-      const { data, error } = await api.api.config["salary-grades"]({ id: gradeId }).steps.get();
+      const { data, error } = await api.api.config["salary-grades"]({
+        id: gradeId,
+      }).steps.get();
       if (error) throw handleApiError(error);
       return data;
     },
@@ -73,21 +86,25 @@ export function useCreateSalaryGrade() {
   return useMutation({
     mutationFn: async (input: CreateSalaryGradeInput) => {
       const { data, error } = await api.api.config["salary-grades"].post(
-        input as Record<string, unknown>,
+        input as any,
       );
       if (error) throw handleApiError(error);
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: salaryGradeKeys.lists() }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: salaryGradeKeys.lists() }),
   });
 }
 
 export function useUpdateSalaryGrade() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: UpdateSalaryGradeInput & { id: string }) => {
+    mutationFn: async ({
+      id,
+      ...input
+    }: UpdateSalaryGradeInput & { id: string }) => {
       const { data, error } = await api.api.config["salary-grades"]({ id }).put(
-        input as Record<string, unknown>,
+        input as any,
       );
       if (error) throw handleApiError(error);
       return data;
@@ -103,11 +120,14 @@ export function useDeleteSalaryGrade() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await api.api.config["salary-grades"]({ id }).delete();
+      const { data, error } = await api.api.config["salary-grades"]({
+        id,
+      }).delete();
       if (error) throw handleApiError(error);
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: salaryGradeKeys.lists() }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: salaryGradeKeys.lists() }),
   });
 }
 
@@ -119,9 +139,9 @@ export function useCreateSalaryGradeStep() {
       gradeId,
       ...input
     }: CreateSalaryGradeStepInput & { gradeId: string }) => {
-      const { data, error } = await api.api.config["salary-grades"]({ id: gradeId }).steps.post(
-        input as Record<string, unknown>,
-      );
+      const { data, error } = await api.api.config["salary-grades"]({
+        id: gradeId,
+      }).steps.post(input as any);
       if (error) throw handleApiError(error);
       return data;
     },
@@ -140,9 +160,11 @@ export function useUpdateSalaryGradeStep() {
       stepId,
       ...input
     }: UpdateSalaryGradeStepInput & { gradeId: string; stepId: string }) => {
-      const { data, error } = await (api.api.config["salary-grades"]({ id: gradeId }).steps as any)({
+      const { data, error } = await (
+        api.api.config["salary-grades"]({ id: gradeId }).steps as any
+      )({
         stepId,
-      }).put(input as Record<string, unknown>);
+      }).put(input as any);
       if (error) throw handleApiError(error);
       return data;
     },
@@ -156,8 +178,16 @@ export function useUpdateSalaryGradeStep() {
 export function useDeleteSalaryGradeStep() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ gradeId, stepId }: { gradeId: string; stepId: string }) => {
-      const { data, error } = await (api.api.config["salary-grades"]({ id: gradeId }).steps as any)({
+    mutationFn: async ({
+      gradeId,
+      stepId,
+    }: {
+      gradeId: string;
+      stepId: string;
+    }) => {
+      const { data, error } = await (
+        api.api.config["salary-grades"]({ id: gradeId }).steps as any
+      )({
         stepId,
       }).delete();
       if (error) throw handleApiError(error);

@@ -4,7 +4,7 @@ import { campuses } from "../schema";
 async function seedCampus() {
   const existing = await db.select().from(campuses).limit(1);
   if (existing.length > 0) {
-    console.log("Campus already exists:", existing[0].campusName);
+    console.log("Campus already exists:", existing[0]?.campusName);
     return;
   }
 
@@ -17,7 +17,7 @@ async function seedCampus() {
     })
     .returning();
 
-  console.log("Created campus:", c.campusName, "(ID:", c.id + ")");
+  console.log("Created campus:", c?.campusName, "(ID:", c?.id + ")");
 }
 
 seedCampus()
