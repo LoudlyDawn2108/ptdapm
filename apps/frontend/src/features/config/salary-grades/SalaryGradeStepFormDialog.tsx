@@ -46,12 +46,22 @@ export interface StepRow {
   status: string;
 }
 
+export interface GradeOption {
+  id: string;
+  gradeCode: string;
+  gradeName: string;
+}
+
 interface SalaryGradeStepFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   gradeId: string;
   gradeName: string;
   editingStep?: StepRow | null;
+  /** Available grades for the "Ngạch viên chức" selector when adding from top-level */
+  grades?: GradeOption[];
+  /** Callback when the user selects a different grade */
+  onGradeChange?: (gradeId: string, gradeName: string) => void;
 }
 
 export function SalaryGradeStepFormDialog({
@@ -60,6 +70,8 @@ export function SalaryGradeStepFormDialog({
   gradeId,
   gradeName,
   editingStep,
+  grades,
+  onGradeChange,
 }: SalaryGradeStepFormDialogProps) {
   const isUpdate = !!editingStep;
   const createMutation = useCreateSalaryGradeStep();
@@ -88,14 +100,28 @@ export function SalaryGradeStepFormDialog({
     }
   }, [open, editingStep, form]);
 
+  // Find selected grade for constructing the HSL code
+  const selectedGrade = grades?.find((g) => g.id === gradeId);
+  const gradeCode = selectedGrade?.gradeCode ?? "";
+  const currentStepNo = form.watch("stepNo");
+  const hslCode = gradeCode
+    ? `HSL${gradeCode}${String(currentStepNo ?? 1).padStart(2, "0")}`
+    : "";
+
   const onSubmit = async (values: CreateSalaryGradeStepInput & { status?: string }) => {
+    if (!gradeId) {
+      toast.error("Vui lòng chọn ngạch viên chức");
+      return;
+    }
     try {
       if (isUpdate) {
         await updateMutation.mutateAsync({
           gradeId,
           stepId: editingStep!.id,
-          ...values,
-        } as any);
+          stepNo: values.stepNo,
+          coefficient: values.coefficient,
+          ...(values.status ? { status: values.status as "active" | "inactive" } : {}),
+        });
         toast.success("Cập nhật hệ số lương thành công");
       } else {
         await createMutation.mutateAsync({ gradeId, ...values });
@@ -130,9 +156,51 @@ export function SalaryGradeStepFormDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="rounded-md bg-muted/50 p-3 text-sm">
-              <span className="font-medium">Ngạch viên chức:</span> {gradeName}
-            </div>
+            {/* Mã hệ số lương (auto-generated, readonly) */}
+            {hslCode && (
+              <div>
+                <label className="text-sm font-medium">
+                  Mã hệ số lương <span className="text-destructive">*</span>
+                </label>
+                <Input value={hslCode} disabled className="mt-1.5" />
+              </div>
+            )}
+
+            {/* Ngạch viên chức - show selector if grades available, otherwise static display */}
+            {grades && grades.length > 0 && !isUpdate ? (
+              <div>
+                <label className="text-sm font-medium">
+                  Ngạch viên chức <span className="text-destructive">*</span>
+                </label>
+                <Select
+                  value={gradeId}
+                  onValueChange={(value) => {
+                    const g = grades.find((gr) => gr.id === value);
+                    if (g && onGradeChange) {
+                      onGradeChange(g.id, g.gradeName);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue placeholder="Chọn ngạch viên chức" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {grades.map((g) => (
+                      <SelectItem key={g.id} value={g.id}>
+                        {g.gradeName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div>
+                <label className="text-sm font-medium">
+                  Ngạch viên chức <span className="text-destructive">*</span>
+                </label>
+                <Input value={gradeName} disabled className="mt-1.5" />
+              </div>
+            )}
 
             <FormField
               control={form.control}
