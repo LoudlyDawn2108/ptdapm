@@ -39,14 +39,21 @@ export const contractRoutes = new Elysia({
       );
       return { data };
     },
-    { auth: true, params: employeeIdParamSchema, query: contractListQuerySchema },
+    {
+      auth: true,
+      params: employeeIdParamSchema,
+      query: contractListQuerySchema,
+    },
   )
   .get(
     "/:contractId",
     async ({ params, user }) => {
       requireRole(user.role, ...EMPLOYEE_PROFILE_VIEW_ROLES);
       const { employeeId, contractId } = params;
-      const data = await contractService.getByIdForEmployee(employeeId, contractId);
+      const data = await contractService.getByIdForEmployee(
+        employeeId,
+        contractId,
+      );
       return { data };
     },
     {
@@ -57,11 +64,20 @@ export const contractRoutes = new Elysia({
   .post(
     "/",
     async ({ params, body, user }) => {
+      console.log(user.role);
       requireRole(user.role, ...EMPLOYEE_PROFILE_MANAGE_ROLES);
-      const data = await contractService.create(params.employeeId, body, user.id);
+      const data = await contractService.create(
+        params.employeeId,
+        body,
+        user.id,
+      );
       return { data };
     },
-    { auth: true, params: employeeIdParamSchema, body: createEmployeeContractSchema },
+    {
+      auth: true,
+      params: employeeIdParamSchema,
+      body: createEmployeeContractSchema,
+    },
   )
   .put(
     "/:contractId",
@@ -137,14 +153,23 @@ export const contractAppendixRoutes = new Elysia({
       );
       return { data };
     },
-    { auth: true, params: appendixParamsSchema, body: createContractAppendixSchema },
+    {
+      auth: true,
+      params: appendixParamsSchema,
+      body: createContractAppendixSchema,
+    },
   )
   .put(
     "/:id",
     async ({ params, body, user }) => {
       requireRole(user.role, ...EMPLOYEE_PROFILE_MANAGE_ROLES);
       const { employeeId, contractId, id } = params;
-      const data = await appendixService.update(employeeId, contractId, id, body);
+      const data = await appendixService.update(
+        employeeId,
+        contractId,
+        id,
+        body,
+      );
       return { data };
     },
     {
