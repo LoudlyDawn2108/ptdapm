@@ -28,10 +28,10 @@ const exportListQuerySchema = z.object({
   format: listFormatSchema.optional(),
   search: z.string().optional(),
   orgUnitId: z.string().optional(),
-  workStatus: z.enum(WORK_STATUS_CODES as [string, ...string[]]).optional(),
-  contractStatus: z.enum(CONTRACT_STATUS_CODES as [string, ...string[]]).optional(),
-  gender: z.enum(GENDER_CODES as [string, ...string[]]).optional(),
-  academicRank: z.enum(ACADEMIC_RANK_CODES as [string, ...string[]]).optional(),
+  workStatus: z.enum(WORK_STATUS_CODES).optional(),
+  contractStatus: z.enum(CONTRACT_STATUS_CODES).optional(),
+  gender: z.enum(GENDER_CODES).optional(),
+  academicRank: z.enum(ACADEMIC_RANK_CODES).optional(),
   positionTitle: z.string().optional(),
 });
 
