@@ -309,7 +309,7 @@ function ContractFormDialog({
     resolver: zodResolver(createEmploymentContractSchema),
     defaultValues: {
       contractTypeId: "",
-      contractNo: undefined,
+      contractNo: "",
       signedOn: "",
       effectiveFrom: "",
       effectiveTo: "",
@@ -324,7 +324,7 @@ function ContractFormDialog({
 
     form.reset({
       contractTypeId: contract?.contractTypeId ?? "",
-      contractNo: contract?.contractNo ?? undefined,
+      contractNo: contract?.contractNo ?? "",
       signedOn: formatForInput(contract?.signedOn),
       effectiveFrom: formatForInput(contract?.effectiveFrom),
       effectiveTo: formatForInput(contract?.effectiveTo),
@@ -393,6 +393,24 @@ function ContractFormDialog({
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="contractNo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Số hợp đồng <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nhập số hợp đồng" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
                 name="signedOn"
