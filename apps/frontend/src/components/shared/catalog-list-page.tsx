@@ -78,7 +78,7 @@ export function CatalogListPage<TData extends { id: string }>({
 
   const actionsColumn: ColumnDef<TData, unknown> = {
     id: "actions",
-    header: "Thao tác",
+    header: "THAO TÁC",
     cell: ({ row }) => {
       const item = row.original;
       const name = (item as Record<string, unknown>)[deleteConfig.nameAccessor] as string;

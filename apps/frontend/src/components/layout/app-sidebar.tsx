@@ -64,7 +64,7 @@ const navGroups: NavGroupConfig[] = [
     label: "Cơ cấu tổ chức",
     items: [
       {
-        title: "Ngạch lương",
+        title: "Hệ số lương",
         to: "/config/salary-grades",
         icon: Settings,
       },

@@ -40,8 +40,8 @@ function AllowanceTypesPage() {
   return (
     <>
       <CatalogListPage
-        title="Loại phụ cấp"
-        description="Quản lý danh mục loại phụ cấp"
+        title="Phụ cấp"
+        description="Quản lý danh mục phụ cấp"
         addButtonLabel="Thêm danh mục phụ cấp"
         columns={allowanceTypeColumns}
         queryOptions={allowanceTypeListOptions({
@@ -56,7 +56,7 @@ function AllowanceTypesPage() {
           successMessage: "Đã xóa loại phụ cấp",
         }}
         searchPlaceholder="Tìm kiếm theo tên..."
-        emptyMessage="Không có loại phụ cấp nào"
+        emptyMessage="Không có danh mục phụ cấp nào"
         onAddClick={() => setShowCreateDialog(true)}
         onEditClick={(item) => setEditingItem(item as AllowanceTypeRow)}
         {...listPage}

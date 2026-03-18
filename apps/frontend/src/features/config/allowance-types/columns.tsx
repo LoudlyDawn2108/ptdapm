@@ -12,20 +12,28 @@ export interface AllowanceTypeRow {
 }
 
 export const allowanceTypeColumns: ColumnDef<AllowanceTypeRow, unknown>[] = [
-  { accessorKey: "allowanceName", header: "Tên loại phụ cấp" },
+  {
+    id: "code",
+    header: "MÃ PC",
+    cell: ({ row }) => {
+      const code = `PC${String(row.index + 1).padStart(3, "0")}`;
+      return <span className="font-mono text-xs font-semibold">{code}</span>;
+    },
+  },
+  { accessorKey: "allowanceName", header: "TÊN LOẠI PHỤ CẤP" },
   {
     accessorKey: "description",
-    header: "Mô tả",
+    header: "MÔ TẢ",
     cell: ({ row }) => row.original.description ?? "—",
   },
   {
     accessorKey: "calcMethod",
-    header: "Phương thức tính",
+    header: "CÁCH TÍNH",
     cell: ({ row }) => row.original.calcMethod ?? "—",
   },
   {
     accessorKey: "status",
-    header: "Trạng thái",
+    header: "TRẠNG THÁI",
     cell: ({ row }) => {
       const s = CatalogStatus[row.original.status as keyof typeof CatalogStatus];
       return (
