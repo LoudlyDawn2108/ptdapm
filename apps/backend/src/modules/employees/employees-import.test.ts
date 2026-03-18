@@ -50,8 +50,8 @@ async function importAs(username: string, password: string, file: File) {
   );
 }
 
-async function adminImport(file: File) {
-  return importAs("admin", "admin123", file);
+async function tccbImport(file: File) {
+  return importAs("tccb_user", "tccb1234", file);
 }
 
 async function buildValidExcel(rows: Record<string, string>[]): Promise<File> {
@@ -120,7 +120,7 @@ describe("POST /api/employees/import — Valid import", () => {
       { fullName: "Import Two", dob: "1992-06-15", gender: "NU", nationalId: nid2 },
     ]);
 
-    const res = await adminImport(file);
+    const res = await tccbImport(file);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.imported).toBe(2);
@@ -134,7 +134,7 @@ describe("POST /api/employees/import — Validation errors", () => {
       { fullName: "", dob: "not-a-date", gender: "NAM", nationalId: "" },
     ]);
 
-    const res = await adminImport(file);
+    const res = await tccbImport(file);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.imported).toBe(0);
@@ -151,7 +151,7 @@ describe("POST /api/employees/import — Validation errors", () => {
       { fullName: "Person B", dob: "1991-02-02", gender: "NU", nationalId: dupNid },
     ]);
 
-    const res = await adminImport(file);
+    const res = await tccbImport(file);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.imported).toBe(0);
@@ -170,7 +170,7 @@ describe("POST /api/employees/import — Validation errors", () => {
       },
     ]);
 
-    const res = await adminImport(file);
+    const res = await tccbImport(file);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.imported).toBe(0);
@@ -182,7 +182,7 @@ describe("POST /api/employees/import — Validation errors", () => {
 
 describe("POST /api/employees/import — File validation", () => {
   test("non-Excel file returns 400", async () => {
-    const signInRes = await signIn("admin", "admin123");
+    const signInRes = await signIn("tccb_user", "tccb1234");
     const cookies = extractCookies(signInRes);
     const formData = new FormData();
     formData.append("file", new File(["not excel"], "data.txt", { type: "text/plain" }));
@@ -207,7 +207,7 @@ describe("POST /api/employees/import — File validation", () => {
 
 describe("GET /api/employees/import/template", () => {
   test("template download returns xlsx", async () => {
-    const signInRes = await signIn("admin", "admin123");
+    const signInRes = await signIn("tccb_user", "tccb1234");
     const cookies = extractCookies(signInRes);
     const res = await app.handle(
       new Request("http://localhost/api/employees/import/template", {
@@ -219,5 +219,16 @@ describe("GET /api/employees/import/template", () => {
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
     expect(res.headers.get("Content-Disposition")).toContain("import-template.xlsx");
+  });
+
+  test("ADMIN cannot download template (403)", async () => {
+    const signInRes = await signIn("admin", "admin123");
+    const cookies = extractCookies(signInRes);
+    const res = await app.handle(
+      new Request("http://localhost/api/employees/import/template", {
+        headers: { Cookie: cookies },
+      }),
+    );
+    expect(res.status).toBe(403);
   });
 });

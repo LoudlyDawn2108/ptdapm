@@ -39,6 +39,7 @@ import type { EmployeeAggregate } from "@/features/employees/types";
 import { isEmployeeAggregate } from "@/features/employees/types";
 import { formatForInput } from "@/lib/date-utils";
 import { ApiResponseError, applyFieldErrors } from "@/lib/error-handler";
+import { authorizeRoute } from "@/lib/permissions";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AcademicRank,
@@ -241,6 +242,7 @@ function syncSubEntities<T extends { id?: string }>(opts: {
 }
 
 export const Route = createFileRoute("/_authenticated/employees/$employeeId/edit")({
+  beforeLoad: authorizeRoute("/employees/new"),
   component: EditEmployeePage,
 });
 

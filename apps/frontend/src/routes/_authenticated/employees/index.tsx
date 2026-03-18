@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { QueryError } from "@/components/shared/query-error";
+import { RoleGuard } from "@/components/shared/role-guard";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,7 @@ import { getEmployeeColumns } from "@/features/employees/columns";
 import { useListPage } from "@/hooks/use-list-page";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { authorizeRoute } from "@/lib/permissions";
-import { Gender, WorkStatus, enumToSortedList } from "@hrms/shared";
+import { EMPLOYEE_PROFILE_MANAGE_ROLES, Gender, WorkStatus, enumToSortedList } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
@@ -74,12 +75,14 @@ function EmployeesPage() {
         title="Quản lý nhân sự"
         description="Danh sách cán bộ, giảng viên, nhân viên"
         actions={
-          <Button asChild>
-            <Link to="/employees/new">
-              <Plus className="mr-2 h-4 w-4" />
-              Thêm nhân sự
-            </Link>
-          </Button>
+          <RoleGuard roles={[...EMPLOYEE_PROFILE_MANAGE_ROLES]}>
+            <Button asChild>
+              <Link to="/employees/new">
+                <Plus className="mr-2 h-4 w-4" />
+                Thêm nhân sự
+              </Link>
+            </Button>
+          </RoleGuard>
         }
       />
 

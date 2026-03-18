@@ -1,4 +1,6 @@
 import {
+  EMPLOYEE_PROFILE_MANAGE_ROLES,
+  EMPLOYEE_PROFILE_VIEW_ROLES,
   createEmployeeAllowanceSchema,
   employeeIdParamSchema,
   idParamSchema,
@@ -16,7 +18,8 @@ export const allowanceRoutes = new Elysia({
   .use(authPlugin)
   .get(
     "/",
-    async ({ params, query }) => {
+    async ({ params, query, user }) => {
+      requireRole(user.role, ...EMPLOYEE_PROFILE_VIEW_ROLES);
       const data = await allowanceService.listByEmployee(
         params.employeeId,
         query.page,
@@ -29,7 +32,7 @@ export const allowanceRoutes = new Elysia({
   .post(
     "/",
     async ({ params, body, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_MANAGE_ROLES);
       const data = await allowanceService.create(params.employeeId, body);
       return { data };
     },
@@ -38,7 +41,7 @@ export const allowanceRoutes = new Elysia({
   .put(
     "/:id",
     async ({ params, body, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_MANAGE_ROLES);
       const { employeeId, id } = params;
       const data = await allowanceService.update(employeeId, id, body);
       return { data };
@@ -52,7 +55,7 @@ export const allowanceRoutes = new Elysia({
   .delete(
     "/:id",
     async ({ params, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_MANAGE_ROLES);
       const { employeeId, id } = params;
       const data = await allowanceService.remove(employeeId, id);
       return { data };

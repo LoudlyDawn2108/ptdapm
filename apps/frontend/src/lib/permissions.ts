@@ -1,4 +1,8 @@
-import type { RoleCode } from "@hrms/shared";
+import {
+  EMPLOYEE_PROFILE_MANAGE_ROLES,
+  EMPLOYEE_PROFILE_VIEW_ROLES,
+  type RoleCode,
+} from "@hrms/shared";
 import { redirect } from "@tanstack/react-router";
 
 // HOW TO ADD A NEW PROTECTED ROUTE:
@@ -13,8 +17,8 @@ export const ROUTE_PERMISSIONS: Record<string, RoleCode[]> = {
   "/accounts": ["ADMIN"],
 
   // --- Hồ sơ nhân sự ---
-  "/employees": ["ADMIN", "TCCB", "TCKT"],
-  "/employees/new": ["ADMIN", "TCCB"],
+  "/employees": [...EMPLOYEE_PROFILE_VIEW_ROLES],
+  "/employees/new": [...EMPLOYEE_PROFILE_MANAGE_ROLES],
   "/org-units": ["ADMIN", "TCCB"],
 
   // --- Cơ cấu tổ chức (config) ---
@@ -53,9 +57,13 @@ export function getRouteRoles(path: string): RoleCode[] | undefined {
  * ```
  */
 export function authorizeRoute(routePath: string) {
+  const allowedRoles = ROUTE_PERMISSIONS[routePath];
+  return authorizeRoles(...(allowedRoles ?? []));
+}
+
+export function authorizeRoles(...allowedRoles: readonly RoleCode[]) {
   return ({ context }: { context: { user: { role: RoleCode } } }) => {
-    const allowedRoles = ROUTE_PERMISSIONS[routePath];
-    if (!allowedRoles) return;
+    if (allowedRoles.length === 0) return;
 
     if (!allowedRoles.includes(context.user.role)) {
       throw redirect({ to: "/forbidden" });

@@ -55,8 +55,8 @@ async function requestAs(
   );
 }
 
-async function adminRequest(method: string, path: string, body?: unknown) {
-  return requestAs("admin", "admin123", method, path, body);
+async function tccbRequest(method: string, path: string, body?: unknown) {
+  return requestAs("tccb_user", "tccb1234", method, path, body);
 }
 
 let testEmployeeId: string;
@@ -180,11 +180,16 @@ describe("RBAC — Employee list/detail role guards", () => {
     const body = await res.json();
     expect(body.data.items).toBeArray();
   });
+
+  test("ADMIN cannot GET employee list (403)", async () => {
+    const res = await requestAs("admin", "admin123", "GET", "/api/employees");
+    expect(res.status).toBe(403);
+  });
 });
 
 describe("GET /api/employees/:id — Aggregate response", () => {
   test("returns object with all 11 aggregate keys", async () => {
-    const res = await adminRequest("GET", `/api/employees/${testEmployeeId}`);
+    const res = await tccbRequest("GET", `/api/employees/${testEmployeeId}`);
     expect(res.status).toBe(200);
     const body = await res.json();
     const data = body.data;
@@ -209,7 +214,7 @@ describe("GET /api/employees/:id — Aggregate response", () => {
   });
 
   test("each sub-entity value is an array", async () => {
-    const res = await adminRequest("GET", `/api/employees/${testEmployeeId}`);
+    const res = await tccbRequest("GET", `/api/employees/${testEmployeeId}`);
     expect(res.status).toBe(200);
     const body = await res.json();
     const data = body.data;
@@ -233,7 +238,7 @@ describe("GET /api/employees/:id — Aggregate response", () => {
   });
 
   test("empty sub-entity arrays are valid (no error)", async () => {
-    const res = await adminRequest("GET", `/api/employees/${testEmployeeId}`);
+    const res = await tccbRequest("GET", `/api/employees/${testEmployeeId}`);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.familyMembers).toEqual([]);

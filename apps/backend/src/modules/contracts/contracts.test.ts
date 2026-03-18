@@ -51,8 +51,8 @@ async function requestWithCookies(method: string, path: string, cookies: string,
   );
 }
 
-let adminCookies: string;
 let tccbCookies: string;
+let tcktCookies: string;
 let employeeCookies: string;
 
 let testEmployeeId: string;
@@ -62,16 +62,15 @@ let testCampusId: string;
 
 let createdContractId: string;
 let createdAppendixId: string;
-let tccbContractId: string;
 
 const uniqueSuffix = Date.now();
 
 beforeAll(async () => {
-  const adminRes = await signIn("admin", "admin123");
-  adminCookies = extractCookies(adminRes);
-
   const tccbRes = await signIn("tccb_user", "tccb1234");
   tccbCookies = extractCookies(tccbRes);
+
+  const tcktRes = await signIn("tckt_user", "tckt1234");
+  tcktCookies = extractCookies(tcktRes);
 
   const employeeRes = await signIn("employee_user", "employee1234");
   employeeCookies = extractCookies(employeeRes);
@@ -128,10 +127,6 @@ afterAll(async () => {
     .delete(contractAppendices)
     .where(eq(contractAppendices.contractId, createdContractId))
     .catch(() => {});
-  await db
-    .delete(contractAppendices)
-    .where(eq(contractAppendices.contractId, tccbContractId))
-    .catch(() => {});
   await db.delete(employmentContracts).where(eq(employmentContracts.employeeId, testEmployeeId));
   await db.delete(employees).where(eq(employees.id, testEmployeeId));
   await db.delete(contractTypes).where(eq(contractTypes.id, testContractTypeId));
@@ -159,9 +154,9 @@ describe("Contracts CRUD", () => {
     expect(res.status).toBe(401);
   });
 
-  test("ADMIN can create contract", async () => {
-    const payload = contractPayload({ contractNo: `HD-ADMIN-${uniqueSuffix}` });
-    const res = await requestWithCookies("POST", basePath(testEmployeeId), adminCookies, payload);
+  test("TCCB can create contract", async () => {
+    const payload = contractPayload({ contractNo: `HD-TCCB-${uniqueSuffix}` });
+    const res = await requestWithCookies("POST", basePath(testEmployeeId), tccbCookies, payload);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data).toBeDefined();
@@ -172,8 +167,8 @@ describe("Contracts CRUD", () => {
     createdContractId = body.data.id;
   });
 
-  test("ADMIN can list contracts with paginated response", async () => {
-    const res = await requestWithCookies("GET", basePath(testEmployeeId), adminCookies);
+  test("TCCB can list contracts with paginated response", async () => {
+    const res = await requestWithCookies("GET", basePath(testEmployeeId), tccbCookies);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.items).toBeArray();
@@ -183,22 +178,22 @@ describe("Contracts CRUD", () => {
     expect(body.data.items.length).toBeGreaterThan(0);
   });
 
-  test("ADMIN can get contract by id", async () => {
+  test("TCKT can get contract by id", async () => {
     const res = await requestWithCookies(
       "GET",
       `${basePath(testEmployeeId)}/${createdContractId}`,
-      adminCookies,
+      tcktCookies,
     );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.id).toBe(createdContractId);
   });
 
-  test("ADMIN can update contract", async () => {
+  test("TCCB can update contract", async () => {
     const res = await requestWithCookies(
       "PUT",
       `${basePath(testEmployeeId)}/${createdContractId}`,
-      adminCookies,
+      tccbCookies,
       { status: "draft" },
     );
     expect(res.status).toBe(200);
@@ -210,7 +205,7 @@ describe("Contracts CRUD", () => {
     const res = await requestWithCookies(
       "GET",
       `${basePath(testEmployeeId)}?status=draft`,
-      adminCookies,
+      tcktCookies,
     );
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -219,13 +214,20 @@ describe("Contracts CRUD", () => {
     }
   });
 
-  test("TCCB can create contract", async () => {
-    const payload = contractPayload({ contractNo: `HD-TCCB-${uniqueSuffix}` });
-    const res = await requestWithCookies("POST", basePath(testEmployeeId), tccbCookies, payload);
+  test("ADMIN cannot create contract (403)", async () => {
+    const payload = contractPayload({ contractNo: `HD-ADMIN-${uniqueSuffix}` });
+    const res = await requestWithCookies(
+      "POST",
+      basePath(testEmployeeId),
+      extractCookies(await signIn("admin", "admin123")),
+      payload,
+    );
+    expect(res.status).toBe(403);
+  });
+
+  test("TCKT can list contracts (200)", async () => {
+    const res = await requestWithCookies("GET", basePath(testEmployeeId), tcktCookies);
     expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.data.id).toBeString();
-    tccbContractId = body.data.id;
   });
 
   test("EMPLOYEE cannot create contract (403)", async () => {
@@ -239,11 +241,27 @@ describe("Contracts CRUD", () => {
     expect(res.status).toBe(403);
   });
 
+  test("TCKT cannot create contract (403)", async () => {
+    const payload = contractPayload({ contractNo: `HD-TCKT-${uniqueSuffix}` });
+    const res = await requestWithCookies("POST", basePath(testEmployeeId), tcktCookies, payload);
+    expect(res.status).toBe(403);
+  });
+
   test("EMPLOYEE cannot update contract (403)", async () => {
     const res = await requestWithCookies(
       "PUT",
       `${basePath(testEmployeeId)}/${createdContractId}`,
       employeeCookies,
+      { status: "valid" },
+    );
+    expect(res.status).toBe(403);
+  });
+
+  test("TCKT cannot update contract (403)", async () => {
+    const res = await requestWithCookies(
+      "PUT",
+      `${basePath(testEmployeeId)}/${createdContractId}`,
+      tcktCookies,
       { status: "valid" },
     );
     expect(res.status).toBe(403);
@@ -258,13 +276,22 @@ describe("Contracts CRUD", () => {
     expect(res.status).toBe(403);
   });
 
+  test("TCKT cannot delete contract (403)", async () => {
+    const res = await requestWithCookies(
+      "DELETE",
+      `${basePath(testEmployeeId)}/${createdContractId}`,
+      tcktCookies,
+    );
+    expect(res.status).toBe(403);
+  });
+
   test("Create with effectiveTo < effectiveFrom returns validation error", async () => {
     const payload = contractPayload({
       contractNo: `HD-DATE-${uniqueSuffix}`,
       effectiveFrom: "2025-06-01",
       effectiveTo: "2024-01-01",
     });
-    const res = await requestWithCookies("POST", basePath(testEmployeeId), adminCookies, payload);
+    const res = await requestWithCookies("POST", basePath(testEmployeeId), tccbCookies, payload);
     expect(res.status).toBe(400);
   });
 
@@ -277,13 +304,13 @@ describe("Contracts CRUD", () => {
       contractNo: `HD-FUTURE-${uniqueSuffix}`,
       signedOn: futureDateStr,
     });
-    const res = await requestWithCookies("POST", basePath(testEmployeeId), adminCookies, payload);
+    const res = await requestWithCookies("POST", basePath(testEmployeeId), tccbCookies, payload);
     expect(res.status).toBe(400);
   });
 
   test("Create with duplicate contractNo returns 409 conflict", async () => {
-    const payload = contractPayload({ contractNo: `HD-ADMIN-${uniqueSuffix}` });
-    const res = await requestWithCookies("POST", basePath(testEmployeeId), adminCookies, payload);
+    const payload = contractPayload({ contractNo: `HD-TCCB-${uniqueSuffix}` });
+    const res = await requestWithCookies("POST", basePath(testEmployeeId), tccbCookies, payload);
     expect(res.status).toBe(409);
   });
 
@@ -291,17 +318,17 @@ describe("Contracts CRUD", () => {
     const res = await requestWithCookies(
       "GET",
       `${basePath(testEmployeeId)}/00000000-0000-0000-0000-000000000000`,
-      adminCookies,
+      tcktCookies,
     );
     expect(res.status).toBe(404);
   });
 
-  test("ADMIN can delete contract", async () => {
+  test("TCCB can delete contract", async () => {
     const deletePayload = contractPayload({ contractNo: `HD-DEL-${uniqueSuffix}` });
     const createRes = await requestWithCookies(
       "POST",
       basePath(testEmployeeId),
-      adminCookies,
+      tccbCookies,
       deletePayload,
     );
     const createBody = await createRes.json();
@@ -310,7 +337,7 @@ describe("Contracts CRUD", () => {
     const res = await requestWithCookies(
       "DELETE",
       `${basePath(testEmployeeId)}/${deleteId}`,
-      adminCookies,
+      tccbCookies,
     );
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -321,8 +348,8 @@ describe("Contracts CRUD", () => {
 describe("Contract Appendices CRUD", () => {
   const appendixBasePath = () => `${basePath(testEmployeeId)}/${createdContractId}/appendices`;
 
-  test("ADMIN can create appendix", async () => {
-    const res = await requestWithCookies("POST", appendixBasePath(), adminCookies, {
+  test("TCCB can create appendix", async () => {
+    const res = await requestWithCookies("POST", appendixBasePath(), tccbCookies, {
       effectiveOn: "2024-06-01",
       terms: "Appendix terms content",
       notes: "Some notes",
@@ -336,8 +363,8 @@ describe("Contract Appendices CRUD", () => {
     createdAppendixId = body.data.id;
   });
 
-  test("ADMIN can list appendices with paginated response", async () => {
-    const res = await requestWithCookies("GET", appendixBasePath(), adminCookies);
+  test("TCKT can list appendices with paginated response", async () => {
+    const res = await requestWithCookies("GET", appendixBasePath(), tcktCookies);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.items).toBeArray();
@@ -345,27 +372,35 @@ describe("Contract Appendices CRUD", () => {
     expect(body.data.items.length).toBeGreaterThan(0);
   });
 
-  test("ADMIN can get appendix by id", async () => {
+  test("TCKT can get appendix by id", async () => {
     const res = await requestWithCookies(
       "GET",
       `${appendixBasePath()}/${createdAppendixId}`,
-      adminCookies,
+      tcktCookies,
     );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.id).toBe(createdAppendixId);
   });
 
-  test("ADMIN can update appendix", async () => {
+  test("TCCB can update appendix", async () => {
     const res = await requestWithCookies(
       "PUT",
       `${appendixBasePath()}/${createdAppendixId}`,
-      adminCookies,
+      tccbCookies,
       { terms: "Updated appendix terms" },
     );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.terms).toBe("Updated appendix terms");
+  });
+
+  test("TCKT cannot create appendix (403)", async () => {
+    const res = await requestWithCookies("POST", appendixBasePath(), tcktCookies, {
+      effectiveOn: "2024-07-01",
+      terms: "Unauthorized appendix by TCKT",
+    });
+    expect(res.status).toBe(403);
   });
 
   test("EMPLOYEE cannot create appendix (403)", async () => {
@@ -379,15 +414,15 @@ describe("Contract Appendices CRUD", () => {
   test("Cannot create appendix for contract belonging to different employee (404)", async () => {
     const fakeEmployeeId = "00000000-0000-0000-0000-000000000000";
     const path = `${basePath(fakeEmployeeId)}/${createdContractId}/appendices`;
-    const res = await requestWithCookies("POST", path, adminCookies, {
+    const res = await requestWithCookies("POST", path, tccbCookies, {
       effectiveOn: "2024-08-01",
       terms: "Wrong employee appendix",
     });
     expect(res.status).toBe(404);
   });
 
-  test("ADMIN can delete appendix", async () => {
-    const createRes = await requestWithCookies("POST", appendixBasePath(), adminCookies, {
+  test("TCCB can delete appendix", async () => {
+    const createRes = await requestWithCookies("POST", appendixBasePath(), tccbCookies, {
       effectiveOn: "2024-09-01",
       terms: "Appendix to delete",
     });
@@ -397,7 +432,7 @@ describe("Contract Appendices CRUD", () => {
     const res = await requestWithCookies(
       "DELETE",
       `${appendixBasePath()}/${deleteId}`,
-      adminCookies,
+      tccbCookies,
     );
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -409,7 +444,7 @@ describe("Contract Appendices CRUD", () => {
     const contractRes = await requestWithCookies(
       "POST",
       basePath(testEmployeeId),
-      adminCookies,
+      tccbCookies,
       cascadePayload,
     );
     const contractBody = await contractRes.json();
@@ -418,7 +453,7 @@ describe("Contract Appendices CRUD", () => {
     const appendixRes = await requestWithCookies(
       "POST",
       `${basePath(testEmployeeId)}/${cascadeContractId}/appendices`,
-      adminCookies,
+      tccbCookies,
       {
         effectiveOn: "2024-10-01",
         terms: "Cascade test appendix",
@@ -430,7 +465,7 @@ describe("Contract Appendices CRUD", () => {
     await requestWithCookies(
       "DELETE",
       `${basePath(testEmployeeId)}/${cascadeContractId}`,
-      adminCookies,
+      tccbCookies,
     );
 
     const [remaining] = await db

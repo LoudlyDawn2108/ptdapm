@@ -1,6 +1,7 @@
 import {
   ACADEMIC_RANK_CODES,
   CONTRACT_STATUS_CODES,
+  EMPLOYEE_PROFILE_VIEW_ROLES,
   GENDER_CODES,
   WORK_STATUS_CODES,
 } from "@hrms/shared";
@@ -301,7 +302,7 @@ export const employeeExportRoutes = new Elysia({ prefix: "/api/employees" })
   .get(
     "/export",
     async ({ query, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB", "TCKT");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_VIEW_ROLES);
       const format = query.format ?? "csv";
 
       const employees = await listAllEmployees({
@@ -331,7 +332,7 @@ export const employeeExportRoutes = new Elysia({ prefix: "/api/employees" })
   .get(
     "/:employeeId/export",
     async ({ params, query, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB", "TCKT");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_VIEW_ROLES);
       const format = query.format ?? "csv";
 
       const aggregate = await getAggregateById(params.employeeId, user.role);
