@@ -335,7 +335,6 @@ function SalaryGradesPage() {
         gradeName={stepGradeName}
         editingStep={editingStep}
         grades={grades.map((g) => ({ id: g.id, gradeCode: g.gradeCode, gradeName: g.gradeName } as GradeOption))}
-        onGradeChange={(id, name) => { setStepGradeId(id); setStepGradeName(name); }}
       />
     </div>
   );
