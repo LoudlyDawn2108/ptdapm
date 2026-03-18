@@ -1,3 +1,4 @@
+import { RoleGuard } from "@/components/shared/role-guard";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { DataTable } from "@/components/ui/data-table";
@@ -12,11 +13,18 @@ import {
 import { employeeListOptions } from "@/features/employees/api";
 import { useDebounce } from "@/hooks/use-debounce";
 import { fetchOrgUnitDropdown } from "@/lib/api/config-dropdowns";
-import { AcademicRank, ContractStatus, WorkStatus, enumToSortedList } from "@hrms/shared";
+import { authorizeRoute } from "@/lib/permissions";
+import {
+  AcademicRank,
+  ContractStatus,
+  EMPLOYEE_PROFILE_MANAGE_ROLES,
+  WorkStatus,
+  enumToSortedList,
+} from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ChevronDown, Pencil, Search, Users } from "lucide-react";
+import { Pencil, Plus, Search, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { z } from "zod";
 
@@ -32,6 +40,7 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/_authenticated/employees")({
+  beforeLoad: authorizeRoute("/employees"),
   validateSearch: searchSchema,
   component: EmployeesLayout,
 });
@@ -318,15 +327,17 @@ function EmployeesLayout() {
                 </Select>
               </div>
 
-              <Button
-                asChild
-                className="h-10 flex-shrink-0 rounded-lg bg-[#3B5CCC] px-4 text-white hover:bg-[#2F4FB8]"
-              >
-                <Link to="/employees/new">
-                  Thêm hồ sơ nhân sự
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
+              <RoleGuard roles={[...EMPLOYEE_PROFILE_MANAGE_ROLES]}>
+                <Button
+                  asChild
+                  className="h-10 flex-shrink-0 rounded-lg bg-[#3B5CCC] px-4 text-white hover:bg-[#2F4FB8]"
+                >
+                  <Link to="/employees/new">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Thêm hồ sơ nhân sự
+                  </Link>
+                </Button>
+              </RoleGuard>
             </div>
           </div>
 

@@ -55,8 +55,8 @@ async function requestAs(
   );
 }
 
-async function adminRequest(method: string, path: string, body?: unknown) {
-  return requestAs("admin", "admin123", method, path, body);
+async function tccbRequest(method: string, path: string, body?: unknown) {
+  return requestAs("tccb_user", "tccb1234", method, path, body);
 }
 
 let testEmployeeId: string;
@@ -106,16 +106,26 @@ afterAll(async () => {
 const BASE = () => `/api/employees/${testEmployeeId}/allowances`;
 
 describe("RBAC — Allowances role guards", () => {
-  test("ADMIN can list allowances (200)", async () => {
-    const res = await adminRequest("GET", BASE());
+  test("TCCB can list allowances (200)", async () => {
+    const res = await tccbRequest("GET", BASE());
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.items).toBeArray();
   });
 
-  test("EMPLOYEE can list allowances (200)", async () => {
-    const res = await requestAs("employee_user", "employee1234", "GET", BASE());
+  test("TCKT can list allowances (200)", async () => {
+    const res = await requestAs("tckt_user", "tckt1234", "GET", BASE());
     expect(res.status).toBe(200);
+  });
+
+  test("EMPLOYEE cannot list allowances (403)", async () => {
+    const res = await requestAs("employee_user", "employee1234", "GET", BASE());
+    expect(res.status).toBe(403);
+  });
+
+  test("ADMIN cannot list allowances (403)", async () => {
+    const res = await requestAs("admin", "admin123", "GET", BASE());
+    expect(res.status).toBe(403);
   });
 
   test("EMPLOYEE cannot create allowance (403)", async () => {
@@ -138,8 +148,8 @@ describe("RBAC — Allowances role guards", () => {
 describe("CRUD — Allowances", () => {
   let allowanceId: string;
 
-  test("ADMIN can create allowance (200)", async () => {
-    const res = await adminRequest("POST", BASE(), {
+  test("TCCB can create allowance (200)", async () => {
+    const res = await tccbRequest("POST", BASE(), {
       allowanceTypeId: testAllowanceTypeId,
       amount: 1500000,
       note: "Phu cap an trua",
@@ -152,7 +162,16 @@ describe("CRUD — Allowances", () => {
     createdAllowanceIds.push(allowanceId);
   });
 
-  test("TCCB can create allowance (200)", async () => {
+  test("ADMIN cannot create allowance (403)", async () => {
+    const res = await requestAs("admin", "admin123", "POST", BASE(), {
+      allowanceTypeId: testAllowanceTypeId,
+      amount: 700000,
+      note: "Blocked admin allowance",
+    });
+    expect(res.status).toBe(403);
+  });
+
+  test("TCCB can create additional allowance (200)", async () => {
     const res = await requestAs("tccb_user", "tccb1234", "POST", BASE(), {
       allowanceTypeId: testAllowanceTypeId,
       amount: 800000,
@@ -164,15 +183,15 @@ describe("CRUD — Allowances", () => {
   });
 
   test("list returns created allowances with pagination", async () => {
-    const res = await adminRequest("GET", BASE());
+    const res = await tccbRequest("GET", BASE());
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.items.length).toBeGreaterThanOrEqual(2);
     expect(body.data.total).toBeGreaterThanOrEqual(2);
   });
 
-  test("ADMIN can update allowance (200)", async () => {
-    const res = await adminRequest("PUT", `${BASE()}/${allowanceId}`, {
+  test("TCCB can update allowance (200)", async () => {
+    const res = await tccbRequest("PUT", `${BASE()}/${allowanceId}`, {
       amount: 2000000,
       note: "Cap nhat phu cap",
     });
@@ -202,8 +221,8 @@ describe("CRUD — Allowances", () => {
     expect(res.status).toBe(403);
   });
 
-  test("ADMIN can delete allowance (200)", async () => {
-    const res = await adminRequest("DELETE", `${BASE()}/${allowanceId}`);
+  test("TCCB can delete allowance (200)", async () => {
+    const res = await tccbRequest("DELETE", `${BASE()}/${allowanceId}`);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.id).toBe(allowanceId);
@@ -214,7 +233,7 @@ describe("CRUD — Allowances", () => {
 
 describe("Validation — Allowances", () => {
   test("invalid allowanceTypeId returns error", async () => {
-    const res = await adminRequest("POST", BASE(), {
+    const res = await tccbRequest("POST", BASE(), {
       allowanceTypeId: "00000000-0000-0000-0000-000000000000",
       amount: 100000,
     });
@@ -222,7 +241,7 @@ describe("Validation — Allowances", () => {
   });
 
   test("allowance with null amount is valid (200)", async () => {
-    const res = await adminRequest("POST", BASE(), {
+    const res = await tccbRequest("POST", BASE(), {
       allowanceTypeId: testAllowanceTypeId,
       note: "No amount specified",
     });

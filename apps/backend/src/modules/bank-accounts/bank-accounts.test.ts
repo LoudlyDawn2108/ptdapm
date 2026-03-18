@@ -55,8 +55,8 @@ async function requestAs(
   );
 }
 
-async function adminRequest(method: string, path: string, body?: unknown) {
-  return requestAs("admin", "admin123", method, path, body);
+async function tccbRequest(method: string, path: string, body?: unknown) {
+  return requestAs("tccb_user", "tccb1234", method, path, body);
 }
 
 let testEmployeeId: string;
@@ -90,16 +90,26 @@ afterAll(async () => {
 const BASE = () => `/api/employees/${testEmployeeId}/bank-accounts`;
 
 describe("RBAC — Bank Accounts role guards", () => {
-  test("ADMIN can list bank accounts (200)", async () => {
-    const res = await adminRequest("GET", BASE());
+  test("TCCB can list bank accounts (200)", async () => {
+    const res = await tccbRequest("GET", BASE());
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.items).toBeArray();
   });
 
-  test("EMPLOYEE can list bank accounts (200)", async () => {
-    const res = await requestAs("employee_user", "employee1234", "GET", BASE());
+  test("TCKT can list bank accounts (200)", async () => {
+    const res = await requestAs("tckt_user", "tckt1234", "GET", BASE());
     expect(res.status).toBe(200);
+  });
+
+  test("EMPLOYEE cannot list bank accounts (403)", async () => {
+    const res = await requestAs("employee_user", "employee1234", "GET", BASE());
+    expect(res.status).toBe(403);
+  });
+
+  test("ADMIN cannot list bank accounts (403)", async () => {
+    const res = await requestAs("admin", "admin123", "GET", BASE());
+    expect(res.status).toBe(403);
   });
 
   test("EMPLOYEE cannot create bank account (403)", async () => {
@@ -124,8 +134,8 @@ describe("RBAC — Bank Accounts role guards", () => {
 describe("CRUD — Bank Accounts", () => {
   let accountId: string;
 
-  test("ADMIN can create bank account (200)", async () => {
-    const res = await adminRequest("POST", BASE(), {
+  test("TCCB can create bank account (200)", async () => {
+    const res = await tccbRequest("POST", BASE(), {
       bankName: "Techcombank",
       accountNo: "19001234567890",
       isPrimary: true,
@@ -139,7 +149,16 @@ describe("CRUD — Bank Accounts", () => {
     createdIds.push(accountId);
   });
 
-  test("TCCB can create bank account (200)", async () => {
+  test("ADMIN cannot create bank account (403)", async () => {
+    const res = await requestAs("admin", "admin123", "POST", BASE(), {
+      bankName: "Blocked Admin Bank",
+      accountNo: "111111",
+      isPrimary: false,
+    });
+    expect(res.status).toBe(403);
+  });
+
+  test("TCCB can create additional bank account (200)", async () => {
     const res = await requestAs("tccb_user", "tccb1234", "POST", BASE(), {
       bankName: "Vietcombank",
       accountNo: "00112233445566",
@@ -152,7 +171,7 @@ describe("CRUD — Bank Accounts", () => {
   });
 
   test("list returns created accounts with pagination", async () => {
-    const res = await adminRequest("GET", BASE());
+    const res = await tccbRequest("GET", BASE());
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.items.length).toBeGreaterThanOrEqual(2);
@@ -160,7 +179,7 @@ describe("CRUD — Bank Accounts", () => {
   });
 
   test("creating isPrimary=true demotes existing primary", async () => {
-    const res = await adminRequest("POST", BASE(), {
+    const res = await tccbRequest("POST", BASE(), {
       bankName: "BIDV",
       accountNo: "99887766554433",
       isPrimary: true,
@@ -171,14 +190,14 @@ describe("CRUD — Bank Accounts", () => {
     createdIds.push(body.data.id);
 
     // The first account should no longer be primary
-    const listRes = await adminRequest("GET", BASE());
+    const listRes = await tccbRequest("GET", BASE());
     const listBody = await listRes.json();
     const firstAccount = listBody.data.items.find((a: { id: string }) => a.id === accountId);
     expect(firstAccount.isPrimary).toBe(false);
   });
 
-  test("ADMIN can update bank account (200)", async () => {
-    const res = await adminRequest("PUT", `${BASE()}/${accountId}`, {
+  test("TCCB can update bank account (200)", async () => {
+    const res = await tccbRequest("PUT", `${BASE()}/${accountId}`, {
       bankName: "Techcombank Updated",
     });
     expect(res.status).toBe(200);
@@ -196,8 +215,8 @@ describe("CRUD — Bank Accounts", () => {
     expect(res.status).toBe(403);
   });
 
-  test("ADMIN can delete bank account (200)", async () => {
-    const res = await adminRequest("DELETE", `${BASE()}/${accountId}`);
+  test("TCCB can delete bank account (200)", async () => {
+    const res = await tccbRequest("DELETE", `${BASE()}/${accountId}`);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.id).toBe(accountId);
