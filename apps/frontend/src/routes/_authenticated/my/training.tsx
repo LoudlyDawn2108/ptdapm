@@ -20,16 +20,15 @@ import {
 } from "@/components/ui/select";
 import {
   type MyTrainingRow,
+  myAvailableTrainingListOptions,
+  myTrainingCourseDetailOptions,
   myTrainingListOptions,
   useRegisterForCourse,
   useCancelRegistration,
 } from "@/features/my-training/api";
-import {
-  trainingCourseListOptions,
-  trainingCourseDetailOptions,
-} from "@/features/training-courses/api";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { formatDate } from "@/lib/date-utils";
+import { authorizeRoute } from "@/lib/permissions";
 import {
   TrainingStatus,
   ParticipationStatus,
@@ -58,6 +57,7 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/_authenticated/my/training")({
+  beforeLoad: authorizeRoute("/my/training"),
   validateSearch: searchSchema,
   component: MyTrainingPage,
 });
@@ -171,10 +171,9 @@ function AvailableCoursesTab({
   onViewCourse: (courseId: string) => void;
 }) {
   const { data: coursesData, isLoading } = useQuery(
-    trainingCourseListOptions({
+    myAvailableTrainingListOptions({
       page: search.page,
       pageSize: search.pageSize,
-      status: "open_registration" as TrainingStatusCode,
     }),
   );
 
@@ -535,7 +534,7 @@ function CourseDetailDialog({
   onClose: () => void;
 }) {
   const { data: course, isLoading } = useQuery({
-    ...trainingCourseDetailOptions(courseId ?? ""),
+    ...myTrainingCourseDetailOptions(courseId ?? ""),
     enabled: !!courseId,
   });
 
@@ -545,9 +544,18 @@ function CourseDetailDialog({
   const isOpen = !!courseId;
 
   // Determine if user is already registered for this course
-  const isRegistered = !!registration;
+  const effectiveRegistration =
+    registration ??
+    (course?.myRegistration
+      ? {
+          registrationId: course.myRegistration.registrationId,
+          participationStatus: course.myRegistration.participationStatus,
+        }
+      : null);
+
+  const isRegistered = !!effectiveRegistration;
   const canCancel =
-    isRegistered && registration.participationStatus === "registered";
+    isRegistered && effectiveRegistration.participationStatus === "registered";
 
   // Check if course is open for registration
   const isOpenForRegistration = course?.status === "open_registration";
@@ -575,11 +583,11 @@ function CourseDetailDialog({
   };
 
   const handleCancel = async () => {
-    if (!courseId || !registration) return;
+    if (!courseId || !effectiveRegistration) return;
     try {
       await cancelMutation.mutateAsync({
         courseId,
-        registrationId: registration.registrationId,
+        registrationId: effectiveRegistration.registrationId,
       });
       toast.success("Hủy đăng ký thành công");
       onClose();

@@ -1,4 +1,5 @@
 import {
+  changeTrainingCourseStatusSchema,
   createTrainingCourseSchema,
   listTrainingCoursesQuerySchema,
   updateTrainingCourseSchema,
@@ -19,7 +20,8 @@ export const trainingCourseRoutes = new Elysia({
   .use(authPlugin)
   .get(
     "/",
-    async ({ query }) => {
+    async ({ query, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
       const data = await trainingCoursesService.list(
         query.page,
         query.pageSize,
@@ -32,7 +34,8 @@ export const trainingCourseRoutes = new Elysia({
   )
   .get(
     "/:courseId",
-    async ({ params }) => {
+    async ({ params, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
       const data = await trainingCoursesService.getById(params.courseId);
       return { data };
     },
@@ -62,5 +65,37 @@ export const trainingCourseRoutes = new Elysia({
       auth: true,
       params: courseIdParamSchema,
       body: updateTrainingCourseSchema,
+    },
+  )
+  .patch(
+    "/:courseId/status",
+    async ({ params, body, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
+      const data = await trainingCoursesService.changeStatus(
+        params.courseId,
+        body,
+        user.id,
+      );
+      return { data };
+    },
+    {
+      auth: true,
+      params: courseIdParamSchema,
+      body: changeTrainingCourseStatusSchema,
+    },
+  )
+  .delete(
+    "/:courseId",
+    async ({ params, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
+      const data = await trainingCoursesService.remove(
+        params.courseId,
+        user.id,
+      );
+      return { data };
+    },
+    {
+      auth: true,
+      params: courseIdParamSchema,
     },
   );

@@ -1,10 +1,11 @@
 import type {
+  ChangeTrainingCourseStatusInput,
   CreateTrainingCourseInput,
   PaginatedResponse,
+  TrainingStatusCode,
   UpdateTrainingCourseInput,
 } from "@hrms/shared";
 import { type SQL, and, eq, ilike, sql } from "drizzle-orm";
-import type { TrainingStatusCode } from "@hrms/shared";
 import { BadRequestError, NotFoundError } from "../../common/utils/errors";
 import {
   buildPaginatedResponse,
@@ -24,6 +25,15 @@ import { orgUnits } from "../../db/schema/organization";
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+const NEXT_TRAINING_STATUS: Record<
+  TrainingStatusCode,
+  TrainingStatusCode | null
+> = {
+  open_registration: "in_progress",
+  in_progress: "completed",
+  completed: null,
+};
 
 async function ensureCourseExists(courseId: string): Promise<TrainingCourse> {
   const [course] = await db
@@ -51,6 +61,28 @@ async function getRegistrationCount(courseId: string): Promise<number> {
     .from(trainingRegistrations)
     .where(eq(trainingRegistrations.courseId, courseId));
   return Number(result[0]?.count ?? 0);
+}
+
+function ensureValidTrainingStatusTransition(
+  currentStatus: TrainingStatusCode,
+  requestedStatus: TrainingStatusCode,
+) {
+  const nextStatus = NEXT_TRAINING_STATUS[currentStatus];
+
+  if (currentStatus === requestedStatus) {
+    return;
+  }
+
+  if (nextStatus !== requestedStatus) {
+    if (!nextStatus) {
+      throw new BadRequestError(
+        "Khóa đào tạo đã hoàn thành và không thể chuyển sang trạng thái khác.",
+      );
+    }
+    throw new BadRequestError(
+      `Trạng thái chỉ có thể chuyển từ ${currentStatus} sang ${nextStatus}.`,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -206,6 +238,28 @@ export async function update(
   // A1: Nếu đang đào tạo, chỉ cho sửa: location, cost, commitment, certificateName, certificateType
   const isInProgress = existing.status === "in_progress";
 
+  if (isInProgress) {
+    const forbiddenFields: Array<keyof UpdateTrainingCourseInput> = [
+      "courseName",
+      "courseTypeId",
+      "trainingFrom",
+      "trainingTo",
+      "registrationFrom",
+      "registrationTo",
+      "registrationLimit",
+    ];
+
+    const attemptedForbidden = forbiddenFields.filter(
+      (field) => data[field] !== undefined,
+    );
+
+    if (attemptedForbidden.length > 0) {
+      throw new BadRequestError(
+        "Khóa đào tạo đang diễn ra: chỉ được chỉnh sửa địa điểm, kinh phí, cam kết và thông tin chứng chỉ.",
+      );
+    }
+  }
+
   // E2: Nếu giảm giới hạn đăng ký, kiểm tra số lượng đã đăng ký
   if (!isInProgress && data.registrationLimit != null) {
     const registrationCount = await getRegistrationCount(courseId);
@@ -271,6 +325,83 @@ export async function update(
     { courseName: existing.courseName, status: existing.status },
     { ...cleanSet },
   );
+
+  return updated;
+}
+
+export async function remove(
+  courseId: string,
+  actorUserId: string,
+): Promise<{ id: string }> {
+  const existing = await ensureCourseExists(courseId);
+
+  const [deleted] = await db
+    .delete(trainingCourses)
+    .where(eq(trainingCourses.id, courseId))
+    .returning({ id: trainingCourses.id });
+
+  if (!deleted) throw new Error("Delete training course failed");
+
+  await withAuditLog(
+    db,
+    actorUserId,
+    "DELETE",
+    "training_course",
+    courseId,
+    {
+      courseName: existing.courseName,
+      status: existing.status,
+    },
+    undefined,
+  );
+
+  return { id: deleted.id };
+}
+
+export async function changeStatus(
+  courseId: string,
+  data: ChangeTrainingCourseStatusInput,
+  actorUserId: string,
+): Promise<TrainingCourse> {
+  let previousStatus: TrainingStatusCode | undefined;
+
+  const updated = await db.transaction(async (tx) => {
+    const [course] = await tx
+      .select()
+      .from(trainingCourses)
+      .where(eq(trainingCourses.id, courseId))
+      .for("update");
+
+    if (!course) throw new NotFoundError("Không tìm thấy khóa đào tạo");
+
+    previousStatus = course.status;
+    ensureValidTrainingStatusTransition(course.status, data.status);
+
+    if (course.status === data.status) {
+      return course;
+    }
+
+    const [row] = await tx
+      .update(trainingCourses)
+      .set({ status: data.status, updatedAt: new Date() })
+      .where(eq(trainingCourses.id, courseId))
+      .returning();
+
+    if (!row) throw new Error("Update training course status failed");
+    return row;
+  });
+
+  if (previousStatus && previousStatus !== updated.status) {
+    await withAuditLog(
+      db,
+      actorUserId,
+      "UPDATE",
+      "training_course",
+      courseId,
+      { status: previousStatus },
+      { status: updated.status },
+    );
+  }
 
   return updated;
 }

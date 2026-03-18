@@ -54,7 +54,7 @@ async function seedTrainingRegistrations() {
     {
       courseName: "Tập huấn nghiệp vụ quản lý nhân sự 2026",
       nationalId: "001090056789",
-      participationStatus: "learning" as const,
+      participationStatus: "registered" as const,
     },
     {
       courseName: "Khóa bồi dưỡng phương pháp giảng dạy hiện đại",
@@ -84,7 +84,7 @@ async function seedTrainingRegistrations() {
     {
       courseName: "Tiếng Anh giao tiếp công sở - Trình độ B1",
       nationalId: "001088098765",
-      participationStatus: "learning" as const,
+      participationStatus: "registered" as const,
     },
     {
       courseName: "Đào tạo Scrum Master cho quản lý dự án",

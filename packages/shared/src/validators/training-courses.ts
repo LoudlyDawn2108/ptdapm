@@ -4,6 +4,29 @@ import {
   type TrainingStatusCode,
 } from "../constants/enums";
 
+const amountStringSchema = z
+  .string()
+  .trim()
+  .regex(
+    /^\d+(\.\d{1,2})?$/,
+    "Giá trị tiền tệ phải là số không âm, tối đa 2 chữ số thập phân (ví dụ: 3500000 hoặc 3500000.00)",
+  );
+
+const nullableAmountStringSchema = z
+  .string()
+  .nullish()
+  .refine(
+    (value) => {
+      if (value == null || value === "") return true;
+      return amountStringSchema.safeParse(value).success;
+    },
+    {
+      message:
+        "Giá trị tiền tệ phải là số không âm, tối đa 2 chữ số thập phân (ví dụ: 3500000 hoặc 3500000.00)",
+    },
+  )
+  .transform((value) => (value === "" ? undefined : value));
+
 // ---------------------------------------------------------------------------
 // Create Training Course (UC 4.33 — Mở khóa đào tạo)
 // ---------------------------------------------------------------------------
@@ -17,7 +40,7 @@ export const createTrainingCourseSchema = z
     trainingFrom: z.string().date("Ngày bắt đầu đào tạo không hợp lệ"),
     trainingTo: z.string().date("Ngày kết thúc đào tạo không hợp lệ"),
     location: z.string().max(255).nullish(),
-    cost: z.string().nullish(),
+    cost: nullableAmountStringSchema,
     commitment: z.string().nullish(),
     certificateName: z.string().max(255).nullish(),
     certificateType: z.string().max(255).nullish(),
@@ -53,6 +76,18 @@ export const createTrainingCourseSchema = z
         path: ["registrationFrom"],
       });
     }
+
+    if (
+      data.registrationTo &&
+      data.trainingFrom &&
+      data.registrationTo > data.trainingFrom
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Ngày đóng đăng ký phải trước hoặc bằng ngày bắt đầu đào tạo",
+        path: ["registrationTo"],
+      });
+    }
   });
 
 export type CreateTrainingCourseInput = z.infer<
@@ -69,7 +104,7 @@ export const updateTrainingCourseSchema = z
     trainingFrom: z.string().date().optional(),
     trainingTo: z.string().date().optional(),
     location: z.string().max(255).nullish(),
-    cost: z.string().nullish(),
+    cost: nullableAmountStringSchema,
     commitment: z.string().nullish(),
     certificateName: z.string().max(255).nullish(),
     certificateType: z.string().max(255).nullish(),
@@ -99,6 +134,18 @@ export const updateTrainingCourseSchema = z
         code: z.ZodIssueCode.custom,
         message: "Ngày mở đăng ký phải trước ngày đóng đăng ký",
         path: ["registrationFrom"],
+      });
+    }
+
+    if (
+      data.registrationTo &&
+      data.trainingFrom &&
+      data.registrationTo > data.trainingFrom
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Ngày đóng đăng ký phải trước hoặc bằng ngày bắt đầu đào tạo",
+        path: ["registrationTo"],
       });
     }
   });

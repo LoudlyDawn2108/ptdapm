@@ -1,5 +1,5 @@
 import type { CreateTerminationInput } from "@hrms/shared";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { BadRequestError, NotFoundError } from "../../common/utils/errors";
 import { db } from "../../db";
 import {
@@ -81,8 +81,6 @@ export async function terminate(
     );
   }
 
-  const today = new Date().toISOString().split("T")[0]!;
-
   return await db.transaction(async (tx) => {
     // 2. Insert termination record
     const [termination] = await tx
@@ -110,21 +108,21 @@ export async function terminate(
       })
       .where(eq(employees.id, employeeId));
 
-    // 4. Expire all non-expired contracts
+    // 4. Expire all non-final contracts
     await tx
       .update(employmentContracts)
       .set({ status: "expired", updatedAt: new Date() })
       .where(
         and(
           eq(employmentContracts.employeeId, employeeId),
-          eq(employmentContracts.status, "draft"),
+          inArray(employmentContracts.status, ["draft", "valid"]),
         ),
       );
 
     // 5. End all remaining assignments
     await tx
       .update(employeeAssignments)
-      .set({ endedOn: today, eventType: "DISMISS" })
+      .set({ endedOn: data.terminatedOn, eventType: "DISMISS" })
       .where(
         and(
           eq(employeeAssignments.employeeId, employeeId),

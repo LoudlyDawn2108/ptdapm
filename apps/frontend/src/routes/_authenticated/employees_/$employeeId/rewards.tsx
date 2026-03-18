@@ -466,7 +466,8 @@ function RewardFormDialog({
                   <FormLabel>Số tiền thưởng</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Nhập số tiền thưởng"
+                      placeholder="VD: 1000000 hoặc 1000000.00"
+                      inputMode="decimal"
                       {...field}
                       value={field.value ?? ""}
                     />

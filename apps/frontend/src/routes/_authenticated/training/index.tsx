@@ -155,7 +155,18 @@ function TrainingCoursesPage() {
     setError: UseFormSetError<UpdateTrainingCourseInput>,
   ) => {
     try {
-      await updateMutation.mutateAsync({ courseId, ...input });
+      const payload: UpdateTrainingCourseInput =
+        editingCourse?.status === "in_progress"
+          ? {
+              location: input.location,
+              cost: input.cost,
+              commitment: input.commitment,
+              certificateName: input.certificateName,
+              certificateType: input.certificateType,
+            }
+          : input;
+
+      await updateMutation.mutateAsync({ courseId, ...payload });
       toast.success("Cập nhật khóa đào tạo thành công");
       setEditingCourse(null);
     } catch (error) {
@@ -267,7 +278,7 @@ function TrainingCoursesPage() {
 // Form Dialog
 // ---------------------------------------------------------------------------
 
-type FormValues = CreateTrainingCourseInput;
+type FormValues = z.input<typeof createTrainingCourseSchema>;
 
 interface TrainingCourseFormDialogProps {
   mode: "create" | "edit";
@@ -352,6 +363,7 @@ function TrainingCourseFormDialog({
     mode === "create" ? "Thêm khóa đào tạo" : "Chỉnh sửa khóa đào tạo";
   const submitLabel =
     mode === "create" ? "Lưu khóa đào tạo" : "Lưu thay đổi";
+  const isInProgressEdit = mode === "edit" && course?.status === "in_progress";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -383,10 +395,17 @@ function TrainingCourseFormDialog({
                 registrationFrom: values.registrationFrom || undefined,
                 registrationTo: values.registrationTo || undefined,
               };
+
               return onSubmit(cleaned, form.setError);
             })}
             className="px-6 py-4 space-y-5"
           >
+            {isInProgressEdit && (
+              <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                Khóa đào tạo đang diễn ra: chỉ được chỉnh sửa địa điểm, kinh phí, cam kết và thông tin chứng chỉ.
+              </div>
+            )}
+
             {/* Tên + Loại khóa đào tạo */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
@@ -399,7 +418,11 @@ function TrainingCourseFormDialog({
                       <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Nhập tên khóa đào tạo" />
+                      <Input
+                        {...field}
+                        placeholder="Nhập tên khóa đào tạo"
+                        disabled={isInProgressEdit}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -414,7 +437,11 @@ function TrainingCourseFormDialog({
                       Loại khóa đào tạo{" "}
                       <span className="text-destructive">*</span>
                     </FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={isInProgressEdit}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Chọn loại" />
@@ -446,7 +473,12 @@ function TrainingCourseFormDialog({
                       <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} value={field.value ?? ""} />
+                      <Input
+                        type="date"
+                        {...field}
+                        value={field.value ?? ""}
+                        disabled={isInProgressEdit}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -462,7 +494,12 @@ function TrainingCourseFormDialog({
                       <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} value={field.value ?? ""} />
+                      <Input
+                        type="date"
+                        {...field}
+                        value={field.value ?? ""}
+                        disabled={isInProgressEdit}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -499,7 +536,7 @@ function TrainingCourseFormDialog({
                       <Input
                         {...field}
                         value={field.value ?? ""}
-                        placeholder="VD: 3.500.000"
+                        placeholder="VD: 3500000 hoặc 3500000.00"
                       />
                     </FormControl>
                     <FormMessage />
@@ -578,6 +615,7 @@ function TrainingCourseFormDialog({
                         type="date"
                         {...field}
                         value={field.value ?? ""}
+                        disabled={isInProgressEdit}
                         onChange={(e) =>
                           field.onChange(e.target.value || undefined)
                         }
@@ -598,6 +636,7 @@ function TrainingCourseFormDialog({
                         type="date"
                         {...field}
                         value={field.value ?? ""}
+                        disabled={isInProgressEdit}
                         onChange={(e) =>
                           field.onChange(e.target.value || undefined)
                         }
@@ -622,6 +661,7 @@ function TrainingCourseFormDialog({
                       min={1}
                       placeholder="Để trống nếu không giới hạn"
                       value={field.value ?? ""}
+                      disabled={isInProgressEdit}
                       onChange={(e) => {
                         const val = e.target.value;
                         field.onChange(val === "" ? undefined : Number(val));

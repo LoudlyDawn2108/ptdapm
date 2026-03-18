@@ -2,11 +2,13 @@ import type {
   CreateTrainingRegistrationInput,
   PaginatedResponse,
   ParticipationStatusCode,
+  RoleCode,
 } from "@hrms/shared";
 import { type SQL, and, eq, sql } from "drizzle-orm";
 import {
   BadRequestError,
   ConflictError,
+  ForbiddenError,
   NotFoundError,
 } from "../../common/utils/errors";
 import { buildPaginatedResponse } from "../../common/utils/pagination";
@@ -59,6 +61,15 @@ async function ensureEmployeeExists(employeeId: string) {
 
   if (!employee) throw new NotFoundError("Không tìm thấy nhân sự");
   return employee;
+}
+
+function isPostgresUniqueViolation(error: unknown): error is { code: string } {
+  return (
+    error !== null &&
+    typeof error === "object" &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "23505"
+  );
 }
 
 async function ensureRegistrationExists(
@@ -181,10 +192,6 @@ export async function create(
   actorEmployeeId: string | null,
   actorRole: string,
 ): Promise<TrainingRegistration> {
-  const course = await ensureCourseExists(courseId);
-  ensureCourseOpenForRegistration(course);
-  ensureRegistrationPeriodActive(course);
-
   // Resolve employeeId: ADMIN/TCCB can register on behalf, others use own
   let employeeId: string;
   const isAdmin = actorRole === "ADMIN" || actorRole === "TCCB";
@@ -202,45 +209,62 @@ export async function create(
   await ensureEmployeeExists(employeeId);
 
   // Use transaction to atomically check capacity + uniqueness and insert
-  const created = await db.transaction(async (tx) => {
-    // Re-check capacity inside transaction to prevent race condition
-    if (course.registrationLimit != null) {
-      const countResult = await tx
-        .select({ count: sql<number>`count(*)` })
-        .from(trainingRegistrations)
-        .where(eq(trainingRegistrations.courseId, courseId));
-      const count = Number(countResult[0]?.count ?? 0);
-      if (count >= course.registrationLimit) {
-        throw new BadRequestError("Khóa đào tạo đã đủ số lượng đăng ký.");
-      }
-    }
+  let created: TrainingRegistration;
+  try {
+    created = await db.transaction(async (tx) => {
+      const [course] = await tx
+        .select()
+        .from(trainingCourses)
+        .where(eq(trainingCourses.id, courseId))
+        .for("update");
 
-    // Check for existing registration inside transaction
-    const [existing] = await tx
-      .select({ id: trainingRegistrations.id })
-      .from(trainingRegistrations)
-      .where(
-        and(
-          eq(trainingRegistrations.courseId, courseId),
-          eq(trainingRegistrations.employeeId, employeeId),
-        ),
-      );
-    if (existing) {
+      if (!course) throw new NotFoundError("Không tìm thấy khóa đào tạo");
+
+      ensureCourseOpenForRegistration(course);
+      ensureRegistrationPeriodActive(course);
+
+      if (course.registrationLimit != null) {
+        const countResult = await tx
+          .select({ count: sql<number>`count(*)` })
+          .from(trainingRegistrations)
+          .where(eq(trainingRegistrations.courseId, courseId));
+        const count = Number(countResult[0]?.count ?? 0);
+        if (count >= course.registrationLimit) {
+          throw new BadRequestError("Khóa đào tạo đã đủ số lượng đăng ký.");
+        }
+      }
+
+      const [existing] = await tx
+        .select({ id: trainingRegistrations.id })
+        .from(trainingRegistrations)
+        .where(
+          and(
+            eq(trainingRegistrations.courseId, courseId),
+            eq(trainingRegistrations.employeeId, employeeId),
+          ),
+        );
+      if (existing) {
+        throw new ConflictError("Bạn đã đăng ký khóa đào tạo này.");
+      }
+
+      const [row] = await tx
+        .insert(trainingRegistrations)
+        .values({
+          courseId,
+          employeeId,
+          participationStatus: "registered",
+        })
+        .returning();
+
+      if (!row) throw new Error("Insert training registration failed");
+      return row;
+    });
+  } catch (error) {
+    if (isPostgresUniqueViolation(error)) {
       throw new ConflictError("Bạn đã đăng ký khóa đào tạo này.");
     }
-
-    const [row] = await tx
-      .insert(trainingRegistrations)
-      .values({
-        courseId,
-        employeeId,
-        participationStatus: "registered",
-      })
-      .returning();
-
-    if (!row) throw new Error("Insert training registration failed");
-    return row;
-  });
+    throw error;
+  }
 
   await withAuditLog(
     db,
@@ -263,8 +287,17 @@ export async function remove(
   courseId: string,
   registrationId: string,
   actorUserId: string,
+  actorEmployeeId: string | null,
+  actorRole: RoleCode,
 ): Promise<{ id: string }> {
   const registration = await ensureRegistrationExists(registrationId, courseId);
+
+  const isAdmin = actorRole === "ADMIN" || actorRole === "TCCB";
+  if (!isAdmin) {
+    if (!actorEmployeeId || registration.employeeId !== actorEmployeeId) {
+      throw new ForbiddenError("Bạn chỉ có thể hủy đăng ký của chính mình.");
+    }
+  }
 
   if (registration.participationStatus !== "registered") {
     throw new BadRequestError(

@@ -72,11 +72,12 @@ export const trainingRegistrationRoutes = new Elysia({
   .delete(
     "/:courseId/registrations/:id",
     async ({ params, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
       const data = await trainingRegistrationsService.remove(
         params.courseId,
         params.id,
         user.id,
+        user.employeeId,
+        user.role,
       );
       return { data };
     },

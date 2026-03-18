@@ -12,8 +12,8 @@ import {
   NotFoundError,
 } from "../../common/utils/errors";
 import { buildPaginatedResponse } from "../../common/utils/pagination";
-import { withAuditLog } from "../../common/utils/user-context";
 import { db } from "../../db";
+import { auditLogs } from "../../db/schema/audit";
 import {
   type TrainingCourse,
   type TrainingResult,
@@ -101,16 +101,6 @@ async function ensureResultExists(
     ...result.training_results,
     registrationId: result.training_registrations.id,
   };
-}
-
-async function updateParticipationStatus(
-  registrationId: string,
-  status: "completed" | "failed" | "learning",
-) {
-  await db
-    .update(trainingRegistrations)
-    .set({ participationStatus: status })
-    .where(eq(trainingRegistrations.id, registrationId));
 }
 
 // ---------------------------------------------------------------------------
@@ -234,36 +224,42 @@ export async function create(
   await ensureRegistrationExists(data.registrationId, courseId);
   await ensureNoExistingResult(data.registrationId);
 
-  const [created] = await db
-    .insert(trainingResults)
-    .values({
-      registrationId: data.registrationId,
-      resultStatus: data.resultStatus,
-      completedOn: data.completedOn ?? course.trainingTo,
-      certificateFileId: data.certificateFileId ?? null,
-      note: data.note ?? null,
-      createdByUserId: actorUserId,
-    })
-    .returning();
+  const [created] = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .insert(trainingResults)
+      .values({
+        registrationId: data.registrationId,
+        resultStatus: data.resultStatus,
+        completedOn: data.completedOn ?? course.trainingTo,
+        certificateFileId: data.certificateFileId ?? null,
+        note: data.note ?? null,
+        createdByUserId: actorUserId,
+      })
+      .returning();
+
+    if (!row) throw new Error("Insert training result failed");
+
+    await tx
+      .update(trainingRegistrations)
+      .set({ participationStatus: data.resultStatus })
+      .where(eq(trainingRegistrations.id, data.registrationId));
+
+    await tx.insert(auditLogs).values({
+      actorUserId,
+      action: "CREATE",
+      entityType: "training_result",
+      entityId: row.id,
+      newValues: {
+        registrationId: data.registrationId,
+        resultStatus: data.resultStatus,
+        courseId,
+      },
+    });
+
+    return [row] as const;
+  });
 
   if (!created) throw new Error("Insert training result failed");
-
-  // Cập nhật trạng thái tham gia trên bản đăng ký
-  await updateParticipationStatus(data.registrationId, data.resultStatus);
-
-  await withAuditLog(
-    db,
-    actorUserId,
-    "CREATE",
-    "training_result",
-    created.id,
-    undefined,
-    {
-      registrationId: data.registrationId,
-      resultStatus: data.resultStatus,
-      courseId,
-    },
-  );
 
   return created;
 }
@@ -333,22 +329,19 @@ export async function createBatch(
         .set({ participationStatus: item.resultStatus })
         .where(eq(trainingRegistrations.id, item.registrationId));
     }
-  });
 
-  // Audit log cho batch
-  await withAuditLog(
-    db,
-    actorUserId,
-    "CREATE_BATCH",
-    "training_result",
-    courseId,
-    undefined,
-    {
-      courseId,
-      count: createdResults.length,
-      registrationIds: data.results.map((r) => r.registrationId),
-    },
-  );
+    await tx.insert(auditLogs).values({
+      actorUserId,
+      action: "CREATE_BATCH",
+      entityType: "training_result",
+      entityId: courseId,
+      newValues: {
+        courseId,
+        count: createdResults.length,
+        registrationIds: data.results.map((r) => r.registrationId),
+      },
+    });
+  });
 
   return createdResults;
 }
@@ -393,28 +386,35 @@ export async function update(
     ...(data.note !== undefined && { note: data.note ?? null }),
   };
 
-  const [updated] = await db
-    .update(trainingResults)
-    .set(updateSet)
-    .where(eq(trainingResults.id, resultId))
-    .returning();
+  const [updated] = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .update(trainingResults)
+      .set(updateSet)
+      .where(eq(trainingResults.id, resultId))
+      .returning();
+
+    if (!row) throw new Error("Update training result failed");
+
+    if (data.resultStatus && data.resultStatus !== existing.resultStatus) {
+      await tx
+        .update(trainingRegistrations)
+        .set({ participationStatus: data.resultStatus })
+        .where(eq(trainingRegistrations.id, existing.registrationId));
+    }
+
+    await tx.insert(auditLogs).values({
+      actorUserId,
+      action: "UPDATE",
+      entityType: "training_result",
+      entityId: resultId,
+      oldValues: { resultStatus: existing.resultStatus },
+      newValues: { ...updateSet, courseId },
+    });
+
+    return [row] as const;
+  });
 
   if (!updated) throw new Error("Update training result failed");
-
-  // Đồng bộ participationStatus nếu resultStatus thay đổi
-  if (data.resultStatus && data.resultStatus !== existing.resultStatus) {
-    await updateParticipationStatus(existing.registrationId, data.resultStatus);
-  }
-
-  await withAuditLog(
-    db,
-    actorUserId,
-    "UPDATE",
-    "training_result",
-    resultId,
-    { resultStatus: existing.resultStatus },
-    { ...updateSet, courseId },
-  );
 
   return updated;
 }
@@ -430,23 +430,25 @@ export async function remove(
 ): Promise<{ id: string }> {
   const existing = await ensureResultExists(resultId, courseId);
 
-  await db.delete(trainingResults).where(eq(trainingResults.id, resultId));
+  await db.transaction(async (tx) => {
+    await tx.delete(trainingResults).where(eq(trainingResults.id, resultId));
 
-  // Reset participationStatus về "learning"
-  await updateParticipationStatus(existing.registrationId, "learning");
+    await tx
+      .update(trainingRegistrations)
+      .set({ participationStatus: "learning" })
+      .where(eq(trainingRegistrations.id, existing.registrationId));
 
-  await withAuditLog(
-    db,
-    actorUserId,
-    "DELETE",
-    "training_result",
-    resultId,
-    {
-      resultStatus: existing.resultStatus,
-      registrationId: existing.registrationId,
-    },
-    undefined,
-  );
+    await tx.insert(auditLogs).values({
+      actorUserId,
+      action: "DELETE",
+      entityType: "training_result",
+      entityId: resultId,
+      oldValues: {
+        resultStatus: existing.resultStatus,
+        registrationId: existing.registrationId,
+      },
+    });
+  });
 
   return { id: resultId };
 }

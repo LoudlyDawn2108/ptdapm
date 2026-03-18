@@ -17,6 +17,11 @@ export const myTrainingKeys = {
   lists: () => [...myTrainingKeys.all, "list"] as const,
   list: (params: Record<string, unknown>) =>
     [...myTrainingKeys.lists(), params] as const,
+  availableLists: () => [...myTrainingKeys.all, "available-list"] as const,
+  availableList: (params: Record<string, unknown>) =>
+    [...myTrainingKeys.availableLists(), params] as const,
+  courseDetail: (courseId: string) =>
+    [...myTrainingKeys.all, "course-detail", courseId] as const,
 };
 
 // ---------------------------------------------------------------------------
@@ -39,6 +44,31 @@ export interface MyTrainingRow {
   registrationCount: number;
 }
 
+export interface MyTrainingCourseDetail {
+  id: string;
+  courseName: string;
+  courseTypeId: string;
+  trainingFrom: string;
+  trainingTo: string;
+  location: string | null;
+  cost: string | null;
+  commitment: string | null;
+  certificateName: string | null;
+  certificateType: string | null;
+  registrationFrom: string | null;
+  registrationTo: string | null;
+  registrationLimit: number | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  courseType: { id: string; typeName: string } | null;
+  registrationCount: number;
+  myRegistration: {
+    registrationId: string;
+    participationStatus: string;
+  } | null;
+}
+
 // ---------------------------------------------------------------------------
 // List my training registrations — GET /api/my/training (UC 4.41)
 // ---------------------------------------------------------------------------
@@ -59,6 +89,36 @@ export const myTrainingListOptions = (params: {
     },
   });
 
+export const myAvailableTrainingListOptions = (params: {
+  page?: number;
+  pageSize?: number;
+}) =>
+  queryOptions({
+    queryKey: myTrainingKeys.availableList(params as Record<string, unknown>),
+    queryFn: async () => {
+      const { data, error } = await (api.api.my as any).training.available.get({
+        query: params as Record<string, unknown>,
+      });
+      if (error) throw handleApiError(error);
+      return data;
+    },
+  });
+
+export const myTrainingCourseDetailOptions = (courseId: string) =>
+  queryOptions({
+    queryKey: myTrainingKeys.courseDetail(courseId),
+    queryFn: async () => {
+      const { data, error } = await (api.api.my as any).training
+        .courses({
+          courseId,
+        })
+        .get();
+      if (error) throw handleApiError(error);
+      return (data as any)?.data as MyTrainingCourseDetail;
+    },
+    enabled: !!courseId,
+  });
+
 // ---------------------------------------------------------------------------
 // Register for a course — POST /api/training-courses/:courseId/registrations (UC 4.40)
 // ---------------------------------------------------------------------------
@@ -76,6 +136,7 @@ export function useRegisterForCourse() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: myTrainingKeys.lists() });
+      qc.invalidateQueries({ queryKey: myTrainingKeys.availableLists() });
       qc.invalidateQueries({ queryKey: trainingCourseKeys.all });
     },
   });
@@ -104,6 +165,7 @@ export function useCancelRegistration() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: myTrainingKeys.lists() });
+      qc.invalidateQueries({ queryKey: myTrainingKeys.availableLists() });
       qc.invalidateQueries({ queryKey: trainingCourseKeys.all });
     },
   });

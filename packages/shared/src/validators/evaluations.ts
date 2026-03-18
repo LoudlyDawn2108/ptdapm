@@ -1,6 +1,20 @@
 import { z } from "zod";
 import { EVAL_TYPE_CODES, type EvalTypeCode } from "../constants/enums";
 
+const rewardAmountSchema = z
+  .string()
+  .nullish()
+  .refine(
+    (value) => {
+      if (value == null || value === "") return true;
+      return /^\d+(\.\d{1,2})?$/.test(value.trim());
+    },
+    {
+      message: "Số tiền thưởng phải là số không âm, tối đa 2 chữ số thập phân",
+    },
+  )
+  .transform((value) => (value === "" ? undefined : value));
+
 export const createEvaluationSchema = z
   .object({
     evalType: z.enum(EVAL_TYPE_CODES as [EvalTypeCode, ...EvalTypeCode[]]),
@@ -9,7 +23,7 @@ export const createEvaluationSchema = z
     decisionOn: z.union([z.literal(""), z.string().date()]).nullish(),
     decisionNo: z.string().max(50).nullish(),
     content: z.string().nullish(),
-    rewardAmount: z.string().nullish(),
+    rewardAmount: rewardAmountSchema,
     disciplineType: z.string().max(255).nullish(),
     disciplineName: z.string().max(255).nullish(),
     reason: z.string().nullish(),
@@ -86,7 +100,7 @@ export const createEvaluationSchema = z
     }
   });
 
-export type CreateEvaluationInput = z.infer<typeof createEvaluationSchema>;
+export type CreateEvaluationInput = z.input<typeof createEvaluationSchema>;
 
 export const updateEvaluationSchema = z
   .object({
@@ -96,7 +110,7 @@ export const updateEvaluationSchema = z
     decisionOn: z.union([z.literal(""), z.string().date()]).nullish(),
     decisionNo: z.string().max(50).nullish(),
     content: z.string().nullish(),
-    rewardAmount: z.string().nullish(),
+    rewardAmount: rewardAmountSchema,
     disciplineType: z.string().max(255).nullish(),
     disciplineName: z.string().max(255).nullish(),
     reason: z.string().nullish(),
@@ -173,7 +187,7 @@ export const updateEvaluationSchema = z
     }
   });
 
-export type UpdateEvaluationInput = z.infer<typeof updateEvaluationSchema>;
+export type UpdateEvaluationInput = z.input<typeof updateEvaluationSchema>;
 
 export const listEvaluationsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
