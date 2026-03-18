@@ -19,11 +19,12 @@ import {
 import {
   SalaryGradeStepFormDialog,
   type StepRow,
+  type GradeOption,
 } from "@/features/config/salary-grades/SalaryGradeStepFormDialog";
 import { useDebounce } from "@/hooks/use-debounce";
 import { SKELETON_ROW_COUNT } from "@/lib/constants";
 import { authorizeRoute } from "@/lib/permissions";
-import { CatalogStatus, type CatalogStatusCode } from "@hrms/shared";
+import { CatalogStatus } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
@@ -45,7 +46,10 @@ function GradeStepsTable({
 }) {
   const { data, isLoading } = useQuery(salaryGradeStepsOptions(grade.id));
   const deleteStepMutation = useDeleteSalaryGradeStep();
-  const steps = (data?.data ?? []) as unknown as StepRow[];
+  const steps = ((data?.data ?? []) as any[]).map((s: any) => ({
+    ...s,
+    gradeId: s.salaryGradeId ?? s.gradeId ?? grade.id,
+  })) as StepRow[];
 
   if (isLoading) {
     return (
@@ -110,8 +114,8 @@ function GradeStepsTable({
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       }
-                      title="Xóa bậc lương"
-                      description={`Bạn có chắc muốn xóa bậc ${step.stepNo}?`}
+                      title="Xóa hệ số lương"
+                      description={`Bạn có chắc chắn muốn xóa hệ số lương HSL${grade.gradeCode}${String(step.stepNo).padStart(2, "0")}?\nHành động này không thể hoàn tác`}
                       confirmLabel="Xóa"
                       variant="destructive"
                       onConfirm={() =>
@@ -146,40 +150,27 @@ function GradeAccordion({
   onEditGrade: (grade: GradeRow) => void;
   onDeleteGrade: (grade: GradeRow) => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   return (
-    <div className="rounded-lg border bg-card">
-      <div className="flex w-full items-center justify-between px-4 py-3">
-        <button
-          type="button"
-          className="flex flex-1 items-center gap-2 text-left hover:opacity-70"
-          onClick={() => setExpanded(!expanded)}
-        >
+    <div className="rounded-lg border bg-card overflow-hidden">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between bg-gradient-to-r from-blue-500 to-blue-400 px-4 py-2.5 text-white hover:from-blue-600 hover:to-blue-500 transition-colors"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span className="font-semibold text-sm italic">{grade.gradeName}</span>
+        <div className="flex items-center gap-1">
           {expanded ? (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <ChevronDown className="h-4 w-4" />
           ) : (
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <ChevronRight className="h-4 w-4" />
           )}
-          <span className="font-semibold text-primary">{grade.gradeName}</span>
-          <span className="text-xs text-muted-foreground">({grade.gradeCode})</span>
-        </button>
-        <div className="flex items-center gap-2">
-          <StatusBadgeFromCode
-            code={grade.status}
-            label={
-              CatalogStatus[grade.status as keyof typeof CatalogStatus]?.label ??
-              grade.status
-            }
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => { e.stopPropagation(); onAddStep(grade.id, grade.gradeName); }}
-            title="Thêm bậc lương"
-          >
-            <Plus className="h-4 w-4 text-primary" />
-          </Button>
+        </div>
+      </button>
+      <div className="flex w-full items-center justify-between px-4 py-1">
+        <div />
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
@@ -195,8 +186,8 @@ function GradeAccordion({
               </Button>
             }
             title="Xóa ngạch lương"
-            description={`Bạn có chắc muốn xóa ngạch "${grade.gradeName}"?`}
-            confirmLabel="Xóa"
+            description={`Bạn có chắc muốn xóa ngạch "${grade.gradeName}"?\nHành động này không thể hoàn tác`}
+            confirmLabel="Xác nhận xóa"
             variant="destructive"
             onConfirm={() => onDeleteGrade(grade)}
           />
@@ -236,6 +227,19 @@ function SalaryGradesPage() {
     setGradeDialogOpen(true);
   };
 
+  const handleAddStepFromTop = () => {
+    // Default to the first grade if available
+    if (grades.length > 0) {
+      setStepGradeId(grades[0]?.id ?? "");
+      setStepGradeName(grades[0]?.gradeName ?? "");
+    } else {
+      setStepGradeId("");
+      setStepGradeName("");
+    }
+    setEditingStep(null);
+    setStepDialogOpen(true);
+  };
+
   const handleEditGrade = (grade: GradeRow) => {
     setEditingGrade(grade);
     setGradeDialogOpen(true);
@@ -265,7 +269,7 @@ function SalaryGradesPage() {
   if (isError) {
     return (
       <div>
-        <PageHeader title="Ngạch lương" description="Quản lý hệ thống ngạch lương và bậc lương" />
+        <PageHeader title="Hệ số lương" description="Quản lý danh mục hệ số lương" />
         <QueryError error={error} onRetry={refetch} />
       </div>
     );
@@ -274,12 +278,12 @@ function SalaryGradesPage() {
   return (
     <div>
       <PageHeader
-        title="Ngạch lương"
-        description="Quản lý hệ thống ngạch lương và bậc lương"
+        title="Hệ số lương"
+        description="Quản lý danh mục hệ số lương"
         actions={
-          <Button onClick={handleAddGrade}>
+          <Button onClick={handleAddStepFromTop}>
             <Plus className="mr-2 h-4 w-4" />
-            Thêm ngạch lương
+            Thêm hệ số lương
           </Button>
         }
       />
@@ -313,7 +317,7 @@ function SalaryGradesPage() {
           ))}
         </div>
       ) : (
-        <EmptyState description="Không có ngạch lương nào" />
+        <EmptyState description="Không có hệ số lương nào" />
       )}
 
       {/* Grade Create/Edit Dialog */}
@@ -330,6 +334,7 @@ function SalaryGradesPage() {
         gradeId={stepGradeId}
         gradeName={stepGradeName}
         editingStep={editingStep}
+        grades={grades.map((g) => ({ id: g.id, gradeCode: g.gradeCode, gradeName: g.gradeName } as GradeOption))}
       />
     </div>
   );
