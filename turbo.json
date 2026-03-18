@@ -3,15 +3,16 @@
   "globalEnv": ["DATABASE_URL", "BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "FRONTEND_URL", "PORT"],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^type-check"],
       "outputs": ["dist/**"]
+    },
+    "type-check": {
+      "dependsOn": ["^type-check"],
+      "outputs": []
     },
     "dev": {
       "persistent": true,
       "cache": false
-    },
-    "type-check": {
-      "dependsOn": ["^build"]
     },
     "lint": {}
   }

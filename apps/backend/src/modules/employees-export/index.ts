@@ -1,8 +1,12 @@
 import {
   ACADEMIC_RANK_CODES,
+  type AcademicRankCode,
   CONTRACT_STATUS_CODES,
+  type ContractStatusCode,
   GENDER_CODES,
+  type GenderCode,
   WORK_STATUS_CODES,
+  type WorkStatusCode,
 } from "@hrms/shared";
 import { Elysia } from "elysia";
 import { z } from "zod";
@@ -28,10 +32,12 @@ const exportListQuerySchema = z.object({
   format: listFormatSchema.optional(),
   search: z.string().optional(),
   orgUnitId: z.string().optional(),
-  workStatus: z.enum(WORK_STATUS_CODES as [string, ...string[]]).optional(),
-  contractStatus: z.enum(CONTRACT_STATUS_CODES as [string, ...string[]]).optional(),
-  gender: z.enum(GENDER_CODES as [string, ...string[]]).optional(),
-  academicRank: z.enum(ACADEMIC_RANK_CODES as [string, ...string[]]).optional(),
+  workStatus: z.enum(WORK_STATUS_CODES as [WorkStatusCode, ...WorkStatusCode[]]).optional(),
+  contractStatus: z
+    .enum(CONTRACT_STATUS_CODES as [ContractStatusCode, ...ContractStatusCode[]])
+    .optional(),
+  gender: z.enum(GENDER_CODES as [GenderCode, ...GenderCode[]]).optional(),
+  academicRank: z.enum(ACADEMIC_RANK_CODES as [AcademicRankCode, ...AcademicRankCode[]]).optional(),
   positionTitle: z.string().optional(),
 });
 
