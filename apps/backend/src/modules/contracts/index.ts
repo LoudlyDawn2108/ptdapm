@@ -20,9 +20,7 @@ import * as appendixService from "./contract-appendix.service";
 import * as contractService from "./contract.service";
 
 const contractListQuerySchema = paginationSchema.extend({
-  status: z
-    .enum(CONTRACT_DOC_STATUS_CODES as [ContractDocStatusCode, ...ContractDocStatusCode[]])
-    .optional(),
+  status: z.enum(CONTRACT_DOC_STATUS_CODES).optional(),
 });
 
 export const contractRoutes = new Elysia({

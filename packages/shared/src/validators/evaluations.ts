@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { EVAL_TYPE_CODES, type EvalTypeCode } from "../constants/enums";
+import { EVAL_TYPE_CODES } from "../constants/enums";
 
 const rewardAmountSchema = z
   .string()
@@ -17,7 +17,7 @@ const rewardAmountSchema = z
 
 export const createEvaluationSchema = z
   .object({
-    evalType: z.enum(EVAL_TYPE_CODES as [EvalTypeCode, ...EvalTypeCode[]]),
+    evalType: z.enum(EVAL_TYPE_CODES),
     rewardType: z.string().max(255).nullish(),
     rewardName: z.string().max(255).nullish(),
     decisionOn: z.union([z.literal(""), z.string().date()]).nullish(),
@@ -104,7 +104,7 @@ export type CreateEvaluationInput = z.input<typeof createEvaluationSchema>;
 
 export const updateEvaluationSchema = z
   .object({
-    evalType: z.enum(EVAL_TYPE_CODES as [EvalTypeCode, ...EvalTypeCode[]]),
+    evalType: z.enum(EVAL_TYPE_CODES),
     rewardType: z.string().max(255).nullish(),
     rewardName: z.string().max(255).nullish(),
     decisionOn: z.union([z.literal(""), z.string().date()]).nullish(),
@@ -192,9 +192,7 @@ export type UpdateEvaluationInput = z.input<typeof updateEvaluationSchema>;
 export const listEvaluationsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
-  evalType: z
-    .enum(EVAL_TYPE_CODES as [EvalTypeCode, ...EvalTypeCode[]])
-    .optional(),
+  evalType: z.enum(EVAL_TYPE_CODES).optional(),
 });
 
 export type ListEvaluationsQuery = z.infer<typeof listEvaluationsQuerySchema>;

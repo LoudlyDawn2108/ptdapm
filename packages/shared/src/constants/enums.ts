@@ -39,7 +39,7 @@ export const Gender = {
   KHAC: { code: 'KHAC', label: 'Khác', sortOrder: 3 },
 } as const;
 export type GenderCode = keyof typeof Gender;
-export const GENDER_CODES = Object.keys(Gender) as GenderCode[];
+export const GENDER_CODES = Object.keys(Gender) as [GenderCode, ...GenderCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.2  Trạng thái làm việc của nhân sự (ref_work_statuses)
@@ -50,7 +50,7 @@ export const WorkStatus = {
   terminated: { code: 'terminated', label: 'Đã thôi việc',  sortOrder: 3 },
 } as const;
 export type WorkStatusCode = keyof typeof WorkStatus;
-export const WORK_STATUS_CODES = Object.keys(WorkStatus) as WorkStatusCode[];
+export const WORK_STATUS_CODES = Object.keys(WorkStatus) as [WorkStatusCode, ...WorkStatusCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.3  Trạng thái hợp đồng trên hồ sơ nhân sự (ref_contract_statuses)
@@ -62,7 +62,7 @@ export const ContractStatus = {
   renewal_wait: { code: 'renewal_wait', label: 'Chờ gia hạn',    sortOrder: 4 },
 } as const;
 export type ContractStatusCode = keyof typeof ContractStatus;
-export const CONTRACT_STATUS_CODES = Object.keys(ContractStatus) as ContractStatusCode[];
+export const CONTRACT_STATUS_CODES = Object.keys(ContractStatus) as [ContractStatusCode, ...ContractStatusCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.4  Loại đơn vị tổ chức (ref_org_unit_types)
@@ -77,7 +77,7 @@ export const OrgUnitType = {
   TRUNG_TAM:        { code: 'TRUNG_TAM',        label: 'Trung tâm',        sortOrder: 7 },
 } as const;
 export type OrgUnitTypeCode = keyof typeof OrgUnitType;
-export const ORG_UNIT_TYPE_CODES = Object.keys(OrgUnitType) as OrgUnitTypeCode[];
+export const ORG_UNIT_TYPE_CODES = Object.keys(OrgUnitType) as [OrgUnitTypeCode, ...OrgUnitTypeCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.5  Trạng thái đơn vị tổ chức (ref_org_unit_statuses)
@@ -88,7 +88,7 @@ export const OrgUnitStatus = {
   dissolved: { code: 'dissolved', label: 'Đã giải thể',   sortOrder: 3 },
 } as const;
 export type OrgUnitStatusCode = keyof typeof OrgUnitStatus;
-export const ORG_UNIT_STATUS_CODES = Object.keys(OrgUnitStatus) as OrgUnitStatusCode[];
+export const ORG_UNIT_STATUS_CODES = Object.keys(OrgUnitStatus) as [OrgUnitStatusCode, ...OrgUnitStatusCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.6  Loại sự kiện trạng thái đơn vị (ref_org_event_types)
@@ -98,7 +98,7 @@ export const OrgEventType = {
   MERGE:    { code: 'MERGE',    label: 'Sáp nhập', sortOrder: 2 },
 } as const;
 export type OrgEventTypeCode = keyof typeof OrgEventType;
-export const ORG_EVENT_TYPE_CODES = Object.keys(OrgEventType) as OrgEventTypeCode[];
+export const ORG_EVENT_TYPE_CODES = Object.keys(OrgEventType) as [OrgEventTypeCode, ...OrgEventTypeCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.7  Lý do sự kiện đơn vị (ref_org_event_reasons)
@@ -110,7 +110,7 @@ export const OrgEventReason = {
   KHAC:       { code: 'KHAC',       label: 'Khác',        sortOrder: 4 },
 } as const;
 export type OrgEventReasonCode = keyof typeof OrgEventReason;
-export const ORG_EVENT_REASON_CODES = Object.keys(OrgEventReason) as OrgEventReasonCode[];
+export const ORG_EVENT_REASON_CODES = Object.keys(OrgEventReason) as [OrgEventReasonCode, ...OrgEventReasonCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.8  Quan hệ gia đình (ref_family_relations)
@@ -124,7 +124,7 @@ export const FamilyRelation = {
   KHAC:            { code: 'KHAC',            label: 'Khác',            sortOrder: 6 },
 } as const;
 export type FamilyRelationCode = keyof typeof FamilyRelation;
-export const FAMILY_RELATION_CODES = Object.keys(FamilyRelation) as FamilyRelationCode[];
+export const FAMILY_RELATION_CODES = Object.keys(FamilyRelation) as [FamilyRelationCode, ...FamilyRelationCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.9  Loại tổ chức Đảng/Đoàn (ref_party_org_types)
@@ -134,7 +134,7 @@ export const PartyOrgType = {
   DANG: { code: 'DANG', label: 'Đảng', sortOrder: 2 },
 } as const;
 export type PartyOrgTypeCode = keyof typeof PartyOrgType;
-export const PARTY_ORG_TYPE_CODES = Object.keys(PartyOrgType) as PartyOrgTypeCode[];
+export const PARTY_ORG_TYPE_CODES = Object.keys(PartyOrgType) as [PartyOrgTypeCode, ...PartyOrgTypeCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.10  Loại đánh giá — khen thưởng / kỷ luật (ref_eval_types)
@@ -144,7 +144,7 @@ export const EvalType = {
   DISCIPLINE: { code: 'DISCIPLINE', label: 'Kỷ luật',     sortOrder: 2 },
 } as const;
 export type EvalTypeCode = keyof typeof EvalType;
-export const EVAL_TYPE_CODES = Object.keys(EvalType) as EvalTypeCode[];
+export const EVAL_TYPE_CODES = Object.keys(EvalType) as [EvalTypeCode, ...EvalTypeCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.11  Loại sự kiện bổ nhiệm (ref_assignment_event_types)
@@ -154,7 +154,7 @@ export const AssignmentEventType = {
   DISMISS: { code: 'DISMISS', label: 'Bãi nhiệm', sortOrder: 2 },
 } as const;
 export type AssignmentEventTypeCode = keyof typeof AssignmentEventType;
-export const ASSIGNMENT_EVENT_TYPE_CODES = Object.keys(AssignmentEventType) as AssignmentEventTypeCode[];
+export const ASSIGNMENT_EVENT_TYPE_CODES = Object.keys(AssignmentEventType) as [AssignmentEventTypeCode, ...AssignmentEventTypeCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.12  Trình độ văn hóa (ref_education_levels)
@@ -169,7 +169,7 @@ export const EducationLevel = {
   TIEN_SI:   { code: 'TIEN_SI',   label: 'Tiến sĩ',           sortOrder: 7 },
 } as const;
 export type EducationLevelCode = keyof typeof EducationLevel;
-export const EDUCATION_LEVEL_CODES = Object.keys(EducationLevel) as EducationLevelCode[];
+export const EDUCATION_LEVEL_CODES = Object.keys(EducationLevel) as [EducationLevelCode, ...EducationLevelCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.13  Trình độ đào tạo (ref_training_levels)
@@ -184,7 +184,7 @@ export const TrainingLevel = {
   TSKH:      { code: 'TSKH',      label: 'Tiến sĩ khoa học',  sortOrder: 7 },
 } as const;
 export type TrainingLevelCode = keyof typeof TrainingLevel;
-export const TRAINING_LEVEL_CODES = Object.keys(TrainingLevel) as TrainingLevelCode[];
+export const TRAINING_LEVEL_CODES = Object.keys(TrainingLevel) as [TrainingLevelCode, ...TrainingLevelCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.14  Chức danh nghề nghiệp (ref_academic_titles)
@@ -200,7 +200,7 @@ export const AcademicTitle = {
   KY_THUAT_VIEN:     { code: 'KY_THUAT_VIEN',     label: 'Kỹ thuật viên',       sortOrder: 8 },
 } as const;
 export type AcademicTitleCode = keyof typeof AcademicTitle;
-export const ACADEMIC_TITLE_CODES = Object.keys(AcademicTitle) as AcademicTitleCode[];
+export const ACADEMIC_TITLE_CODES = Object.keys(AcademicTitle) as [AcademicTitleCode, ...AcademicTitleCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.15  Chức danh khoa học / Học hàm (ref_academic_ranks)
@@ -210,7 +210,7 @@ export const AcademicRank = {
   PGS: { code: 'PGS', label: 'Phó Giáo sư', sortOrder: 2 },
 } as const;
 export type AcademicRankCode = keyof typeof AcademicRank;
-export const ACADEMIC_RANK_CODES = Object.keys(AcademicRank) as AcademicRankCode[];
+export const ACADEMIC_RANK_CODES = Object.keys(AcademicRank) as [AcademicRankCode, ...AcademicRankCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.16  Trạng thái tài liệu hợp đồng (ref_contract_doc_statuses)
@@ -222,7 +222,7 @@ export const ContractDocStatus = {
   terminated: { code: 'terminated', label: 'Đã chấm dứt',   sortOrder: 4 },
 } as const;
 export type ContractDocStatusCode = keyof typeof ContractDocStatus;
-export const CONTRACT_DOC_STATUS_CODES = Object.keys(ContractDocStatus) as ContractDocStatusCode[];
+export const CONTRACT_DOC_STATUS_CODES = Object.keys(ContractDocStatus) as [ContractDocStatusCode, ...ContractDocStatusCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.17  Trạng thái khóa đào tạo (ref_training_statuses)
@@ -233,7 +233,7 @@ export const TrainingStatus = {
   completed:         { code: 'completed',         label: 'Đã hoàn thành', sortOrder: 3 },
 } as const;
 export type TrainingStatusCode = keyof typeof TrainingStatus;
-export const TRAINING_STATUS_CODES = Object.keys(TrainingStatus) as TrainingStatusCode[];
+export const TRAINING_STATUS_CODES = Object.keys(TrainingStatus) as [TrainingStatusCode, ...TrainingStatusCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.18  Trạng thái tham gia khóa đào tạo (ref_participation_statuses)
@@ -245,7 +245,7 @@ export const ParticipationStatus = {
   failed:     { code: 'failed',     label: 'Không đạt',   sortOrder: 4 },
 } as const;
 export type ParticipationStatusCode = keyof typeof ParticipationStatus;
-export const PARTICIPATION_STATUS_CODES = Object.keys(ParticipationStatus) as ParticipationStatusCode[];
+export const PARTICIPATION_STATUS_CODES = Object.keys(ParticipationStatus) as [ParticipationStatusCode, ...ParticipationStatusCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.19  Kết quả đào tạo (ref_result_statuses)
@@ -255,7 +255,7 @@ export const ResultStatus = {
   failed:    { code: 'failed',    label: 'Không đạt',  sortOrder: 2 },
 } as const;
 export type ResultStatusCode = keyof typeof ResultStatus;
-export const RESULT_STATUS_CODES = Object.keys(ResultStatus) as ResultStatusCode[];
+export const RESULT_STATUS_CODES = Object.keys(ResultStatus) as [ResultStatusCode, ...ResultStatusCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.20  Trạng thái tài khoản (ref_auth_user_statuses)
@@ -265,7 +265,7 @@ export const AuthUserStatus = {
   locked: { code: 'locked', label: 'Đã khóa',        sortOrder: 2 },
 } as const;
 export type AuthUserStatusCode = keyof typeof AuthUserStatus;
-export const AUTH_USER_STATUS_CODES = Object.keys(AuthUserStatus) as AuthUserStatusCode[];
+export const AUTH_USER_STATUS_CODES = Object.keys(AuthUserStatus) as [AuthUserStatusCode, ...AuthUserStatusCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.21  Trạng thái danh mục cấu hình (ref_catalog_statuses)
@@ -277,7 +277,7 @@ export const CatalogStatus = {
   inactive: { code: 'inactive', label: 'Ngừng sử dụng', sortOrder: 2 },
 } as const;
 export type CatalogStatusCode = keyof typeof CatalogStatus;
-export const CATALOG_STATUS_CODES = Object.keys(CatalogStatus) as CatalogStatusCode[];
+export const CATALOG_STATUS_CODES = Object.keys(CatalogStatus) as [CatalogStatusCode, ...CatalogStatusCode[]];
 
 // ---------------------------------------------------------------------------
 // 0.22  Vai trò người dùng (ref_roles)
@@ -289,4 +289,4 @@ export const Role = {
   EMPLOYEE: { code: 'EMPLOYEE', label: 'Cán bộ / Giảng viên / Nhân viên',   sortOrder: 4 },
 } as const;
 export type RoleCode = keyof typeof Role;
-export const ROLE_CODES = Object.keys(Role) as RoleCode[];
+export const ROLE_CODES = Object.keys(Role) as [RoleCode, ...RoleCode[]];
