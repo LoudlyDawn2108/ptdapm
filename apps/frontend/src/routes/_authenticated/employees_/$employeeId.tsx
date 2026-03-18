@@ -88,6 +88,8 @@ function EmployeeDetailLayout() {
         return navigate({ to: "/employees/$employeeId/work-history", params: { employeeId } });
       case "/education":
         return navigate({ to: "/employees/$employeeId/education", params: { employeeId } });
+      case "/certifications":
+        return navigate({ to: "/employees/$employeeId/certifications", params: { employeeId } });
       case "/party":
         return navigate({ to: "/employees/$employeeId/party", params: { employeeId } });
       case "/salary":
