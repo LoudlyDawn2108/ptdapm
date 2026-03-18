@@ -13,6 +13,7 @@ import {
 } from "../../common/utils/pagination";
 import { withAuditLog } from "../../common/utils/user-context";
 import { db } from "../../db";
+import { auditLogs } from "../../db/schema/audit";
 import {
   type TrainingCourse,
   trainingCourses,
@@ -333,39 +334,7 @@ export async function remove(
   courseId: string,
   actorUserId: string,
 ): Promise<{ id: string }> {
-  const existing = await ensureCourseExists(courseId);
-
-  const [deleted] = await db
-    .delete(trainingCourses)
-    .where(eq(trainingCourses.id, courseId))
-    .returning({ id: trainingCourses.id });
-
-  if (!deleted) throw new Error("Delete training course failed");
-
-  await withAuditLog(
-    db,
-    actorUserId,
-    "DELETE",
-    "training_course",
-    courseId,
-    {
-      courseName: existing.courseName,
-      status: existing.status,
-    },
-    undefined,
-  );
-
-  return { id: deleted.id };
-}
-
-export async function changeStatus(
-  courseId: string,
-  data: ChangeTrainingCourseStatusInput,
-  actorUserId: string,
-): Promise<TrainingCourse> {
-  let previousStatus: TrainingStatusCode | undefined;
-
-  const updated = await db.transaction(async (tx) => {
+  return db.transaction(async (tx) => {
     const [course] = await tx
       .select()
       .from(trainingCourses)
@@ -374,7 +343,60 @@ export async function changeStatus(
 
     if (!course) throw new NotFoundError("Không tìm thấy khóa đào tạo");
 
-    previousStatus = course.status;
+    if (course.status !== "open_registration") {
+      throw new BadRequestError(
+        "Chỉ có thể xóa khóa đào tạo khi đang ở trạng thái mở đăng ký.",
+      );
+    }
+
+    const countResult = await tx
+      .select({ count: sql<number>`count(*)` })
+      .from(trainingRegistrations)
+      .where(eq(trainingRegistrations.courseId, courseId));
+    const registrationCount = Number(countResult[0]?.count ?? 0);
+
+    if (registrationCount > 0) {
+      throw new BadRequestError(
+        "Không thể xóa khóa đào tạo đã có học viên đăng ký.",
+      );
+    }
+
+    const [deleted] = await tx
+      .delete(trainingCourses)
+      .where(eq(trainingCourses.id, courseId))
+      .returning({ id: trainingCourses.id });
+
+    if (!deleted) throw new Error("Delete training course failed");
+
+    await tx.insert(auditLogs).values({
+      actorUserId,
+      action: "DELETE",
+      entityType: "training_course",
+      entityId: courseId,
+      oldValues: {
+        courseName: course.courseName,
+        status: course.status,
+      },
+    });
+
+    return { id: deleted.id };
+  });
+}
+
+export async function changeStatus(
+  courseId: string,
+  data: ChangeTrainingCourseStatusInput,
+  actorUserId: string,
+): Promise<TrainingCourse> {
+  return db.transaction(async (tx) => {
+    const [course] = await tx
+      .select()
+      .from(trainingCourses)
+      .where(eq(trainingCourses.id, courseId))
+      .for("update");
+
+    if (!course) throw new NotFoundError("Không tìm thấy khóa đào tạo");
+
     ensureValidTrainingStatusTransition(course.status, data.status);
 
     if (course.status === data.status) {
@@ -388,20 +410,16 @@ export async function changeStatus(
       .returning();
 
     if (!row) throw new Error("Update training course status failed");
+
+    await tx.insert(auditLogs).values({
+      actorUserId,
+      action: "UPDATE",
+      entityType: "training_course",
+      entityId: courseId,
+      oldValues: { status: course.status },
+      newValues: { status: row.status },
+    });
+
     return row;
   });
-
-  if (previousStatus && previousStatus !== updated.status) {
-    await withAuditLog(
-      db,
-      actorUserId,
-      "UPDATE",
-      "training_course",
-      courseId,
-      { status: previousStatus },
-      { status: updated.status },
-    );
-  }
-
-  return updated;
 }

@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/layout/page-header";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { StatusBadgeFromCode } from "@/components/shared/status-badge";
 import { ReadOnlyField } from "@/components/shared/read-only-field";
 import { TableSkeleton } from "@/components/shared/loading-skeleton";
@@ -583,7 +584,7 @@ function CourseDetailDialog({
   };
 
   const handleCancel = async () => {
-    if (!courseId || !effectiveRegistration) return;
+    if (!courseId || !effectiveRegistration || cancelMutation.isPending) return;
     try {
       await cancelMutation.mutateAsync({
         courseId,
@@ -724,15 +725,23 @@ function CourseDetailDialog({
             </Button>
 
             {isRegistered && canCancel && isOpenForRegistration && (
-              <Button
+              <ConfirmDialog
+                trigger={
+                  <Button
+                    variant="destructive"
+                    disabled={cancelMutation.isPending}
+                    className="gap-1.5"
+                  >
+                    <UserMinus className="h-4 w-4" />
+                    {cancelMutation.isPending ? "Đang hủy..." : "Hủy đăng ký"}
+                  </Button>
+                }
+                title="Xác nhận hủy đăng ký"
+                description={`Bạn có chắc muốn hủy đăng ký khóa đào tạo "${course.courseName}"? Thao tác này không thể hoàn tác.`}
+                confirmLabel={cancelMutation.isPending ? "Đang hủy..." : "Hủy đăng ký"}
                 variant="destructive"
-                onClick={handleCancel}
-                disabled={cancelMutation.isPending}
-                className="gap-1.5"
-              >
-                <UserMinus className="h-4 w-4" />
-                {cancelMutation.isPending ? "Đang hủy..." : "Hủy đăng ký"}
-              </Button>
+                onConfirm={handleCancel}
+              />
             )}
 
             {!isRegistered &&
