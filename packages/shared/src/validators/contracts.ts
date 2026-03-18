@@ -1,9 +1,7 @@
 import { z } from "zod";
-import { CONTRACT_DOC_STATUS_CODES, type ContractDocStatusCode } from "../constants/enums";
+import { CONTRACT_DOC_STATUS_CODES } from "../constants/enums";
 
-const contractDocStatusSchema = z.enum(
-  CONTRACT_DOC_STATUS_CODES as [ContractDocStatusCode, ...ContractDocStatusCode[]],
-);
+const contractDocStatusSchema = z.enum(CONTRACT_DOC_STATUS_CODES);
 
 export const createEmploymentContractSchema = z.object({
   contractTypeId: z.string().uuid("Loại hợp đồng không hợp lệ"),

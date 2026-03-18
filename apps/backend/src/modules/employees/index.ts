@@ -1,12 +1,8 @@
 import {
   ACADEMIC_RANK_CODES,
-  type AcademicRankCode,
   CONTRACT_STATUS_CODES,
-  type ContractStatusCode,
   GENDER_CODES,
-  type GenderCode,
   WORK_STATUS_CODES,
-  type WorkStatusCode,
   createEmployeeSchema,
   paginationSchema,
   updateEmployeeSchema,
@@ -21,12 +17,10 @@ import * as employeeService from "./employee.service";
 const listQuerySchema = paginationSchema.extend({
   search: z.string().optional(),
   orgUnitId: z.string().optional(),
-  workStatus: z.enum(WORK_STATUS_CODES as [WorkStatusCode, ...WorkStatusCode[]]).optional(),
-  contractStatus: z
-    .enum(CONTRACT_STATUS_CODES as [ContractStatusCode, ...ContractStatusCode[]])
-    .optional(),
-  gender: z.enum(GENDER_CODES as [GenderCode, ...GenderCode[]]).optional(),
-  academicRank: z.enum(ACADEMIC_RANK_CODES as [AcademicRankCode, ...AcademicRankCode[]]).optional(),
+  workStatus: z.enum(WORK_STATUS_CODES).optional(),
+  contractStatus: z.enum(CONTRACT_STATUS_CODES).optional(),
+  gender: z.enum(GENDER_CODES).optional(),
+  academicRank: z.enum(ACADEMIC_RANK_CODES).optional(),
   positionTitle: z.string().optional(),
 });
 
