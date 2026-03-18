@@ -61,8 +61,8 @@ export function AccountFormDialog({
     if (error) throw handleApiError(error);
     const items = (data as any)?.data?.items ?? [];
     return items.map((emp: any) => ({
-      value: emp.employeeId,
-      label: `${emp.fullName} — ${emp.employeeCode}`,
+      value: emp.id,
+      label: `${emp.fullName} — ${emp.staffCode}`,
     }));
   }, []);
 
