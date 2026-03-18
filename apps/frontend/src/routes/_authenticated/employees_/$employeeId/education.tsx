@@ -161,15 +161,6 @@ function EducationTab() {
     }
   };
 
-  const handleDeleteCert = async (id: string) => {
-    try {
-      await deleteCert.mutateAsync({ employeeId, id });
-      toast.success("Xóa chứng chỉ thành công");
-    } catch {
-      toast.error("Xóa chứng chỉ thất bại");
-    }
-  };
-
   return (
     <div className="rounded-xl border bg-card p-6 space-y-6">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -179,14 +170,6 @@ function EducationTab() {
 
       <SectionTitle
         title="Thông tin bằng cấp"
-        action={
-          canEdit ? (
-            <Button size="sm" className="gap-1.5" onClick={() => setShowCreateDegreeDialog(true)}>
-              <Plus className="h-4 w-4" />
-              Thêm bằng cấp
-            </Button>
-          ) : undefined
-        }
       />
 
       {degrees && degrees.length > 0 ? (
@@ -220,14 +203,6 @@ function EducationTab() {
 
       <SectionTitle
         title="Thông tin chứng chỉ"
-        action={
-          canEdit ? (
-            <Button size="sm" className="gap-1.5" onClick={() => setShowCreateCertDialog(true)}>
-              <Plus className="h-4 w-4" />
-              Thêm chứng chỉ
-            </Button>
-          ) : undefined
-        }
       />
 
       {certifications.length > 0 ? (
