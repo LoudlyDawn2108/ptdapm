@@ -12,15 +12,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AccountFormDialog } from "@/features/accounts/AccountFormDialog";
 import { accountListOptions, useSetAccountStatus } from "@/features/accounts/api";
 import { useListPage } from "@/hooks/use-list-page";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { authorizeRoute } from "@/lib/permissions";
 import { AuthUserStatus, Role, enumToSortedList } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Lock, Plus, Unlock } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -40,6 +42,7 @@ export const Route = createFileRoute("/_authenticated/accounts/")({
 
 function AccountsPage() {
   const navigate = useNavigate({ from: "/accounts/" });
+  const [dialogOpen, setDialogOpen] = useState(false);
   const search = Route.useSearch();
   const { searchText, setSearchText, debouncedSearch, pagination, onPaginationChange } =
     useListPage({
@@ -151,11 +154,9 @@ function AccountsPage() {
         title="Quản lý tài khoản"
         description="Danh sách tài khoản người dùng hệ thống"
         actions={
-          <Button asChild>
-            <Link to="/accounts" search={{ page: 1 }}>
-              <Plus className="mr-2 h-4 w-4" />
-              Tạo tài khoản
-            </Link>
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Tạo tài khoản
           </Button>
         }
       />
@@ -226,6 +227,8 @@ function AccountsPage() {
         isLoading={isLoading}
         emptyMessage="Không có tài khoản nào"
       />
+
+      <AccountFormDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>
   );
 }
