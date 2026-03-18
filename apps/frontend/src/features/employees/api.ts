@@ -490,6 +490,8 @@ export function useCreateCertification() {
       employeeId: string;
       certName: string;
       issuedBy?: string;
+      issuedOn?: string;
+      expiresOn?: string;
       certFileId?: string;
     }) => {
       const { data, error } = await api.api
@@ -515,6 +517,8 @@ export function useUpdateCertification() {
       id: string;
       certName?: string;
       issuedBy?: string;
+      issuedOn?: string;
+      expiresOn?: string;
       certFileId?: string;
     }) => {
       const { data, error } = await api.api

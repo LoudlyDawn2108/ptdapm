@@ -1,6 +1,6 @@
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
-import { ReadOnlyField, SectionTitle } from "@/components/shared/read-only-field";
+import { SectionTitle } from "@/components/shared/read-only-field";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,15 +23,16 @@ import { useAuth } from "@/features/auth/hooks";
 import {
   getFileUrl,
   uploadFile,
-  useCreateDegree,
-  useDeleteDegree,
+  useCreateCertification,
+  useDeleteCertification,
   useEmployeeDetail,
-  useUpdateDegree,
+  useUpdateCertification,
 } from "@/features/employees/api";
-import type { Degree } from "@/features/employees/types";
+import type { Certification } from "@/features/employees/types";
+import { formatDate } from "@/lib/date-utils";
 import { applyFieldErrors } from "@/lib/error-handler";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AcademicRank, type CreateEmployeeDegreeInput, EducationLevel } from "@hrms/shared";
+import type { CreateEmployeeCertificationInput } from "@hrms/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import { Eye, Pencil, Plus, Save, Trash, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -39,46 +40,43 @@ import { type UseFormSetError, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-const degreeFormSchema = z.object({
-  degreeName: z.string().min(1, "Tên bằng không được để trống"),
-  school: z.string().min(1, "Trường/Nơi cấp không được để trống"),
-  degreeFileId: z.string().uuid().optional(),
+const certFormSchema = z.object({
+  certName: z.string().min(1, "Tên chứng chỉ không được để trống"),
+  issuedBy: z.string().optional(),
+  issuedOn: z.string().optional(),
+  expiresOn: z.string().optional(),
+  certFileId: z.string().uuid().optional(),
 });
 
-export const Route = createFileRoute("/_authenticated/employees_/$employeeId/education")({
-  component: EducationTab,
+export const Route = createFileRoute("/_authenticated/employees_/$employeeId/certifications")({
+  component: CertificationsTab,
 });
 
-function EducationTab() {
+function CertificationsTab() {
   const { employeeId } = Route.useParams();
   const { aggregate, employee: emp, isLoading } = useEmployeeDetail(employeeId);
-  const degrees = aggregate?.degrees as Degree[] | undefined;
+  const certifications = (aggregate?.certifications ?? []) as Certification[];
 
   const { user } = useAuth();
   const canEdit =
     user && (user.role === "TCCB" || user.role === "ADMIN") && emp?.workStatus !== "terminated";
 
-  const createDegree = useCreateDegree();
-  const updateDegree = useUpdateDegree();
-  const deleteDegree = useDeleteDegree();
+  const createCert = useCreateCertification();
+  const updateCert = useUpdateCertification();
+  const deleteCert = useDeleteCertification();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [editingDegree, setEditingDegree] = useState<Degree | null>(null);
+  const [editingCert, setEditingCert] = useState<Certification | null>(null);
 
   if (isLoading) return <FormSkeleton fields={4} />;
   if (!emp) return null;
 
-  const eduLabel =
-    EducationLevel[emp.educationLevel as keyof typeof EducationLevel]?.label ?? emp.educationLevel;
-  const rankLabel =
-    AcademicRank[emp.academicRank as keyof typeof AcademicRank]?.label ?? emp.academicRank;
-
   const handleCreate = async (
-    input: CreateEmployeeDegreeInput,
-    setError: UseFormSetError<CreateEmployeeDegreeInput>,
+    input: CreateEmployeeCertificationInput,
+    setError: UseFormSetError<CreateEmployeeCertificationInput>,
   ) => {
     try {
-      await createDegree.mutateAsync({ employeeId, ...input });
-      toast.success("Thêm bằng cấp thành công");
+      await createCert.mutateAsync({ employeeId, ...input });
+      toast.success("Thêm chứng chỉ thành công");
       setShowCreateDialog(false);
     } catch (error) {
       applyFieldErrors(setError, error);
@@ -87,13 +85,13 @@ function EducationTab() {
 
   const handleUpdate = async (
     id: string,
-    input: CreateEmployeeDegreeInput,
-    setError: UseFormSetError<CreateEmployeeDegreeInput>,
+    input: CreateEmployeeCertificationInput,
+    setError: UseFormSetError<CreateEmployeeCertificationInput>,
   ) => {
     try {
-      await updateDegree.mutateAsync({ employeeId, id, ...input });
-      toast.success("Cập nhật bằng cấp thành công");
-      setEditingDegree(null);
+      await updateCert.mutateAsync({ employeeId, id, ...input });
+      toast.success("Cập nhật chứng chỉ thành công");
+      setEditingCert(null);
     } catch (error) {
       applyFieldErrors(setError, error);
     }
@@ -101,55 +99,52 @@ function EducationTab() {
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteDegree.mutateAsync({ employeeId, id });
-      toast.success("Xóa bằng cấp thành công");
+      await deleteCert.mutateAsync({ employeeId, id });
+      toast.success("Xóa chứng chỉ thành công");
     } catch {
-      toast.error("Xóa bằng cấp thất bại");
+      toast.error("Xóa chứng chỉ thất bại");
     }
   };
 
   return (
     <div className="rounded-xl border bg-card p-6 space-y-6">
-      {/* ── Top row: Trình độ văn hóa + Học hàm/Học vị ── */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <ReadOnlyField label="Trình độ văn hóa" value={eduLabel} />
-        <ReadOnlyField label="Học hàm/Học vị" value={rankLabel} />
-      </div>
-
-      {/* ── Bằng cấp ── */}
       <div className="flex items-center justify-between">
-        <SectionTitle title="Thông tin bằng cấp" />
+        <SectionTitle title="Thông tin chứng chỉ" />
         {canEdit && (
           <Button size="sm" className="gap-1.5" onClick={() => setShowCreateDialog(true)}>
             <Plus className="h-4 w-4" />
-            Thêm bằng cấp
+            Thêm chứng chỉ
           </Button>
         )}
       </div>
 
-      {degrees && degrees.length > 0 ? (
+      {certifications.length > 0 ? (
         <div className="overflow-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-blue-50 text-sm font-semibold text-gray-700">
-                <th className="rounded-l-lg px-4 py-3 text-left font-medium">Tên bằng</th>
+                <th className="rounded-l-lg px-4 py-3 text-left font-medium">Tên chứng chỉ</th>
                 <th className="px-4 py-3 text-left font-medium">Nơi cấp</th>
+                <th className="px-4 py-3 text-left font-medium">Ngày cấp</th>
+                <th className="px-4 py-3 text-left font-medium">Ngày hết hạn</th>
                 <th className="rounded-r-lg px-4 py-3 text-left font-medium">Thao tác</th>
               </tr>
             </thead>
             <tbody>
-              {degrees.map((d) => (
-                <tr key={d.id} className="border-b border-gray-100 last:border-0">
-                  <td className="px-4 py-3">{d.degreeName}</td>
-                  <td className="px-4 py-3">{d.school}</td>
+              {certifications.map((c) => (
+                <tr key={c.id} className="border-b border-gray-100 last:border-0">
+                  <td className="px-4 py-3">{c.certName}</td>
+                  <td className="px-4 py-3">{c.issuedBy}</td>
+                  <td className="px-4 py-3">{formatDate(c.issuedOn)}</td>
+                  <td className="px-4 py-3">{formatDate(c.expiresOn)}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-                        disabled={!d.degreeFileId}
+                        disabled={!c.certFileId}
                         onClick={() =>
-                          d.degreeFileId && window.open(getFileUrl(d.degreeFileId), "_blank")
+                          c.certFileId && window.open(getFileUrl(c.certFileId), "_blank")
                         }
                       >
                         <Eye className="h-4 w-4" />
@@ -159,7 +154,7 @@ function EducationTab() {
                           <button
                             type="button"
                             className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-                            onClick={() => setEditingDegree(d)}
+                            onClick={() => setEditingCert(c)}
                           >
                             <Pencil className="h-4 w-4" />
                           </button>
@@ -172,11 +167,11 @@ function EducationTab() {
                                 <Trash className="h-4 w-4" />
                               </button>
                             }
-                            title="Xóa bằng cấp"
-                            description={`Bạn có chắc chắn muốn xóa bằng "${d.degreeName}"?`}
+                            title="Xóa chứng chỉ"
+                            description={`Bạn có chắc chắn muốn xóa chứng chỉ "${c.certName}"?`}
                             confirmLabel="Xóa"
                             variant="destructive"
-                            onConfirm={() => handleDelete(d.id)}
+                            onConfirm={() => handleDelete(c.id)}
                           />
                         </>
                       )}
@@ -188,40 +183,40 @@ function EducationTab() {
           </table>
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">Chưa có bằng cấp.</p>
+        <p className="text-sm text-muted-foreground">Chưa có chứng chỉ.</p>
       )}
 
-      <DegreeFormDialog
+      <CertificationFormDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
-        title="Thêm bằng cấp"
-        submitLabel="Lưu bằng cấp"
-        isSubmitting={createDegree.isPending}
+        title="Thêm chứng chỉ"
+        submitLabel="Lưu chứng chỉ"
+        isSubmitting={createCert.isPending}
         onSubmit={handleCreate}
       />
-      <DegreeFormDialog
-        open={!!editingDegree}
+      <CertificationFormDialog
+        open={!!editingCert}
         onOpenChange={(open) => {
-          if (!open) setEditingDegree(null);
+          if (!open) setEditingCert(null);
         }}
-        title="Chỉnh sửa bằng cấp"
-        submitLabel="Lưu bằng cấp"
-        degree={editingDegree}
-        isSubmitting={updateDegree.isPending}
+        title="Chỉnh sửa chứng chỉ"
+        submitLabel="Lưu chứng chỉ"
+        certification={editingCert}
+        isSubmitting={updateCert.isPending}
         onSubmit={async (input, setError) => {
-          if (editingDegree) await handleUpdate(editingDegree.id, input, setError);
+          if (editingCert) await handleUpdate(editingCert.id, input, setError);
         }}
       />
     </div>
   );
 }
 
-function DegreeFormDialog({
+function CertificationFormDialog({
   open,
   onOpenChange,
   title,
   submitLabel,
-  degree,
+  certification,
   isSubmitting,
   onSubmit,
 }: {
@@ -229,22 +224,24 @@ function DegreeFormDialog({
   onOpenChange: (open: boolean) => void;
   title: string;
   submitLabel: string;
-  degree?: Degree | null;
+  certification?: Certification | null;
   isSubmitting: boolean;
   onSubmit: (
-    input: CreateEmployeeDegreeInput,
-    setError: UseFormSetError<CreateEmployeeDegreeInput>,
+    input: CreateEmployeeCertificationInput,
+    setError: UseFormSetError<CreateEmployeeCertificationInput>,
   ) => Promise<void>;
 }) {
-  const isEditing = !!degree;
+  const isEditing = !!certification;
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const form = useForm<CreateEmployeeDegreeInput>({
-    resolver: zodResolver(degreeFormSchema),
+  const form = useForm<CreateEmployeeCertificationInput>({
+    resolver: zodResolver(certFormSchema),
     defaultValues: {
-      degreeName: "",
-      school: "",
-      degreeFileId: undefined,
+      certName: "",
+      issuedBy: undefined,
+      issuedOn: undefined,
+      expiresOn: undefined,
+      certFileId: undefined,
     },
   });
 
@@ -252,11 +249,13 @@ function DegreeFormDialog({
     if (!open) return;
 
     form.reset({
-      degreeName: degree?.degreeName ?? "",
-      school: degree?.school ?? "",
-      degreeFileId: degree?.degreeFileId ?? undefined,
+      certName: certification?.certName ?? "",
+      issuedBy: certification?.issuedBy ?? undefined,
+      issuedOn: certification?.issuedOn ?? undefined,
+      expiresOn: certification?.expiresOn ?? undefined,
+      certFileId: certification?.certFileId ?? undefined,
     });
-  }, [degree, form, open]);
+  }, [certification, form, open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -274,7 +273,7 @@ function DegreeFormDialog({
               {title}
             </DialogTitle>
           </div>
-          <DialogDescription className="sr-only">Nhập thông tin bằng cấp.</DialogDescription>
+          <DialogDescription className="sr-only">Nhập thông tin chứng chỉ.</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -284,14 +283,14 @@ function DegreeFormDialog({
           >
             <FormField
               control={form.control}
-              name="degreeName"
+              name="certName"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    Tên bằng <span className="text-red-500">*</span>
+                    Tên chứng chỉ <span className="text-red-500">*</span>
                   </FormLabel>
                   <FormControl>
-                    <Input placeholder="Nhập tên bằng cấp" {...field} />
+                    <Input placeholder="Nhập tên chứng chỉ" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -300,19 +299,47 @@ function DegreeFormDialog({
 
             <FormField
               control={form.control}
-              name="school"
+              name="issuedBy"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    Trường/Nơi cấp <span className="text-red-500">*</span>
-                  </FormLabel>
+                  <FormLabel>Nơi cấp</FormLabel>
                   <FormControl>
-                    <Input placeholder="Nhập trường/nơi cấp" {...field} />
+                    <Input placeholder="Nhập nơi cấp" {...field} value={field.value ?? ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="issuedOn"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ngày cấp</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="expiresOn"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ngày hết hạn</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="flex items-center gap-3">
               <Button
@@ -324,9 +351,9 @@ function DegreeFormDialog({
                 <Upload className="mr-1.5 h-3.5 w-3.5" />
                 {isUploading
                   ? "Đang tải..."
-                  : form.watch("degreeFileId")
+                  : form.watch("certFileId")
                     ? "Đã tải PDF"
-                    : "Tải PDF"}
+                    : "Tải PDF chứng chỉ"}
               </Button>
               <input
                 ref={fileInputRef}
@@ -339,8 +366,8 @@ function DegreeFormDialog({
                   setIsUploading(true);
                   try {
                     const uploaded = await uploadFile(file);
-                    form.setValue("degreeFileId", uploaded.id, { shouldDirty: true });
-                    toast.success("Tải PDF bằng cấp thành công");
+                    form.setValue("certFileId", uploaded.id, { shouldDirty: true });
+                    toast.success("Tải PDF chứng chỉ thành công");
                   } catch {
                     toast.error("Tải PDF thất bại");
                   } finally {

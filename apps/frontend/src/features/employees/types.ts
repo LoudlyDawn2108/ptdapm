@@ -104,6 +104,8 @@ export type Certification = {
   employeeId: string;
   certName: string;
   issuedBy: string | null;
+  issuedOn: string | null;
+  expiresOn: string | null;
   certFileId: string | null;
   createdAt: string;
   updatedAt: string;
