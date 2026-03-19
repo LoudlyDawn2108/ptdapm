@@ -14,6 +14,12 @@ import { employeeListOptions } from "@/features/employees/api";
 import { useDebounce } from "@/hooks/use-debounce";
 import { fetchOrgUnitDropdown } from "@/lib/api/config-dropdowns";
 import { authorizeRoute } from "@/lib/permissions";
+import type {
+  AcademicRankCode,
+  ContractStatusCode,
+  GenderCode,
+  WorkStatusCode,
+} from "@hrms/shared";
 import {
   AcademicRank,
   ContractStatus,
@@ -61,10 +67,10 @@ function EmployeesLayout() {
     page: search.page,
     pageSize: search.pageSize,
     search: debouncedSearch || undefined,
-    workStatus: search.workStatus || undefined,
-    gender: search.gender || undefined,
-    contractStatus: search.contractStatus || undefined,
-    academicRank: search.academicRank || undefined,
+    workStatus: (search.workStatus || undefined) as WorkStatusCode | undefined,
+    gender: (search.gender || undefined) as GenderCode | undefined,
+    contractStatus: (search.contractStatus || undefined) as ContractStatusCode | undefined,
+    academicRank: (search.academicRank || undefined) as AcademicRankCode | undefined,
     orgUnitId: search.orgUnitId || undefined,
   };
 

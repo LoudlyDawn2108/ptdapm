@@ -18,6 +18,7 @@ import { useListPage } from "@/hooks/use-list-page";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { authorizeRoute } from "@/lib/permissions";
 import { AuthUserStatus, Role, enumToSortedList } from "@hrms/shared";
+import type { AuthUserStatusCode, RoleCode } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -54,8 +55,8 @@ function AccountsPage() {
     page: search.page,
     pageSize: search.pageSize,
     search: debouncedSearch,
-    role: search.role,
-    status: search.status,
+    role: search.role as RoleCode | undefined,
+    status: search.status as AuthUserStatusCode | undefined,
   };
 
   const { data, isLoading, isError, error, refetch } = useQuery(accountListOptions(params));

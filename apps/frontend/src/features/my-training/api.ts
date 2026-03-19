@@ -1,12 +1,8 @@
 import { api } from "@/api/client";
+import { trainingCourseKeys } from "@/features/training-courses/api";
 import { handleApiError } from "@/lib/error-handler";
 import type { ParticipationStatusCode } from "@hrms/shared";
-import {
-  queryOptions,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
-import { trainingCourseKeys } from "@/features/training-courses/api";
+import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // ---------------------------------------------------------------------------
 // Query keys
@@ -15,13 +11,11 @@ import { trainingCourseKeys } from "@/features/training-courses/api";
 export const myTrainingKeys = {
   all: ["my-training"] as const,
   lists: () => [...myTrainingKeys.all, "list"] as const,
-  list: (params: Record<string, unknown>) =>
-    [...myTrainingKeys.lists(), params] as const,
+  list: (params: Record<string, unknown>) => [...myTrainingKeys.lists(), params] as const,
   availableLists: () => [...myTrainingKeys.all, "available-list"] as const,
   availableList: (params: Record<string, unknown>) =>
     [...myTrainingKeys.availableLists(), params] as const,
-  courseDetail: (courseId: string) =>
-    [...myTrainingKeys.all, "course-detail", courseId] as const,
+  courseDetail: (courseId: string) => [...myTrainingKeys.all, "course-detail", courseId] as const,
 };
 
 // ---------------------------------------------------------------------------
@@ -81,8 +75,8 @@ export const myTrainingListOptions = (params: {
   queryOptions({
     queryKey: myTrainingKeys.list(params as Record<string, unknown>),
     queryFn: async () => {
-      const { data, error } = await (api.api.my as any).training.get({
-        query: params as Record<string, unknown>,
+      const { data, error } = await api.api.my.training.get({
+        query: { page: 1, pageSize: 20, ...params },
       });
       if (error) throw handleApiError(error);
       return data;
@@ -96,8 +90,8 @@ export const myAvailableTrainingListOptions = (params: {
   queryOptions({
     queryKey: myTrainingKeys.availableList(params as Record<string, unknown>),
     queryFn: async () => {
-      const { data, error } = await (api.api.my as any).training.available.get({
-        query: params as Record<string, unknown>,
+      const { data, error } = await api.api.my.training.available.get({
+        query: { page: 1, pageSize: 20, ...params },
       });
       if (error) throw handleApiError(error);
       return data;
@@ -108,13 +102,13 @@ export const myTrainingCourseDetailOptions = (courseId: string) =>
   queryOptions({
     queryKey: myTrainingKeys.courseDetail(courseId),
     queryFn: async () => {
-      const { data, error } = await (api.api.my as any).training
+      const { data, error } = await api.api.my.training
         .courses({
           courseId,
         })
         .get();
       if (error) throw handleApiError(error);
-      return (data as any)?.data as MyTrainingCourseDetail;
+      return data?.data as unknown as MyTrainingCourseDetail;
     },
     enabled: !!courseId,
   });
@@ -127,10 +121,9 @@ export function useRegisterForCourse() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ courseId }: { courseId: string }) => {
-      const res = await (
-        api.api["training-courses"]({ courseId }) as any
-      ).registrations.post({});
-      const { data, error } = res ?? {};
+      const { data, error } = await api.api["training-courses"]({
+        courseId,
+      }).registrations.post({});
       if (error) throw handleApiError(error);
       return data;
     },
@@ -156,10 +149,9 @@ export function useCancelRegistration() {
       courseId: string;
       registrationId: string;
     }) => {
-      const res = await (api.api["training-courses"]({ courseId }) as any)
+      const { data, error } = await api.api["training-courses"]({ courseId })
         .registrations({ id: registrationId })
         .delete();
-      const { data, error } = res ?? {};
       if (error) throw handleApiError(error);
       return data;
     },

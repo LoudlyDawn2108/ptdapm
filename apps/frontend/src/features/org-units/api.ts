@@ -54,7 +54,7 @@ export function useCreateOrgUnit() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateOrgUnitInput) => {
-      const { data, error } = await api.api["org-units"].post(input as any);
+      const { data, error } = await api.api["org-units"].post(input);
       if (error) throw handleApiError(error);
       return data;
     },
@@ -66,9 +66,7 @@ export function useUpdateOrgUnit() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: UpdateOrgUnitInput & { id: string }) => {
-      const { data, error } = await api.api["org-units"]({ id }).put(
-        input as any,
-      );
+      const { data, error } = await api.api["org-units"]({ id }).put(input);
       if (error) throw handleApiError(error);
       return data;
     },
@@ -83,9 +81,7 @@ export function useDissolveOrgUnit() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: DissolveOrgUnitInput & { id: string }) => {
-      const { data, error } = await api.api["org-units"]({ id }).dissolve.post(
-        input as any,
-      );
+      const { data, error } = await api.api["org-units"]({ id }).dissolve.post(input);
       if (error) throw handleApiError(error);
       return data;
     },
@@ -97,9 +93,7 @@ export function useMergeOrgUnit() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: MergeOrgUnitInput & { id: string }) => {
-      const { data, error } = await api.api["org-units"]({ id }).merge.post(
-        input as any,
-      );
+      const { data, error } = await api.api["org-units"]({ id }).merge.post(input);
       if (error) throw handleApiError(error);
       return data;
     },

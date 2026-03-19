@@ -40,12 +40,14 @@
     "zustand": "5.0.3"
   },
   "devDependencies": {
+    "@hrms/backend": "workspace:*",
     "@tailwindcss/vite": "4.1.8",
     "@tanstack/react-query-devtools": "^5.91.3",
     "@tanstack/router-plugin": "1.163.3",
     "@types/react": "19.0.8",
     "@types/react-dom": "19.0.3",
     "@vitejs/plugin-react": "4.3.4",
+    "bun-types": "1.2.4",
     "typescript": "5.7.3",
     "vite": "6.1.0"
   }

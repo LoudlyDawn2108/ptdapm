@@ -45,8 +45,10 @@ import {
   AcademicRank,
   EducationLevel,
   FamilyRelation,
+  type FamilyRelationCode,
   Gender,
   PartyOrgType,
+  type PartyOrgTypeCode,
   type UpdateEmployeeInput,
   enumToSortedList,
 } from "@hrms/shared";
@@ -475,8 +477,20 @@ function EditEmployeeFormContent({
         items: familyMembers,
         initialIds: initialIds.familyMembers,
         label: "Thành viên gia đình",
-        create: (body) => createFamilyMemberMutation.mutateAsync({ employeeId, ...body }),
-        update: (id, body) => updateFamilyMemberMutation.mutateAsync({ employeeId, id, ...body }),
+        create: (body) =>
+          createFamilyMemberMutation.mutateAsync({
+            employeeId,
+            ...body,
+            relation: body.relation as FamilyRelationCode,
+            isDependent: false,
+          }),
+        update: (id, body) =>
+          updateFamilyMemberMutation.mutateAsync({
+            employeeId,
+            id,
+            ...body,
+            relation: body.relation as FamilyRelationCode,
+          }),
         remove: (id) => deleteFamilyMemberMutation.mutateAsync({ employeeId, id }),
         promises,
         errors: subEntityErrors,
@@ -487,7 +501,12 @@ function EditEmployeeFormContent({
         items: bankAccounts,
         initialIds: initialIds.bankAccounts,
         label: "Tài khoản ngân hàng",
-        create: (body) => createBankAccountMutation.mutateAsync({ employeeId, ...body }),
+        create: (body) =>
+          createBankAccountMutation.mutateAsync({
+            employeeId,
+            ...body,
+            isPrimary: false,
+          }),
         update: (id, body) => updateBankAccountMutation.mutateAsync({ employeeId, id, ...body }),
         remove: (id) => deleteBankAccountMutation.mutateAsync({ employeeId, id }),
         promises,
@@ -511,9 +530,19 @@ function EditEmployeeFormContent({
         items: partyMemberships,
         initialIds: initialIds.partyMemberships,
         label: "Đoàn/Đảng",
-        create: (body) => createPartyMembershipMutation.mutateAsync({ employeeId, ...body }),
+        create: (body) =>
+          createPartyMembershipMutation.mutateAsync({
+            employeeId,
+            ...body,
+            organizationType: body.organizationType as PartyOrgTypeCode,
+          }),
         update: (id, body) =>
-          updatePartyMembershipMutation.mutateAsync({ employeeId, id, ...body }),
+          updatePartyMembershipMutation.mutateAsync({
+            employeeId,
+            id,
+            ...body,
+            organizationType: body.organizationType as PartyOrgTypeCode,
+          }),
         remove: (id) => deletePartyMembershipMutation.mutateAsync({ employeeId, id }),
         promises,
         errors: subEntityErrors,
