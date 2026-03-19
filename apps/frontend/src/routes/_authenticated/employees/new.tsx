@@ -506,6 +506,11 @@ function NewEmployeePage() {
                       }
                     }}
                   />
+                  {form.formState.errors.portraitFileId && (
+                    <p className="mt-1 text-center text-[10px] text-destructive">
+                      {form.formState.errors.portraitFileId.message}
+                    </p>
+                  )}
                 </div>
                 <div className="grid flex-1 grid-cols-2 gap-4">
                   <FieldInput form={form} name="fullName" label="Họ tên *" />
