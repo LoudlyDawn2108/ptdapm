@@ -1,41 +1,46 @@
+import type { FieldErrorResponse, ToastErrorResponse } from "@hrms/shared";
 import type { FieldValues, Path, UseFormSetError } from "react-hook-form";
 import { toast } from "sonner";
 
 // ──────────────────────────────────────────
-// Error Types (matching backend response shapes)
+// Eden Treaty Error Shape
 // ──────────────────────────────────────────
-type ToastError = { type: "toast"; error: string };
-type FieldError = {
-  type: "field";
-  error: string;
-  fields: Record<string, string>;
-};
-type GenericError = { error: string };
-type ApiError = ToastError | FieldError | GenericError | string;
+/**
+ * Shape of the error object returned by Eden Treaty on non-2xx responses.
+ * Eden wraps every HTTP error as `{ status, value }` where `value` is
+ * the parsed response body from the backend.
+ */
+export interface EdenApiError {
+  status: number;
+  value: unknown;
+}
 
-function isFieldError(error: unknown): error is FieldError {
+// ──────────────────────────────────────────
+// Type Guards (applied to the unwrapped error.value)
+// ──────────────────────────────────────────
+function isFieldError(value: unknown): value is FieldErrorResponse {
   return (
-    typeof error === "object" &&
-    error !== null &&
-    "type" in error &&
-    "error" in error &&
-    "fields" in error &&
-    error.type === "field"
+    typeof value === "object" &&
+    value !== null &&
+    "type" in value &&
+    "error" in value &&
+    "fields" in value &&
+    value.type === "field"
   );
 }
 
-function isToastError(error: unknown): error is ToastError {
+function isToastError(value: unknown): value is ToastErrorResponse {
   return (
-    typeof error === "object" &&
-    error !== null &&
-    "type" in error &&
-    "error" in error &&
-    error.type === "toast"
+    typeof value === "object" &&
+    value !== null &&
+    "type" in value &&
+    "error" in value &&
+    value.type === "toast"
   );
 }
 
-function isGenericError(error: unknown): error is GenericError {
-  return typeof error === "object" && error !== null && "error" in error;
+function isGenericError(value: unknown): value is { error: string } {
+  return typeof value === "object" && value !== null && "error" in value;
 }
 
 // Extended Error with optional field errors (for RHF integration)
@@ -52,35 +57,37 @@ export class ApiResponseError extends Error {
 // ──────────────────────────────────────────
 // Main handler — call this from queryFn / mutationFn
 // ──────────────────────────────────────────
-export function handleApiError(error: unknown): ApiResponseError {
+export function handleApiError(edenError: EdenApiError): ApiResponseError {
+  const value = edenError.value;
+
   // Plain string (401/403 from auth middleware)
-  if (typeof error === "string") {
+  if (typeof value === "string") {
     const message =
-      error === "Unauthorized"
+      value === "Unauthorized"
         ? "Phiên đăng nhập hết hạn"
-        : error === "Account is locked"
+        : value === "Account is locked"
           ? "Tài khoản đã bị khóa"
-          : error;
+          : value;
     toast.error(message);
     return new ApiResponseError(message);
   }
 
   // Field validation errors — show toast + return fields for RHF
-  if (isFieldError(error)) {
-    toast.error(error.error);
-    return new ApiResponseError(error.error, error.fields);
+  if (isFieldError(value)) {
+    toast.error(value.error);
+    return new ApiResponseError(value.error, value.fields);
   }
 
   // Toast errors — just show toast
-  if (isToastError(error)) {
-    toast.error(error.error);
-    return new ApiResponseError(error.error);
+  if (isToastError(value)) {
+    toast.error(value.error);
+    return new ApiResponseError(value.error);
   }
 
   // Generic { error } shape (rate limit, etc.)
-  if (isGenericError(error) && typeof error.error === "string") {
-    toast.error(error.error);
-    return new ApiResponseError(error.error);
+  if (isGenericError(value) && typeof value.error === "string") {
+    toast.error(value.error);
+    return new ApiResponseError(value.error);
   }
 
   // Fallback

@@ -28,8 +28,10 @@ import {
   type CreateEmployeeInput,
   EducationLevel,
   FamilyRelation,
+  type FamilyRelationCode,
   Gender,
   PartyOrgType,
+  type PartyOrgTypeCode,
   enumToSortedList,
 } from "@hrms/shared";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -275,7 +277,12 @@ function NewEmployeePage() {
         if (!fm.fullName || !fm.relation) continue;
         subEntityPromises.push(
           createFamilyMember
-            .mutateAsync({ employeeId, relation: fm.relation, fullName: fm.fullName })
+            .mutateAsync({
+              employeeId,
+              relation: fm.relation as FamilyRelationCode,
+              fullName: fm.fullName,
+              isDependent: false,
+            })
             .then(() => {})
             .catch((err: unknown) => {
               subEntityErrors.push(
@@ -289,7 +296,12 @@ function NewEmployeePage() {
         if (!ba.accountNo || !ba.bankName) continue;
         subEntityPromises.push(
           createBankAccount
-            .mutateAsync({ employeeId, bankName: ba.bankName, accountNo: ba.accountNo })
+            .mutateAsync({
+              employeeId,
+              bankName: ba.bankName,
+              accountNo: ba.accountNo,
+              isPrimary: false,
+            })
             .then(() => {})
             .catch((err: unknown) => {
               subEntityErrors.push(
@@ -305,7 +317,7 @@ function NewEmployeePage() {
           createPartyMembership
             .mutateAsync({
               employeeId,
-              organizationType: pm.organizationType,
+              organizationType: pm.organizationType as PartyOrgTypeCode,
               joinedOn: pm.joinedOn,
               details: pm.details,
             })

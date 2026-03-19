@@ -3,7 +3,7 @@ import { db } from "..";
 import { campuses } from "../schema/campuses";
 import { allowanceTypes, contractTypes } from "../schema/contracts";
 import { orgUnits } from "../schema/organization";
-import { salaryGrades, salaryGradeSteps } from "../schema/salary";
+import { salaryGradeSteps, salaryGrades } from "../schema/salary";
 
 async function seedConfig() {
   console.log("🗑️  Clearing existing config data...");
@@ -17,14 +17,22 @@ async function seedConfig() {
   // We'll use a try-catch approach
   try {
     await db.execute(sql`DELETE FROM employee_assignments`);
-  } catch { /* table may not exist */ }
+  } catch {
+    /* table may not exist */
+  }
   try {
     await db.execute(sql`DELETE FROM org_unit_status_events`);
-  } catch { /* table may not exist */ }
+  } catch {
+    /* table may not exist */
+  }
   try {
     // Delete employment_contracts that reference org_units
-    await db.execute(sql`UPDATE employment_contracts SET org_unit_id = NULL WHERE org_unit_id IS NOT NULL`);
-  } catch { /* ignore */ }
+    await db.execute(
+      sql`UPDATE employment_contracts SET org_unit_id = NULL WHERE org_unit_id IS NOT NULL`,
+    );
+  } catch {
+    /* ignore */
+  }
   await db.delete(orgUnits);
   await db.delete(campuses);
 
@@ -32,7 +40,7 @@ async function seedConfig() {
 
   // ── 1. Campus ──────────────────────────────────────────────────────────
   console.log("🏫 Seeding campuses...");
-  const [campusCS1] = await db
+  const campuses_inserted = await db
     .insert(campuses)
     .values({
       campusCode: "CS1",
@@ -42,6 +50,7 @@ async function seedConfig() {
       email: "cs1@tlu.edu.vn",
     })
     .returning();
+  const campusCS1 = campuses_inserted[0]!;
 
   const [campusCS2] = await db
     .insert(campuses)
@@ -145,8 +154,16 @@ async function seedConfig() {
 
   // Level 0: Trung tâm
   const ttData = [
-    { unitCode: "TT_TV", unitName: "Trung tâm Thông tin - Thư viện", unitType: "TRUNG_TAM" as const },
-    { unitCode: "TT_CNTT", unitName: "Trung tâm CNTT và Truyền thông", unitType: "TRUNG_TAM" as const },
+    {
+      unitCode: "TT_TV",
+      unitName: "Trung tâm Thông tin - Thư viện",
+      unitType: "TRUNG_TAM" as const,
+    },
+    {
+      unitCode: "TT_CNTT",
+      unitName: "Trung tâm CNTT và Truyền thông",
+      unitType: "TRUNG_TAM" as const,
+    },
     { unitCode: "TT_DT", unitName: "Trung tâm Đào tạo và HTQT", unitType: "TRUNG_TAM" as const },
   ];
 
@@ -155,7 +172,8 @@ async function seedConfig() {
     .values(ttData.map((t) => ({ ...t, campusId: campusCS1.id })))
     .returning();
 
-  const totalOrg = 2 + phongBanData.length + khoaData.length + boMonCNTT.length + boMonXD.length + ttData.length;
+  const totalOrg =
+    2 + phongBanData.length + khoaData.length + boMonCNTT.length + boMonXD.length + ttData.length;
   console.log(`  ✅ ${totalOrg} org units seeded (with hierarchy)\n`);
 
   // ── 3. Salary Grades + Steps ───────────────────────────────────────────
@@ -280,10 +298,11 @@ async function seedConfig() {
 
   let totalSteps = 0;
   for (const grade of gradeData) {
-    const [inserted] = await db
+    const gradeInserted = await db
       .insert(salaryGrades)
       .values({ gradeCode: grade.gradeCode, gradeName: grade.gradeName })
       .returning();
+    const inserted = gradeInserted[0]!;
 
     await db.insert(salaryGradeSteps).values(
       grade.steps.map((s) => ({
@@ -301,16 +320,56 @@ async function seedConfig() {
   console.log("💼 Seeding allowance types...");
 
   const allowanceData = [
-    { allowanceName: "Phụ cấp chức vụ", description: "Phụ cấp cho các vị trí quản lý", calcMethod: "Hệ số × Lương cơ sở" },
-    { allowanceName: "Phụ cấp thâm niên nhà giáo", description: "Phụ cấp theo năm công tác giảng dạy", calcMethod: "5% mỗi 5 năm, tối đa 30%" },
-    { allowanceName: "Phụ cấp ưu đãi nghề", description: "Phụ cấp ưu đãi cho ngành giáo dục", calcMethod: "25-50% × Lương hiện hưởng" },
-    { allowanceName: "Phụ cấp trách nhiệm", description: "Phụ cấp cho các vị trí có trách nhiệm đặc biệt", calcMethod: "Hệ số × Lương cơ sở" },
-    { allowanceName: "Phụ cấp độc hại", description: "Phụ cấp cho làm việc trong môi trường độc hại", calcMethod: "Theo mức quy định" },
-    { allowanceName: "Phụ cấp khu vực", description: "Phụ cấp theo vùng miền", calcMethod: "Hệ số × Lương cơ sở" },
-    { allowanceName: "Phụ cấp lưu động", description: "Phụ cấp cho công việc phải di chuyển nhiều", calcMethod: "Theo ngày công tác" },
-    { allowanceName: "Phụ cấp kiêm nhiệm", description: "Phụ cấp khi kiêm nhiệm thêm chức vụ", calcMethod: "10-40% phụ cấp chức vụ" },
-    { allowanceName: "Phụ cấp đặc biệt", description: "Phụ cấp cho các trường hợp đặc biệt", calcMethod: "Theo quyết định" },
-    { allowanceName: "Phụ cấp thu hút", description: "Phụ cấp thu hút nhân tài", calcMethod: "Theo hợp đồng thỏa thuận" },
+    {
+      allowanceName: "Phụ cấp chức vụ",
+      description: "Phụ cấp cho các vị trí quản lý",
+      calcMethod: "Hệ số × Lương cơ sở",
+    },
+    {
+      allowanceName: "Phụ cấp thâm niên nhà giáo",
+      description: "Phụ cấp theo năm công tác giảng dạy",
+      calcMethod: "5% mỗi 5 năm, tối đa 30%",
+    },
+    {
+      allowanceName: "Phụ cấp ưu đãi nghề",
+      description: "Phụ cấp ưu đãi cho ngành giáo dục",
+      calcMethod: "25-50% × Lương hiện hưởng",
+    },
+    {
+      allowanceName: "Phụ cấp trách nhiệm",
+      description: "Phụ cấp cho các vị trí có trách nhiệm đặc biệt",
+      calcMethod: "Hệ số × Lương cơ sở",
+    },
+    {
+      allowanceName: "Phụ cấp độc hại",
+      description: "Phụ cấp cho làm việc trong môi trường độc hại",
+      calcMethod: "Theo mức quy định",
+    },
+    {
+      allowanceName: "Phụ cấp khu vực",
+      description: "Phụ cấp theo vùng miền",
+      calcMethod: "Hệ số × Lương cơ sở",
+    },
+    {
+      allowanceName: "Phụ cấp lưu động",
+      description: "Phụ cấp cho công việc phải di chuyển nhiều",
+      calcMethod: "Theo ngày công tác",
+    },
+    {
+      allowanceName: "Phụ cấp kiêm nhiệm",
+      description: "Phụ cấp khi kiêm nhiệm thêm chức vụ",
+      calcMethod: "10-40% phụ cấp chức vụ",
+    },
+    {
+      allowanceName: "Phụ cấp đặc biệt",
+      description: "Phụ cấp cho các trường hợp đặc biệt",
+      calcMethod: "Theo quyết định",
+    },
+    {
+      allowanceName: "Phụ cấp thu hút",
+      description: "Phụ cấp thu hút nhân tài",
+      calcMethod: "Theo hợp đồng thỏa thuận",
+    },
   ];
 
   await db.insert(allowanceTypes).values(allowanceData);
@@ -320,13 +379,55 @@ async function seedConfig() {
   console.log("📄 Seeding contract types...");
 
   const contractData = [
-    { contractTypeName: "Hợp đồng thử việc", minMonths: 1, maxMonths: 6, maxRenewals: 0, renewalGraceDays: 0 },
-    { contractTypeName: "Hợp đồng xác định thời hạn (1 năm)", minMonths: 12, maxMonths: 12, maxRenewals: 2, renewalGraceDays: 30 },
-    { contractTypeName: "Hợp đồng xác định thời hạn (2 năm)", minMonths: 24, maxMonths: 24, maxRenewals: 1, renewalGraceDays: 30 },
-    { contractTypeName: "Hợp đồng xác định thời hạn (3 năm)", minMonths: 36, maxMonths: 36, maxRenewals: 1, renewalGraceDays: 45 },
-    { contractTypeName: "Hợp đồng không xác định thời hạn", minMonths: 0, maxMonths: 600, maxRenewals: 0, renewalGraceDays: 0 },
-    { contractTypeName: "Hợp đồng vụ việc", minMonths: 1, maxMonths: 12, maxRenewals: 3, renewalGraceDays: 15 },
-    { contractTypeName: "Hợp đồng thỉnh giảng", minMonths: 1, maxMonths: 12, maxRenewals: 5, renewalGraceDays: 15 },
+    {
+      contractTypeName: "Hợp đồng thử việc",
+      minMonths: 1,
+      maxMonths: 6,
+      maxRenewals: 0,
+      renewalGraceDays: 0,
+    },
+    {
+      contractTypeName: "Hợp đồng xác định thời hạn (1 năm)",
+      minMonths: 12,
+      maxMonths: 12,
+      maxRenewals: 2,
+      renewalGraceDays: 30,
+    },
+    {
+      contractTypeName: "Hợp đồng xác định thời hạn (2 năm)",
+      minMonths: 24,
+      maxMonths: 24,
+      maxRenewals: 1,
+      renewalGraceDays: 30,
+    },
+    {
+      contractTypeName: "Hợp đồng xác định thời hạn (3 năm)",
+      minMonths: 36,
+      maxMonths: 36,
+      maxRenewals: 1,
+      renewalGraceDays: 45,
+    },
+    {
+      contractTypeName: "Hợp đồng không xác định thời hạn",
+      minMonths: 0,
+      maxMonths: 600,
+      maxRenewals: 0,
+      renewalGraceDays: 0,
+    },
+    {
+      contractTypeName: "Hợp đồng vụ việc",
+      minMonths: 1,
+      maxMonths: 12,
+      maxRenewals: 3,
+      renewalGraceDays: 15,
+    },
+    {
+      contractTypeName: "Hợp đồng thỉnh giảng",
+      minMonths: 1,
+      maxMonths: 12,
+      maxRenewals: 5,
+      renewalGraceDays: 15,
+    },
   ];
 
   await db.insert(contractTypes).values(contractData);

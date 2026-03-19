@@ -10,8 +10,8 @@
     }
   },
   "scripts": {
-    "dev": "bun run --env-file ../../.env --hot src/index.ts",
-    "build": "bun build src/index.ts --outdir dist --target bun",
+    "dev": "bun run --env-file ../../.env --hot src/server.ts",
+    "build": "bun build src/server.ts --outdir dist --target bun",
     "type-check": "tsc --noEmit",
     "lint": "biome check .",
     "test": "bun test --env-file ../../.env",

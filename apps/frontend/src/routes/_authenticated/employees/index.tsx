@@ -17,6 +17,7 @@ import { useListPage } from "@/hooks/use-list-page";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { authorizeRoute } from "@/lib/permissions";
 import { EMPLOYEE_PROFILE_MANAGE_ROLES, Gender, WorkStatus, enumToSortedList } from "@hrms/shared";
+import type { GenderCode, WorkStatusCode } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
@@ -51,8 +52,8 @@ function EmployeesPage() {
     page: search.page,
     pageSize: search.pageSize,
     search: debouncedSearch,
-    workStatus: search.workStatus,
-    gender: search.gender,
+    workStatus: search.workStatus as WorkStatusCode | undefined,
+    gender: search.gender as GenderCode | undefined,
     orgUnitId: search.orgUnitId,
   };
 

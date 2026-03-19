@@ -7,18 +7,12 @@ import type {
   UpdateTrainingCourseInput,
 } from "@hrms/shared";
 import type { ParticipationStatusCode } from "@hrms/shared";
-import {
-  queryOptions,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const trainingCourseKeys = {
   all: ["training-courses"] as const,
   lists: () => [...trainingCourseKeys.all, "list"] as const,
-  list: (params: Record<string, unknown>) =>
-    [...trainingCourseKeys.lists(), params] as const,
+  list: (params: Record<string, unknown>) => [...trainingCourseKeys.lists(), params] as const,
   detail: (id: string) => [...trainingCourseKeys.all, "detail", id] as const,
 };
 
@@ -32,7 +26,7 @@ export const trainingCourseListOptions = (params: {
     queryKey: trainingCourseKeys.list(params as Record<string, unknown>),
     queryFn: async () => {
       const { data, error } = await api.api["training-courses"].get({
-        query: params as any,
+        query: { page: 1, pageSize: 20, ...params },
       });
       if (error) throw handleApiError(error);
       return data;
@@ -42,13 +36,11 @@ export const trainingCourseListOptions = (params: {
 export const trainingTypeDropdownOptions = queryOptions({
   queryKey: ["training-types", "dropdown"],
   queryFn: async () => {
-    const { data, error } = await (api.api.config as any)[
-      "training-types"
-    ].dropdown.get({
+    const { data, error } = await api.api.config["training-types"].dropdown.get({
       query: { limit: 100 },
     });
     if (error) throw handleApiError(error);
-    return (data as any)?.data as Array<{ value: string; label: string }>;
+    return data?.data as Array<{ value: string; label: string }>;
   },
 });
 
@@ -56,14 +48,11 @@ export function useCreateTrainingCourse() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateTrainingCourseInput) => {
-      const { data, error } = await api.api["training-courses"].post(
-        input as any,
-      );
+      const { data, error } = await api.api["training-courses"].post(input);
       if (error) throw handleApiError(error);
       return data;
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: trainingCourseKeys.lists() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: trainingCourseKeys.lists() }),
   });
 }
 
@@ -76,12 +65,11 @@ export function useUpdateTrainingCourse() {
     }: UpdateTrainingCourseInput & { courseId: string }) => {
       const { data, error } = await api.api["training-courses"]({
         courseId,
-      }).put(input as any);
+      }).put(input);
       if (error) throw handleApiError(error);
       return data;
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: trainingCourseKeys.lists() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: trainingCourseKeys.lists() }),
   });
 }
 
@@ -95,10 +83,9 @@ export function useChangeTrainingCourseStatus() {
       courseId: string;
       status: TrainingStatusCode;
     }) => {
-      const res = await (
-        api.api["training-courses"]({ courseId }) as any
-      ).status.patch({ status } as any);
-      const { data, error } = res ?? {};
+      const { data, error } = await api.api["training-courses"]({
+        courseId,
+      }).status.patch({ status });
       if (error) throw handleApiError(error);
       return data;
     },
@@ -155,7 +142,7 @@ export const trainingCourseDetailOptions = (courseId: string) =>
         courseId,
       }).get();
       if (error) throw handleApiError(error);
-      return (data as any)?.data as TrainingCourseDetail;
+      return data?.data as unknown as TrainingCourseDetail;
     },
     enabled: !!courseId,
   });
@@ -173,14 +160,12 @@ export function useCreateTrainingResult(courseId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateTrainingResultInput) => {
-      const res = await (
-        api.api["training-courses"]({ courseId }) as any
-      ).results.post(input as any);
-      const { data, error } = res ?? {};
+      const { data, error } = await api.api["training-courses"]({
+        courseId,
+      }).results.post(input);
       if (error) throw handleApiError(error);
       return data;
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: trainingCourseKeys.detail(courseId) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: trainingCourseKeys.detail(courseId) }),
   });
 }
