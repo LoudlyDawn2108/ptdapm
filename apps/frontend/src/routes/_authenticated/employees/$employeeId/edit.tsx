@@ -56,6 +56,7 @@ import { Pencil, Plus, Save, Upload } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   type Control,
+  type SubmitErrorHandler,
   type SubmitHandler,
   useFieldArray,
   useForm,
@@ -628,6 +629,18 @@ function EditEmployeeFormContent({
     }
   };
 
+  const onInvalid: SubmitErrorHandler<FormValues> = (errors) => {
+    const messages: string[] = [];
+    for (const [, value] of Object.entries(errors)) {
+      if (value?.message) messages.push(value.message);
+    }
+    toast.error(
+      messages.length > 0
+        ? `Vui lòng kiểm tra lại: ${messages.slice(0, 3).join(", ")}${messages.length > 3 ? "..." : ""}`
+        : "Vui lòng kiểm tra lại các trường bắt buộc",
+    );
+  };
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
@@ -644,7 +657,7 @@ function EditEmployeeFormContent({
 
       <div className="px-6 pb-6 pt-4">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-6">
             {/* ── THÔNG TIN CÁ NHÂN ── */}
             <section>
               <SectionHeader title="THÔNG TIN CÁ NHÂN" />
@@ -701,6 +714,7 @@ function EditEmployeeFormContent({
                       }
                     }}
                   />
+                  <p className="mt-1 text-center text-[10px] text-slate-400">Ảnh chân dung</p>
                 </div>
                 <div className="grid flex-1 grid-cols-2 gap-4">
                   <FieldInput form={form} name="fullName" label="Họ tên *" />
