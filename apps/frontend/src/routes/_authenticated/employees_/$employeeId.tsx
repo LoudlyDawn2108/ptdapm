@@ -28,7 +28,7 @@ const TAB_ITEMS = [
   { value: "family", label: "Thông tin gia đình", path: "/family" },
   { value: "work-history", label: "Lịch sử công tác", path: "/work-history" },
   { value: "education", label: "Trình độ học vấn", path: "/education" },
-  { value: "party", label: "Đảng/Đoàn", path: "/party" },
+  // { value: "party", label: "Đảng/Đoàn", path: "/party" },
   { value: "salary", label: "Lương và phụ cấp", path: "/salary" },
   { value: "contracts", label: "Hợp đồng", path: "/contracts" },
   { value: "assignments", label: "Bổ nhiệm", path: "/assignments" },
@@ -98,8 +98,8 @@ function EmployeeDetailLayout() {
         return navigate({ to: "/employees/$employeeId/work-history", params: { employeeId } });
       case "/education":
         return navigate({ to: "/employees/$employeeId/education", params: { employeeId } });
-      case "/party":
-        return navigate({ to: "/employees/$employeeId/party", params: { employeeId } });
+      // case "/party":
+      //   return navigate({ to: "/employees/$employeeId/party", params: { employeeId } });
       case "/salary":
         return navigate({ to: "/employees/$employeeId/salary", params: { employeeId } });
       case "/contracts":

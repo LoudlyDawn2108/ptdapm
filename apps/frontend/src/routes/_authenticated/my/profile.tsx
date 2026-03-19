@@ -9,7 +9,7 @@ const TAB_ITEMS = [
   { value: "family", label: "Thông tin gia đình", path: "/family" },
   { value: "work-history", label: "Lịch sử công tác", path: "/work-history" },
   { value: "education", label: "Trình độ học vấn", path: "/education" },
-  { value: "party", label: "Đảng/Đoàn", path: "/party" },
+  // { value: "party", label: "Đảng/Đoàn", path: "/party" },
   { value: "salary", label: "Lương và phụ cấp", path: "/salary" },
   { value: "contracts", label: "Hợp đồng", path: "/contracts" },
   { value: "assignments", label: "Bổ nhiệm", path: "/assignments" },
@@ -56,8 +56,8 @@ function MyProfileLayout() {
         return navigate({ to: "/my/profile/work-history" });
       case "/education":
         return navigate({ to: "/my/profile/education" });
-      case "/party":
-        return navigate({ to: "/my/profile/party" });
+      // case "/party":
+      //   return navigate({ to: "/my/profile/party" });
       case "/salary":
         return navigate({ to: "/my/profile/salary" });
       case "/contracts":
