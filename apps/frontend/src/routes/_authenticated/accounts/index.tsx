@@ -66,7 +66,7 @@ function AccountsPage() {
   const columns: ColumnDef<any>[] = [
     {
       accessorKey: "username",
-      header: "Tên đăng nhập",
+      header: "Mã nhân sự",
     },
     {
       accessorKey: "fullName",
@@ -101,7 +101,7 @@ function AccountsPage() {
     },
     {
       id: "actions",
-      header: "",
+      header: "Thao tác",
       cell: ({ row }) => {
         const isLocked = row.original.status === "locked";
         return (
@@ -151,72 +151,67 @@ function AccountsPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Quản lý tài khoản"
-        description="Danh sách tài khoản người dùng hệ thống"
-        actions={
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Tạo tài khoản
-          </Button>
-        }
-      />
-
-      <div className="mb-4 flex gap-3">
-        <Input
-          placeholder="Tìm kiếm theo tên, email..."
-          className="max-w-sm"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-        />
-        <Select
-          value={search.role ?? "all"}
-          onValueChange={(v) =>
-            navigate({
-              search: {
-                ...search,
-                role: v === "all" ? undefined : v,
-                page: 1,
-              },
-            })
-          }
-        >
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Vai trò" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tất cả vai trò</SelectItem>
-            {enumToSortedList(Role).map((r) => (
-              <SelectItem key={r.code} value={r.code}>
-                {r.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={search.status ?? "all"}
-          onValueChange={(v) =>
-            navigate({
-              search: {
-                ...search,
-                status: v === "all" ? undefined : v,
-                page: 1,
-              },
-            })
-          }
-        >
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Trạng thái" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tất cả trạng thái</SelectItem>
-            {enumToSortedList(AuthUserStatus).map((s) => (
-              <SelectItem key={s.code} value={s.code}>
-                {s.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="flex items-start justify-between">
+        <div className="mb-4 flex gap-3">
+          <Input
+            placeholder="Tìm kiếm theo tên, email..."
+            className="max-w-sm"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+          />
+          <Select
+            value={search.role ?? "all"}
+            onValueChange={(v) =>
+              navigate({
+                search: {
+                  ...search,
+                  role: v === "all" ? undefined : v,
+                  page: 1,
+                },
+              })
+            }
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Vai trò" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả vai trò</SelectItem>
+              {enumToSortedList(Role).map((r) => (
+                <SelectItem key={r.code} value={r.code}>
+                  {r.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={search.status ?? "all"}
+            onValueChange={(v) =>
+              navigate({
+                search: {
+                  ...search,
+                  status: v === "all" ? undefined : v,
+                  page: 1,
+                },
+              })
+            }
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Trạng thái" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả trạng thái</SelectItem>
+              {enumToSortedList(AuthUserStatus).map((s) => (
+                <SelectItem key={s.code} value={s.code}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button onClick={() => setDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Tạo tài khoản
+        </Button>
       </div>
 
       <DataTable
