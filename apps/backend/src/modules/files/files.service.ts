@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { access, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { env } from "@hrms/env";
@@ -11,7 +11,8 @@ import { files } from "../../db/schema";
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 // Anchor relative UPLOAD_DIR to project root (not CWD) so Turborepo vs direct-run both work
-const PROJECT_ROOT = fileURLToPath(new URL("../../../../..", import.meta.url));
+const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = path.resolve(MODULE_DIR, "../../../../..");
 const RESOLVED_UPLOAD_DIR = path.isAbsolute(env.UPLOAD_DIR)
   ? env.UPLOAD_DIR
   : path.resolve(PROJECT_ROOT, env.UPLOAD_DIR);
@@ -111,32 +112,19 @@ export async function getFileById(id: string) {
     throw new NotFoundError("Không tìm thấy file");
   }
 
-  let resolvedPath = fileRecord.storagePath;
-  let exists = true;
+  let filePath = fileRecord.storagePath;
+  let fileContent = await readFile(filePath).catch(() => null);
 
-  try {
-    await access(resolvedPath);
-  } catch {
-    exists = false;
-  }
-
-  if (!exists) {
+  if (!fileContent) {
     const filename = path.basename(fileRecord.storagePath);
     const fallbackPath = path.join(RESOLVED_UPLOAD_DIR, filename);
-    resolvedPath = fallbackPath;
-    try {
-      await access(resolvedPath);
-      exists = true;
-    } catch {
-      exists = false;
-    }
+    filePath = fallbackPath;
+    fileContent = await readFile(fallbackPath).catch(() => null);
   }
 
-  if (!exists) {
+  if (!fileContent) {
     throw new NotFoundError("File không tồn tại trên hệ thống");
   }
 
-  const fileBuffer = await readFile(resolvedPath);
-
-  return { fileRecord, fileBuffer };
+  return { fileRecord, fileContent, filePath };
 }

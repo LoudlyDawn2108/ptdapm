@@ -31,7 +31,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Pencil, Plus, Search, Users } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 
 const searchSchema = z.object({
@@ -56,6 +56,9 @@ function EmployeesLayout() {
   const search = Route.useSearch();
   const [searchText, setSearchText] = useState(search.search ?? "");
   const debouncedSearch = useDebounce(searchText);
+  const routeSearch = search.search ?? "";
+  const normalizedSearch = debouncedSearch.trim();
+  const effectivePage = normalizedSearch !== routeSearch ? 1 : search.page;
 
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isNew = pathname === "/employees/new";
@@ -63,10 +66,29 @@ function EmployeesLayout() {
   const isDetail = /^\/employees\/[^/]+$/.test(pathname) && !isNew;
   const showModal = isNew || isEdit;
 
+  useEffect(() => {
+    setSearchText(routeSearch);
+  }, [routeSearch]);
+
+  useEffect(() => {
+    if (normalizedSearch === routeSearch) {
+      return;
+    }
+
+    navigate({
+      replace: true,
+      search: (prev) => ({
+        ...prev,
+        search: normalizedSearch || undefined,
+        page: 1,
+      }),
+    });
+  }, [navigate, normalizedSearch, routeSearch]);
+
   const params = {
-    page: search.page,
+    page: effectivePage,
     pageSize: search.pageSize,
-    search: debouncedSearch || undefined,
+    search: normalizedSearch || undefined,
     workStatus: (search.workStatus || undefined) as WorkStatusCode | undefined,
     gender: (search.gender || undefined) as GenderCode | undefined,
     contractStatus: (search.contractStatus || undefined) as ContractStatusCode | undefined,

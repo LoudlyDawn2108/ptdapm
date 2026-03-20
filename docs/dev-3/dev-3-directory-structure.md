@@ -32,7 +32,7 @@ apps/frontend/src/routes/_authenticated/
 ├── employees_/$employeeId.tsx          # Layout chi tiết nhân sự + tab
 └── employees_/$employeeId/
     ├── index.tsx                       # Tab thông tin chung
-    ├── family.tsx                      # Tab gia đình
+    ├── family.tsx                      # Tab gia5.1.1. VaiTro (Vai trò) đình
     ├── work-history.tsx                # Tab quá trình công tác
     ├── party.tsx                       # Tab Đảng/Đoàn
     ├── salary.tsx                      # Tab lương và phụ cấp

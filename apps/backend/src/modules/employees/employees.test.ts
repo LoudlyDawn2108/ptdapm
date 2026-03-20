@@ -7,6 +7,7 @@ import { dbPlugin } from "../../common/plugins/db";
 import { errorPlugin } from "../../common/plugins/error-handler";
 import { db } from "../../db";
 import { employeeEvaluations, employees } from "../../db/schema";
+import { authUsers } from "../../db/schema/auth";
 import { authRoutes } from "../auth";
 import { employeeRoutes } from "./index";
 
@@ -62,35 +63,62 @@ async function tccbRequest(method: string, path: string, body?: unknown) {
 let testEmployeeId: string;
 let employeeForMeId: string;
 const testEvalIds: string[] = [];
+let shouldDeleteEmployeeForMe = false;
+let linkedEmployeeId: string | null = null;
+const searchSeedSuffix = Date.now().toString().slice(-6);
+const searchSeed = {
+  fullName: `Search Target ${searchSeedSuffix}`,
+  staffCode: `SRCH-${searchSeedSuffix}`,
+  nationalId: `SID${searchSeedSuffix}`,
+  email: `search.${searchSeedSuffix}@example.com`,
+  phone: `0912${searchSeedSuffix}`,
+};
 
 beforeAll(async () => {
   const inserted = await db
     .insert(employees)
     .values({
-      fullName: "Test Aggregate Employee",
+      fullName: searchSeed.fullName,
+      staffCode: searchSeed.staffCode,
       dob: "1990-01-01",
       gender: "NAM",
-      nationalId: `AGG${Date.now()}`,
+      nationalId: searchSeed.nationalId,
       address: "123 Test St",
-      email: `agg.test.${Date.now()}@example.com`,
-      phone: "0901234567",
+      email: searchSeed.email,
+      phone: searchSeed.phone,
     })
     .returning({ id: employees.id });
   testEmployeeId = (inserted[0] as { id: string }).id;
 
-  const meInserted = await db
-    .insert(employees)
-    .values({
-      fullName: "Employee User Linked",
-      dob: "1995-03-15",
-      gender: "NU",
-      nationalId: `ME${Date.now()}`,
-      address: "456 Me St",
-      email: "employee@test.local",
-      phone: "0909999999",
-    })
-    .returning({ id: employees.id });
-  employeeForMeId = (meInserted[0] as { id: string }).id;
+  const existingEmployeeForMe = await db
+    .select({ id: employees.id, fullName: employees.fullName })
+    .from(employees)
+    .where(eq(employees.email, "employee@test.local"))
+    .limit(1);
+
+  if (existingEmployeeForMe[0]) {
+    employeeForMeId = existingEmployeeForMe[0].id;
+  } else {
+    const meInserted = await db
+      .insert(employees)
+      .values({
+        fullName: "Employee User Linked",
+        dob: "1995-03-15",
+        gender: "NU",
+        nationalId: `ME${Date.now()}`,
+        address: "456 Me St",
+        email: "employee@test.local",
+        phone: "0909999999",
+      })
+      .returning({ id: employees.id });
+    employeeForMeId = (meInserted[0] as { id: string }).id;
+    shouldDeleteEmployeeForMe = true;
+  }
+
+  await db
+    .update(authUsers)
+    .set({ employeeId: employeeForMeId, updatedAt: new Date() })
+    .where(eq(authUsers.username, "employee_user"));
 
   const evalInserts = await db
     .insert(employeeEvaluations)
@@ -137,9 +165,16 @@ afterAll(async () => {
   if (testEmployeeId) {
     await db.delete(employees).where(eq(employees.id, testEmployeeId));
   }
-  if (employeeForMeId) {
+  if (employeeForMeId && shouldDeleteEmployeeForMe) {
     await db.delete(employees).where(eq(employees.id, employeeForMeId));
   }
+  if (linkedEmployeeId) {
+    await db.delete(employees).where(eq(employees.id, linkedEmployeeId));
+  }
+  await db
+    .update(authUsers)
+    .set({ employeeId: null, updatedAt: new Date() })
+    .where(eq(authUsers.username, "employee_user"));
 });
 
 describe("RBAC — Employee list/detail role guards", () => {
@@ -184,6 +219,58 @@ describe("RBAC — Employee list/detail role guards", () => {
   test("ADMIN cannot GET employee list (403)", async () => {
     const res = await requestAs("admin", "admin123", "GET", "/api/employees");
     expect(res.status).toBe(403);
+  });
+});
+
+describe("GET /api/employees — Search behavior", () => {
+  test("search matches full name", async () => {
+    const res = await tccbRequest(
+      "GET",
+      `/api/employees?search=${encodeURIComponent(searchSeed.fullName)}`,
+    );
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.data.items.some((item: { id: string }) => item.id === testEmployeeId)).toBe(true);
+  });
+
+  test("search matches personnel code", async () => {
+    const res = await tccbRequest(
+      "GET",
+      `/api/employees?search=${encodeURIComponent(searchSeed.staffCode)}`,
+    );
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.data.items.some((item: { id: string }) => item.id === testEmployeeId)).toBe(true);
+  });
+
+  test("search matches CCCD, email, and phone", async () => {
+    for (const keyword of [searchSeed.nationalId, searchSeed.email, searchSeed.phone]) {
+      const res = await tccbRequest("GET", `/api/employees?search=${encodeURIComponent(keyword)}`);
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body.data.items.some((item: { id: string }) => item.id === testEmployeeId)).toBe(true);
+    }
+  });
+
+  test("empty search returns the full employee list", async () => {
+    const [defaultRes, emptyRes] = await Promise.all([
+      tccbRequest("GET", "/api/employees"),
+      tccbRequest("GET", "/api/employees?search="),
+    ]);
+
+    expect(defaultRes.status).toBe(200);
+    expect(emptyRes.status).toBe(200);
+
+    const defaultBody = await defaultRes.json();
+    const emptyBody = await emptyRes.json();
+
+    expect(emptyBody.data.total).toBe(defaultBody.data.total);
+    expect(emptyBody.data.items.map((item: { id: string }) => item.id)).toEqual(
+      defaultBody.data.items.map((item: { id: string }) => item.id),
+    );
   });
 });
 
@@ -248,6 +335,44 @@ describe("GET /api/employees/:id — Aggregate response", () => {
 });
 
 describe("GET /api/employees/me — Aggregate + visibility filtering", () => {
+  test("/me ưu tiên employeeId đã liên kết thay vì dò theo email", async () => {
+    const linkedInserted = await db
+      .insert(employees)
+      .values({
+        fullName: `Linked Employee ${searchSeedSuffix}`,
+        dob: "1994-04-04",
+        gender: "NU",
+        nationalId: `LNK${searchSeedSuffix}`,
+        address: "789 Linked St",
+        email: `linked.${searchSeedSuffix}@example.com`,
+        phone: `0922${searchSeedSuffix}`,
+      })
+      .returning({ id: employees.id });
+
+    linkedEmployeeId = linkedInserted[0]?.id ?? null;
+
+    await db
+      .update(authUsers)
+      .set({ employeeId: linkedEmployeeId, updatedAt: new Date() })
+      .where(eq(authUsers.username, "employee_user"));
+
+    const res = await requestAs("employee_user", "employee1234", "GET", "/api/employees/me");
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.data.employee.id).toBe(linkedEmployeeId);
+
+    await db
+      .update(authUsers)
+      .set({ employeeId: employeeForMeId, updatedAt: new Date() })
+      .where(eq(authUsers.username, "employee_user"));
+
+    if (linkedEmployeeId) {
+      await db.delete(employees).where(eq(employees.id, linkedEmployeeId));
+      linkedEmployeeId = null;
+    }
+  });
+
   test("EMPLOYEE /me returns full aggregate with 11 keys", async () => {
     const res = await requestAs("employee_user", "employee1234", "GET", "/api/employees/me");
     expect(res.status).toBe(200);
@@ -255,7 +380,8 @@ describe("GET /api/employees/me — Aggregate + visibility filtering", () => {
     const data = body.data;
 
     expect(data.employee).toBeDefined();
-    expect(data.employee.fullName).toBe("Employee User Linked");
+    expect(data.employee.email).toBe("employee@test.local");
+    expect(data.employee.id).toBe(employeeForMeId);
 
     expect(data).toHaveProperty("familyMembers");
     expect(data).toHaveProperty("bankAccounts");

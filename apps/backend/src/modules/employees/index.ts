@@ -32,6 +32,11 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
   .get(
     "/me",
     async ({ user }) => {
+      if (user.employeeId) {
+        const data = await employeeService.getAggregateById(user.employeeId, user.role);
+        return { data };
+      }
+
       const employee = await employeeService.getByEmail(user.email ?? "");
       if (!employee) throw new NotFoundError("Không tìm thấy hồ sơ nhân viên");
       const data = await employeeService.getAggregateById(

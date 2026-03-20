@@ -118,6 +118,11 @@ const navGroups: NavGroupConfig[] = [
     label: "Cá nhân",
     items: [
       {
+        title: "Hồ sơ cá nhân",
+        to: "/my/profile",
+        icon: CircleUserRound,
+      },
+      {
         title: "Đào tạo của tôi",
         to: "/my/training",
         icon: BookOpen,

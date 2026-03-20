@@ -13,13 +13,14 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/features/auth/hooks";
 import { useEmployeeDetail, useMarkResigned } from "@/features/employees/api";
+import { useBreadcrumbOverrides } from "@/lib/breadcrumb-context";
 import { ApiResponseError } from "@/lib/error-handler";
 import { authorizeRoute } from "@/lib/permissions";
 import { EMPLOYEE_PROFILE_MANAGE_ROLES } from "@hrms/shared";
 import { Link, Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useRouterState } from "@tanstack/react-router";
 import { Pencil, UserX } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const TAB_ITEMS = [
@@ -27,7 +28,7 @@ const TAB_ITEMS = [
   { value: "family", label: "Thông tin gia đình", path: "/family" },
   { value: "work-history", label: "Lịch sử công tác", path: "/work-history" },
   { value: "education", label: "Trình độ học vấn", path: "/education" },
-  { value: "party", label: "Đảng/Đoàn", path: "/party" },
+  // { value: "party", label: "Đảng/Đoàn", path: "/party" },
   { value: "salary", label: "Lương và phụ cấp", path: "/salary" },
   { value: "contracts", label: "Hợp đồng", path: "/contracts" },
   { value: "assignments", label: "Bổ nhiệm", path: "/assignments" },
@@ -50,6 +51,16 @@ function EmployeeDetailLayout() {
   const markResigned = useMarkResigned();
 
   const { aggregate, employee: emp, isLoading } = useEmployeeDetail(employeeId);
+  const { setOverrides } = useBreadcrumbOverrides();
+
+  useEffect(() => {
+    if (emp) {
+      setOverrides([
+        { segment: employeeId, label: `${emp.staffCode} - ${emp.fullName}`, collapseAfter: true },
+      ]);
+    }
+    return () => setOverrides([]);
+  }, [employeeId, emp?.staffCode, emp?.fullName, setOverrides]);
 
   // Determine active tab from current path
   const basePath = `/employees/${employeeId}`;
@@ -87,8 +98,8 @@ function EmployeeDetailLayout() {
         return navigate({ to: "/employees/$employeeId/work-history", params: { employeeId } });
       case "/education":
         return navigate({ to: "/employees/$employeeId/education", params: { employeeId } });
-      case "/party":
-        return navigate({ to: "/employees/$employeeId/party", params: { employeeId } });
+      // case "/party":
+      //   return navigate({ to: "/employees/$employeeId/party", params: { employeeId } });
       case "/salary":
         return navigate({ to: "/employees/$employeeId/salary", params: { employeeId } });
       case "/contracts":

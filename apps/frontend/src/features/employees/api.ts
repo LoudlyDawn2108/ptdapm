@@ -5,6 +5,7 @@ import type {
   AcademicRankCode,
   ContractStatusCode,
   CreateEmployeeBankAccountInput,
+  CreateEmployeeDegreeInput,
   CreateEmployeeFamilyMemberInput,
   CreateEmployeeInput,
   CreateEmployeePartyMembershipInput,
@@ -21,7 +22,12 @@ import type {
   UpdateEvaluationInput,
   WorkStatusCode,
 } from "@hrms/shared";
-import { createEvaluationSchema, updateEvaluationSchema } from "@hrms/shared";
+import {
+  createEmployeeDegreeSchema,
+  createEvaluationSchema,
+  updateEmployeeSchema,
+  updateEvaluationSchema,
+} from "@hrms/shared";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { EmployeeAggregate } from "./types";
 import { isEmployeeAggregate } from "./types";
@@ -35,7 +41,7 @@ export type UploadedFile = {
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export function getFileUrl(fileId: string): string {
-  return `${apiBaseUrl}/api/files/${fileId}`;
+  return `${apiBaseUrl}/api/files/${encodeURIComponent(fileId)}`;
 }
 
 function isUploadedFileResponse(
@@ -157,6 +163,13 @@ export function useEmployeeDetail(employeeId: string) {
   return { aggregate, employee: aggregate?.employee, isLoading };
 }
 
+export function useMyEmployeeDetail() {
+  const { data, isLoading } = useQuery(myEmployeeOptions());
+  const raw = data?.data;
+  const aggregate = isEmployeeAggregate(raw) ? raw : undefined;
+  return { aggregate, employee: aggregate?.employee, isLoading };
+}
+
 // ──────────────────────────────────────────
 // Mutations
 // ──────────────────────────────────────────
@@ -176,7 +189,8 @@ export function useUpdateEmployee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: UpdateEmployeeInput & { id: string }) => {
-      const { data, error } = await api.api.employees({ employeeId: id }).put(input);
+      const body = toApi(updateEmployeeSchema, input);
+      const { data, error } = await api.api.employees({ employeeId: id }).put(body);
       if (error) throw handleApiError(error);
       return data;
     },
@@ -428,13 +442,9 @@ export function useCreateDegree() {
     mutationFn: async ({
       employeeId,
       ...input
-    }: {
-      employeeId: string;
-      degreeName: string;
-      school: string;
-      degreeFileId?: string;
-    }) => {
-      const { data, error } = await api.api.employees({ employeeId }).degrees.post(input);
+    }: { employeeId: string } & CreateEmployeeDegreeInput) => {
+      const body = toApi(createEmployeeDegreeSchema, input);
+      const { data, error } = await api.api.employees({ employeeId }).degrees.post(body);
       if (error) throw handleApiError(error);
       return data;
     },
