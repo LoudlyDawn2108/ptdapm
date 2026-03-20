@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "../index";
 import {
+  type NewEmployee,
   allowanceTypes,
   contractTypes,
   employeeAllowances,
@@ -62,7 +63,12 @@ async function findContractType(name: string) {
 // ──────────────────────────────────────────────────────────────────────────────
 // Employee data — emails MATCH the user accounts in users.ts
 // ──────────────────────────────────────────────────────────────────────────────
-const sampleEmployees = [
+type SeedEmployee = Omit<
+  NewEmployee,
+  "id" | "staffCode" | "createdAt" | "updatedAt" | "currentOrgUnitId" | "salaryGradeStepId"
+>;
+
+const sampleEmployees: SeedEmployee[] = [
   {
     // Employee 0 → admin@test.local (ADMIN)
     fullName: "Nguyen Van An",
@@ -188,28 +194,29 @@ async function seedEmployees() {
     salaryStepIds.push(await findSalaryGradeStep(mapping.gradeCode, mapping.stepNo));
   }
 
-  for (let i = 0; i < sampleEmployees.length; i++) {
-    const emp = sampleEmployees[i]!;
-    const existing = await db
+  for (const [i, emp] of sampleEmployees.entries()) {
+    const [existingEmployee] = await db
       .select({ id: employees.id })
       .from(employees)
       .where(eq(employees.nationalId, emp.nationalId))
       .limit(1);
 
-    if (existing.length > 0) {
+    if (existingEmployee) {
       console.log(`  Skipping ${emp.fullName} (nationalId ${emp.nationalId} already exists)`);
-      employeeIds.push((existing[0] as { id: string }).id);
+      employeeIds.push(existingEmployee.id);
       skipped++;
       continue;
     }
 
-    const insertData: Record<string, unknown> = { ...emp };
-    if (orgUnitIds[i]) insertData.currentOrgUnitId = orgUnitIds[i];
-    if (salaryStepIds[i]) insertData.salaryGradeStepId = salaryStepIds[i];
+    const insertData: NewEmployee = {
+      ...emp,
+      currentOrgUnitId: orgUnitIds[i] ?? undefined,
+      salaryGradeStepId: salaryStepIds[i] ?? undefined,
+    };
 
     const [inserted] = await db
       .insert(employees)
-      .values(insertData as typeof emp & { currentOrgUnitId?: string; salaryGradeStepId?: string })
+      .values(insertData)
       .returning({ id: employees.id });
     if (!inserted) {
       console.error(`  Failed to insert ${emp.fullName}`);
@@ -486,63 +493,73 @@ async function seedEmployees() {
       "  No allowance types found — skipping employee allowances (run config seed first)",
     );
   } else {
-    // Build a name→id map for convenience
-    const typeMap = new Map(existingTypes.map((t) => [t.allowanceName, t.id]));
-    const getType = (name: string) => typeMap.get(name) ?? existingTypes[0]!.id;
+    const fallbackAllowanceTypeId = existingTypes[0]?.id;
+    if (!fallbackAllowanceTypeId) {
+      console.log("  No allowance types found — skipping employee allowances");
+    } else {
+      // Build a name→id map for convenience
+      const typeMap = new Map(existingTypes.map((t) => [t.allowanceName, t.id]));
+      const getType = (name: string) => typeMap.get(name) ?? fallbackAllowanceTypeId;
 
-    const allowanceData = [
-      {
-        employeeIdx: 0,
-        typeName: "Phụ cấp chức vụ",
-        amount: "2500000",
-        note: "Phu cap PGD Trung tam",
-      },
-      {
-        employeeIdx: 0,
-        typeName: "Phụ cấp thâm niên nhà giáo",
-        amount: "1800000",
-        note: "15 nam cong tac",
-      },
-      { employeeIdx: 0, typeName: "Phụ cấp ưu đãi nghề", amount: "1200000" },
-      {
-        employeeIdx: 1,
-        typeName: "Phụ cấp chức vụ",
-        amount: "2000000",
-        note: "Phu cap chuyen vien chinh",
-      },
-      {
-        employeeIdx: 1,
-        typeName: "Phụ cấp thâm niên nhà giáo",
-        amount: "800000",
-        note: "5 nam cong tac",
-      },
-      {
-        employeeIdx: 2,
-        typeName: "Phụ cấp trách nhiệm",
-        amount: "1500000",
-        note: "Trach nhiem ke toan",
-      },
-      { employeeIdx: 2, typeName: "Phụ cấp ưu đãi nghề", amount: "600000" },
-      { employeeIdx: 3, typeName: "Phụ cấp ưu đãi nghề", amount: "900000", note: "Giang vien tre" },
-      { employeeIdx: 4, typeName: "Phụ cấp ưu đãi nghề", amount: "500000", note: "Tro giang" },
-    ];
+      const allowanceData = [
+        {
+          employeeIdx: 0,
+          typeName: "Phụ cấp chức vụ",
+          amount: "2500000",
+          note: "Phu cap PGD Trung tam",
+        },
+        {
+          employeeIdx: 0,
+          typeName: "Phụ cấp thâm niên nhà giáo",
+          amount: "1800000",
+          note: "15 nam cong tac",
+        },
+        { employeeIdx: 0, typeName: "Phụ cấp ưu đãi nghề", amount: "1200000" },
+        {
+          employeeIdx: 1,
+          typeName: "Phụ cấp chức vụ",
+          amount: "2000000",
+          note: "Phu cap chuyen vien chinh",
+        },
+        {
+          employeeIdx: 1,
+          typeName: "Phụ cấp thâm niên nhà giáo",
+          amount: "800000",
+          note: "5 nam cong tac",
+        },
+        {
+          employeeIdx: 2,
+          typeName: "Phụ cấp trách nhiệm",
+          amount: "1500000",
+          note: "Trach nhiem ke toan",
+        },
+        { employeeIdx: 2, typeName: "Phụ cấp ưu đãi nghề", amount: "600000" },
+        {
+          employeeIdx: 3,
+          typeName: "Phụ cấp ưu đãi nghề",
+          amount: "900000",
+          note: "Giang vien tre",
+        },
+        { employeeIdx: 4, typeName: "Phụ cấp ưu đãi nghề", amount: "500000", note: "Tro giang" },
+      ];
 
-    let allowanceCount = 0;
-    for (const al of allowanceData) {
-      const employeeId = employeeIds[al.employeeIdx];
-      if (!employeeId) continue;
-      await db
-        .insert(employeeAllowances)
-        .values({
-          employeeId,
-          allowanceTypeId: getType(al.typeName),
-          amount: al.amount,
-          note: al.note,
-        })
-        .onConflictDoNothing();
-      allowanceCount++;
+      let allowanceCount = 0;
+      for (const al of allowanceData) {
+        const employeeId = employeeIds[al.employeeIdx];
+        if (!employeeId) continue;
+        await db
+          .insert(employeeAllowances)
+          .values({
+            employeeId,
+            allowanceTypeId: getType(al.typeName),
+            amount: al.amount,
+            note: al.note,
+          })
+          .onConflictDoNothing();
+        allowanceCount++;
+      }
+      console.log(`  ${allowanceCount} employee allowances seeded`);
     }
-    console.log(`  ${allowanceCount} employee allowances seeded`);
   }
 
   // ── Seed degrees ───────────────────────────────────────────────────────
@@ -691,7 +708,7 @@ async function seedEmployees() {
       // Employee 0 - Nguyen Van An: had trial → 3 year → indefinite
       {
         employeeIdx: 0,
-        contractTypeId: ctThuViec!,
+        contractTypeId: ctThuViec,
         contractNo: "HD-TV-2015-001",
         signedOn: "2015-09-01",
         effectiveFrom: "2015-09-01",
@@ -700,7 +717,7 @@ async function seedEmployees() {
       },
       {
         employeeIdx: 0,
-        contractTypeId: ct3Nam!,
+        contractTypeId: ct3Nam,
         contractNo: "HD-XDTH-2016-001",
         signedOn: "2016-03-01",
         effectiveFrom: "2016-03-01",
@@ -709,7 +726,7 @@ async function seedEmployees() {
       },
       {
         employeeIdx: 0,
-        contractTypeId: ctKoXD!,
+        contractTypeId: ctKoXD,
         contractNo: "HD-KXDTH-2019-001",
         signedOn: "2019-03-01",
         effectiveFrom: "2019-03-01",
@@ -719,7 +736,7 @@ async function seedEmployees() {
       // Employee 1 - Tran Thi Binh: trial → 1 year → indefinite
       {
         employeeIdx: 1,
-        contractTypeId: ctThuViec!,
+        contractTypeId: ctThuViec,
         contractNo: "HD-TV-2020-002",
         signedOn: "2020-01-15",
         effectiveFrom: "2020-01-15",
@@ -728,7 +745,7 @@ async function seedEmployees() {
       },
       {
         employeeIdx: 1,
-        contractTypeId: ct1Nam!,
+        contractTypeId: ct1Nam,
         contractNo: "HD-XDTH-2020-002",
         signedOn: "2020-07-15",
         effectiveFrom: "2020-07-15",
@@ -737,7 +754,7 @@ async function seedEmployees() {
       },
       {
         employeeIdx: 1,
-        contractTypeId: ctKoXD!,
+        contractTypeId: ctKoXD,
         contractNo: "HD-KXDTH-2021-002",
         signedOn: "2021-07-15",
         effectiveFrom: "2021-07-15",
@@ -747,7 +764,7 @@ async function seedEmployees() {
       // Employee 2 - Le Hoang Cuong: trial → 3 year (current)
       {
         employeeIdx: 2,
-        contractTypeId: ctThuViec!,
+        contractTypeId: ctThuViec,
         contractNo: "HD-TV-2018-003",
         signedOn: "2018-07-01",
         effectiveFrom: "2018-07-01",
@@ -756,7 +773,7 @@ async function seedEmployees() {
       },
       {
         employeeIdx: 2,
-        contractTypeId: ct3Nam!,
+        contractTypeId: ct3Nam,
         contractNo: "HD-XDTH-2023-003",
         signedOn: "2023-01-01",
         effectiveFrom: "2023-01-01",
@@ -766,7 +783,7 @@ async function seedEmployees() {
       // Employee 3 - Pham Minh Duc: trial → 1 year (current)
       {
         employeeIdx: 3,
-        contractTypeId: ctThuViec!,
+        contractTypeId: ctThuViec,
         contractNo: "HD-TV-2023-004",
         signedOn: "2023-09-01",
         effectiveFrom: "2023-09-01",
@@ -775,7 +792,7 @@ async function seedEmployees() {
       },
       {
         employeeIdx: 3,
-        contractTypeId: ct1Nam!,
+        contractTypeId: ct1Nam,
         contractNo: "HD-XDTH-2024-004",
         signedOn: "2024-03-01",
         effectiveFrom: "2024-03-01",
@@ -785,7 +802,7 @@ async function seedEmployees() {
       // Employee 4 - Vo Thi Em: trial only (expired, no renewal)
       {
         employeeIdx: 4,
-        contractTypeId: ctThuViec!,
+        contractTypeId: ctThuViec,
         contractNo: "HD-TV-2021-005",
         signedOn: "2021-01-10",
         effectiveFrom: "2021-01-10",

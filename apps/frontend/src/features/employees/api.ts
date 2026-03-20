@@ -5,6 +5,7 @@ import type {
   AcademicRankCode,
   ContractStatusCode,
   CreateEmployeeBankAccountInput,
+  CreateEmployeeDegreeInput,
   CreateEmployeeFamilyMemberInput,
   CreateEmployeeInput,
   CreateEmployeePartyMembershipInput,
@@ -21,11 +22,16 @@ import type {
   UpdateEvaluationInput,
   WorkStatusCode,
 } from "@hrms/shared";
-import { createEvaluationSchema, updateEvaluationSchema } from "@hrms/shared";
+import {
+  createEmployeeDegreeSchema,
+  createEvaluationSchema,
+  updateEmployeeSchema,
+  updateEvaluationSchema,
+} from "@hrms/shared";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { EmployeeAggregate } from "./types";
 import { isEmployeeAggregate } from "./types";
-const edenBody = <T>(input: T): any => input;
+
 export type UploadedFile = {
   id: string;
   originalName: string;
@@ -71,9 +77,10 @@ export async function uploadFile(file: File): Promise<UploadedFile> {
   const payload: unknown = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw handleApiError(
-      (payload ?? { error: "Tải ảnh lên thất bại" }) as Parameters<typeof handleApiError>[0],
-    );
+    throw handleApiError({
+      status: response.status,
+      value: payload ?? { error: "Tải ảnh lên thất bại" },
+    });
   }
 
   if (!isUploadedFileResponse(payload)) {
@@ -176,7 +183,8 @@ export function useUpdateEmployee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: UpdateEmployeeInput & { id: string }) => {
-      const { data, error } = await api.api.employees({ employeeId: id }).put(edenBody(input));
+      const body = toApi(updateEmployeeSchema, input);
+      const { data, error } = await api.api.employees({ employeeId: id }).put(body);
       if (error) throw handleApiError(error);
       return data;
     },
@@ -426,13 +434,9 @@ export function useCreateDegree() {
     mutationFn: async ({
       employeeId,
       ...input
-    }: {
-      employeeId: string;
-      degreeName: string;
-      school: string;
-      degreeFileId?: string;
-    }) => {
-      const { data, error } = await api.api.employees({ employeeId }).degrees.post(edenBody(input));
+    }: { employeeId: string } & CreateEmployeeDegreeInput) => {
+      const body = toApi(createEmployeeDegreeSchema, input);
+      const { data, error } = await api.api.employees({ employeeId }).degrees.post(body);
       if (error) throw handleApiError(error);
       return data;
     },
