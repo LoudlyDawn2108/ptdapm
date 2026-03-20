@@ -1,23 +1,24 @@
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { RoleGuard } from "@/components/shared/role-guard";
 import { StatusBadgeFromCode } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
-import { Gender, WorkStatus } from "@hrms/shared";
+import { EMPLOYEE_PROFILE_MANAGE_ROLES, Gender, WorkStatus } from "@hrms/shared";
 import type { UseMutationResult } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Eye, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-export interface EmployeeListRow {
+export type EmployeeListRow = {
   id: string;
   staffCode: string | null;
   fullName: string;
   gender: string | null;
   phone: string | null;
   email: string | null;
-  currentOrgUnitName: string | null;
+  currentOrgUnitName?: string | null;
   workStatus: string;
-}
+};
 
 export function getEmployeeColumns(
   deleteMutation: UseMutationResult<unknown, Error, string>,
@@ -87,22 +88,24 @@ export function getEmployeeColumns(
               <Eye className="h-4 w-4" />
             </Link>
           </Button>
-          <ConfirmDialog
-            trigger={
-              <Button variant="ghost" size="sm">
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            }
-            title="Xóa nhân sự"
-            description={`Bạn có chắc muốn xóa nhân sự "${row.original.fullName}"?`}
-            confirmLabel="Xóa"
-            variant="destructive"
-            onConfirm={() =>
-              deleteMutation.mutate(row.original.id, {
-                onSuccess: () => toast.success("Đã xóa nhân sự"),
-              })
-            }
-          />
+          <RoleGuard roles={[...EMPLOYEE_PROFILE_MANAGE_ROLES]}>
+            <ConfirmDialog
+              trigger={
+                <Button variant="ghost" size="sm">
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              }
+              title="Xóa nhân sự"
+              description={`Bạn có chắc muốn xóa nhân sự "${row.original.fullName}"?`}
+              confirmLabel="Xóa"
+              variant="destructive"
+              onConfirm={() =>
+                deleteMutation.mutate(row.original.id, {
+                  onSuccess: () => toast.success("Đã xóa nhân sự"),
+                })
+              }
+            />
+          </RoleGuard>
         </div>
       ),
     },

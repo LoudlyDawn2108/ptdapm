@@ -1,4 +1,5 @@
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
+import { RoleGuard } from "@/components/shared/role-guard";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,6 +15,7 @@ import { useAuth } from "@/features/auth/hooks";
 import { useEmployeeDetail, useMarkResigned } from "@/features/employees/api";
 import { ApiResponseError } from "@/lib/error-handler";
 import { authorizeRoute } from "@/lib/permissions";
+import { EMPLOYEE_PROFILE_MANAGE_ROLES } from "@hrms/shared";
 import { Link, Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useRouterState } from "@tanstack/react-router";
 import { Pencil, UserX } from "lucide-react";
@@ -25,7 +27,6 @@ const TAB_ITEMS = [
   { value: "family", label: "Thông tin gia đình", path: "/family" },
   { value: "work-history", label: "Lịch sử công tác", path: "/work-history" },
   { value: "education", label: "Trình độ học vấn", path: "/education" },
-  { value: "certifications", label: "Chứng chỉ", path: "/certifications" },
   { value: "party", label: "Đảng/Đoàn", path: "/party" },
   { value: "salary", label: "Lương và phụ cấp", path: "/salary" },
   { value: "contracts", label: "Hợp đồng", path: "/contracts" },
@@ -40,7 +41,7 @@ export const Route = createFileRoute("/_authenticated/employees_/$employeeId")({
 
 function EmployeeDetailLayout() {
   const { employeeId } = Route.useParams();
-  const navigate = useNavigate();
+  const navigate = useNavigate({ from: "/employees/$employeeId" });
   const { user } = useAuth();
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
@@ -57,8 +58,7 @@ function EmployeeDetailLayout() {
     return suffix || "";
   })();
 
-  const canEdit =
-    user && (user.role === "TCCB" || user.role === "ADMIN") && emp?.workStatus !== "terminated";
+  const canEdit = !!user && user.role === "TCCB" && emp?.workStatus !== "terminated";
 
   if (isLoading) {
     return <FormSkeleton fields={8} />;
@@ -75,6 +75,31 @@ function EmployeeDetailLayout() {
   const handleCloseResignDialog = () => {
     setShowResignDialog(false);
     setResignReason("");
+  };
+
+  const navigateToTab = (path: (typeof TAB_ITEMS)[number]["path"]) => {
+    switch (path) {
+      case "":
+        return navigate({ to: "/employees/$employeeId", params: { employeeId } });
+      case "/family":
+        return navigate({ to: "/employees/$employeeId/family", params: { employeeId } });
+      case "/work-history":
+        return navigate({ to: "/employees/$employeeId/work-history", params: { employeeId } });
+      case "/education":
+        return navigate({ to: "/employees/$employeeId/education", params: { employeeId } });
+      case "/party":
+        return navigate({ to: "/employees/$employeeId/party", params: { employeeId } });
+      case "/salary":
+        return navigate({ to: "/employees/$employeeId/salary", params: { employeeId } });
+      case "/contracts":
+        return navigate({ to: "/employees/$employeeId/contracts", params: { employeeId } });
+      case "/assignments":
+        return navigate({ to: "/employees/$employeeId/assignments", params: { employeeId } });
+      case "/rewards":
+        return navigate({ to: "/employees/$employeeId/rewards", params: { employeeId } });
+      default:
+        return navigate({ to: "/employees/$employeeId", params: { employeeId } });
+    }
   };
 
   const handleConfirmResigned = async () => {
@@ -97,20 +122,22 @@ function EmployeeDetailLayout() {
     <div>
       {/* ── Action Buttons ───────────────── */}
       <div className="flex items-center justify-end gap-3 mb-4">
-        {canEdit && (
-          <Button variant="outline" asChild>
-            <Link to="/employees/$employeeId/edit" params={{ employeeId }}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Sửa hồ sơ
-            </Link>
-          </Button>
-        )}
-        {canEdit && emp.workStatus !== "terminated" && (
-          <Button variant="destructive" onClick={() => setShowResignDialog(true)}>
-            <UserX className="mr-2 h-4 w-4" />
-            Đánh dấu thôi việc
-          </Button>
-        )}
+        <RoleGuard roles={[...EMPLOYEE_PROFILE_MANAGE_ROLES]}>
+          {canEdit && (
+            <Button variant="outline" asChild>
+              <Link to="/employees/$employeeId/edit" params={{ employeeId }}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Sửa hồ sơ
+              </Link>
+            </Button>
+          )}
+          {canEdit && emp.workStatus !== "terminated" && (
+            <Button variant="destructive" onClick={() => setShowResignDialog(true)}>
+              <UserX className="mr-2 h-4 w-4" />
+              Đánh dấu thôi việc
+            </Button>
+          )}
+        </RoleGuard>
       </div>
 
       {/* ── Tab Navigation ───────────────── */}
@@ -119,10 +146,7 @@ function EmployeeDetailLayout() {
         onValueChange={(val) => {
           const tab = TAB_ITEMS.find((t) => t.value === val);
           if (tab) {
-            void navigate({
-              to: `/employees/$employeeId${tab.path}`,
-              params: { employeeId },
-            } as any);
+            void navigateToTab(tab.path);
           }
         }}
         className="mb-6"

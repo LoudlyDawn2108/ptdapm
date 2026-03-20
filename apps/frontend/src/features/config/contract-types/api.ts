@@ -26,7 +26,7 @@ export const contractTypeListOptions = (params: {
     queryKey: contractTypeKeys.list(params),
     queryFn: async () => {
       const { data, error } = await api.api.config["contract-types"].get({
-        query: params as any,
+        query: { page: 1, pageSize: 20, ...params },
       });
       if (error) throw handleApiError(error);
       return data;
@@ -37,9 +37,7 @@ export function useCreateContractType() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateContractTypeInput) => {
-      const { data, error } = await api.api.config["contract-types"].post(
-        input as any,
-      );
+      const { data, error } = await api.api.config["contract-types"].post(input);
       if (error) throw handleApiError(error);
       return data;
     },
@@ -51,13 +49,10 @@ export function useCreateContractType() {
 export function useUpdateContractType() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({
-      id,
-      ...input
-    }: UpdateContractTypeInput & { id: string }) => {
+    mutationFn: async ({ id, ...input }: UpdateContractTypeInput & { id: string }) => {
       const { data, error } = await api.api.config["contract-types"]({
         id,
-      }).put(input as any);
+      }).put(input);
       if (error) throw handleApiError(error);
       return data;
     },

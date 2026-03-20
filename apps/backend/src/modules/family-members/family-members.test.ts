@@ -55,8 +55,8 @@ async function requestAs(
   );
 }
 
-async function adminRequest(method: string, path: string, body?: unknown) {
-  return requestAs("admin", "admin123", method, path, body);
+async function tccbRequest(method: string, path: string, body?: unknown) {
+  return requestAs("tccb_user", "tccb1234", method, path, body);
 }
 
 let testEmployeeId: string;
@@ -90,8 +90,8 @@ afterAll(async () => {
 const BASE = () => `/api/employees/${testEmployeeId}/family-members`;
 
 describe("RBAC — Family Members role guards", () => {
-  test("ADMIN can list family members (200)", async () => {
-    const res = await adminRequest("GET", BASE());
+  test("TCCB can list family members (200)", async () => {
+    const res = await tccbRequest("GET", BASE());
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data).toBeDefined();
@@ -108,9 +108,14 @@ describe("RBAC — Family Members role guards", () => {
     expect(res.status).toBe(200);
   });
 
-  test("EMPLOYEE can list family members (200)", async () => {
+  test("EMPLOYEE cannot list family members (403)", async () => {
     const res = await requestAs("employee_user", "employee1234", "GET", BASE());
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(403);
+  });
+
+  test("ADMIN cannot list family members (403)", async () => {
+    const res = await requestAs("admin", "admin123", "GET", BASE());
+    expect(res.status).toBe(403);
   });
 
   test("EMPLOYEE cannot create family member (403)", async () => {
@@ -133,8 +138,8 @@ describe("RBAC — Family Members role guards", () => {
 describe("CRUD — Family Members", () => {
   let memberId: string;
 
-  test("ADMIN can create family member (200)", async () => {
-    const res = await adminRequest("POST", BASE(), {
+  test("TCCB can create family member (200)", async () => {
+    const res = await tccbRequest("POST", BASE(), {
       relation: "CHA",
       fullName: "Nguyen Van Cha",
       dob: "1960-05-15",
@@ -151,7 +156,16 @@ describe("CRUD — Family Members", () => {
     createdIds.push(memberId);
   });
 
-  test("TCCB can create family member (200)", async () => {
+  test("ADMIN cannot create family member (403)", async () => {
+    const res = await requestAs("admin", "admin123", "POST", BASE(), {
+      relation: "ME",
+      fullName: "Blocked Admin",
+      isDependent: false,
+    });
+    expect(res.status).toBe(403);
+  });
+
+  test("TCCB can create additional family member (200)", async () => {
     const res = await requestAs("tccb_user", "tccb1234", "POST", BASE(), {
       relation: "ME",
       fullName: "Tran Thi Me",
@@ -163,7 +177,7 @@ describe("CRUD — Family Members", () => {
   });
 
   test("list returns created members with pagination", async () => {
-    const res = await adminRequest("GET", BASE());
+    const res = await tccbRequest("GET", BASE());
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.items.length).toBeGreaterThanOrEqual(2);
@@ -171,8 +185,8 @@ describe("CRUD — Family Members", () => {
     expect(body.data.page).toBe(1);
   });
 
-  test("ADMIN can update family member (200)", async () => {
-    const res = await adminRequest("PUT", `${BASE()}/${memberId}`, {
+  test("TCCB can update family member (200)", async () => {
+    const res = await tccbRequest("PUT", `${BASE()}/${memberId}`, {
       fullName: "Nguyen Van Cha Updated",
       isDependent: true,
     });
@@ -194,8 +208,8 @@ describe("CRUD — Family Members", () => {
     expect(res.status).toBe(403);
   });
 
-  test("ADMIN can delete family member (200)", async () => {
-    const res = await adminRequest("DELETE", `${BASE()}/${memberId}`);
+  test("TCCB can delete family member (200)", async () => {
+    const res = await tccbRequest("DELETE", `${BASE()}/${memberId}`);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.id).toBe(memberId);

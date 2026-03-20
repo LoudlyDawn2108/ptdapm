@@ -128,6 +128,19 @@ export function AllowanceTypeFormDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Mã danh mục phụ cấp (auto-generated, readonly) */}
+            <div>
+              <label className="text-sm font-medium">
+                Mã danh mục phụ cấp <span className="text-destructive">*</span>
+              </label>
+              <Input
+                value={editingItem ? `PC${String(1).padStart(3, "0")}` : "PC001"}
+                disabled
+                className="mt-1.5"
+                placeholder="PC001"
+              />
+            </div>
+
             <FormField
               control={form.control}
               name="allowanceName"

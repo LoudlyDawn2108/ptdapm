@@ -1,15 +1,13 @@
 import { api } from "@/api/client";
 import { handleApiError } from "@/lib/error-handler";
 import type {
+  AuthUserStatusCode,
   CreateAccountInput,
+  RoleCode,
   SetAccountStatusInput,
   UpdateAccountInput,
 } from "@hrms/shared";
-import {
-  queryOptions,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // ──────────────────────────────────────────
 // Keys
@@ -29,14 +27,18 @@ export const accountListOptions = (params: {
   page?: number;
   pageSize?: number;
   search?: string;
-  role?: string;
-  status?: string;
+  role?: RoleCode;
+  status?: AuthUserStatusCode;
 }) =>
   queryOptions({
     queryKey: accountKeys.list(params),
     queryFn: async () => {
       const { data, error } = await api.api.accounts.get({
-        query: params as any,
+        query: {
+          ...params,
+          page: params.page ?? 1,
+          pageSize: params.pageSize ?? 20,
+        },
       });
       if (error) throw handleApiError(error);
       return data;
@@ -90,10 +92,8 @@ export function useUpdateAccount() {
 export function useSetAccountStatus() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { data, error } = await api.api
-        .accounts({ id })
-        .status.patch({ status } as any);
+    mutationFn: async ({ id, status }: { id: string; status: AuthUserStatusCode }) => {
+      const { data, error } = await api.api.accounts({ id }).status.patch({ status });
       if (error) throw handleApiError(error);
       return data;
     },

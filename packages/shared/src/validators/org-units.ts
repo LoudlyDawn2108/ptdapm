@@ -1,18 +1,9 @@
 import { z } from "zod";
-import {
-  ORG_UNIT_TYPE_CODES,
-  type OrgUnitTypeCode,
-  ORG_EVENT_REASON_CODES,
-  type OrgEventReasonCode,
-} from "../constants/enums";
+import { ORG_EVENT_REASON_CODES, ORG_UNIT_TYPE_CODES } from "../constants/enums";
 
-const orgUnitTypeSchema = z.enum(
-  ORG_UNIT_TYPE_CODES as [OrgUnitTypeCode, ...OrgUnitTypeCode[]],
-);
+const orgUnitTypeSchema = z.enum(ORG_UNIT_TYPE_CODES);
 
-const orgEventReasonSchema = z.enum(
-  ORG_EVENT_REASON_CODES as [OrgEventReasonCode, ...OrgEventReasonCode[]],
-);
+const orgEventReasonSchema = z.enum(ORG_EVENT_REASON_CODES);
 
 // ---------------------------------------------------------------------------
 // Org Units
@@ -58,7 +49,9 @@ export const updateOrgUnitSchema = z.object({
 export type UpdateOrgUnitInput = z.infer<typeof updateOrgUnitSchema>;
 
 export const dissolveOrgUnitSchema = z.object({
-  effectiveOn: z.string({ error: "Ngày hiệu lực không được để trống" }).min(1, "Ngày hiệu lực không được để trống"),
+  effectiveOn: z
+    .string({ error: "Ngày hiệu lực không được để trống" })
+    .min(1, "Ngày hiệu lực không được để trống"),
   decisionNo: z.string().nullish(),
   decisionOn: z.string().nullish(),
   reason: orgEventReasonSchema,
@@ -70,7 +63,9 @@ export const dissolveOrgUnitSchema = z.object({
 export type DissolveOrgUnitInput = z.infer<typeof dissolveOrgUnitSchema>;
 
 export const mergeOrgUnitSchema = z.object({
-  effectiveOn: z.string({ error: "Ngày hiệu lực không được để trống" }).min(1, "Ngày hiệu lực không được để trống"),
+  effectiveOn: z
+    .string({ error: "Ngày hiệu lực không được để trống" })
+    .min(1, "Ngày hiệu lực không được để trống"),
   decisionNo: z.string().nullish(),
   decisionOn: z.string().nullish(),
   reason: orgEventReasonSchema,
@@ -86,7 +81,9 @@ export type MergeOrgUnitInput = z.infer<typeof mergeOrgUnitSchema>;
 export const createAssignmentSchema = z.object({
   employeeId: z.uuid({ error: "Mã nhân sự không được để trống" }),
   positionTitle: z.string().nullish(),
-  startedOn: z.string({ error: "Ngày bắt đầu không được để trống" }).min(1, "Ngày bắt đầu không được để trống"),
+  startedOn: z
+    .string({ error: "Ngày bắt đầu không được để trống" })
+    .min(1, "Ngày bắt đầu không được để trống"),
 });
 
 export type CreateAssignmentInput = z.infer<typeof createAssignmentSchema>;

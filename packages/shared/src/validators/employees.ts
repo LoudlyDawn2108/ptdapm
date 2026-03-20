@@ -2,24 +2,14 @@ import { z } from "zod";
 import {
   ACADEMIC_RANK_CODES,
   ACADEMIC_TITLE_CODES,
-  type AcademicRankCode,
-  type AcademicTitleCode,
   CONTRACT_DOC_STATUS_CODES,
   CONTRACT_STATUS_CODES,
-  type ContractDocStatusCode,
-  type ContractStatusCode,
   EDUCATION_LEVEL_CODES,
-  type EducationLevelCode,
   FAMILY_RELATION_CODES,
-  type FamilyRelationCode,
   GENDER_CODES,
-  type GenderCode,
   PARTY_ORG_TYPE_CODES,
-  type PartyOrgTypeCode,
   TRAINING_LEVEL_CODES,
-  type TrainingLevelCode,
   WORK_STATUS_CODES,
-  type WorkStatusCode,
 } from "../constants/enums";
 
 const normalizeOptionalTextInput = (value: unknown) => {
@@ -86,27 +76,15 @@ const requiredEmail = (requiredMessage: string, invalidMessage: string) =>
     z.string({ error: requiredMessage }).min(1, requiredMessage).email(invalidMessage),
   );
 
-const genderSchema = z.enum(GENDER_CODES as [GenderCode, ...GenderCode[]]);
-const workStatusSchema = z.enum(WORK_STATUS_CODES as [WorkStatusCode, ...WorkStatusCode[]]);
-const contractStatusSchema = z.enum(
-  CONTRACT_STATUS_CODES as [ContractStatusCode, ...ContractStatusCode[]],
-);
-const educationLevelSchema = z.enum(
-  EDUCATION_LEVEL_CODES as [EducationLevelCode, ...EducationLevelCode[]],
-);
-const trainingLevelSchema = z.enum(
-  TRAINING_LEVEL_CODES as [TrainingLevelCode, ...TrainingLevelCode[]],
-);
-const academicTitleSchema = z.enum(
-  ACADEMIC_TITLE_CODES as [AcademicTitleCode, ...AcademicTitleCode[]],
-);
-const academicRankSchema = z.enum(ACADEMIC_RANK_CODES as [AcademicRankCode, ...AcademicRankCode[]]);
-const familyRelationSchema = z.enum(
-  FAMILY_RELATION_CODES as [FamilyRelationCode, ...FamilyRelationCode[]],
-);
-const partyOrgTypeSchema = z.enum(
-  PARTY_ORG_TYPE_CODES as [PartyOrgTypeCode, ...PartyOrgTypeCode[]],
-);
+const genderSchema = z.enum(GENDER_CODES);
+const workStatusSchema = z.enum(WORK_STATUS_CODES);
+const contractStatusSchema = z.enum(CONTRACT_STATUS_CODES);
+const educationLevelSchema = z.enum(EDUCATION_LEVEL_CODES);
+const trainingLevelSchema = z.enum(TRAINING_LEVEL_CODES);
+const academicTitleSchema = z.enum(ACADEMIC_TITLE_CODES);
+const academicRankSchema = z.enum(ACADEMIC_RANK_CODES);
+const familyRelationSchema = z.enum(FAMILY_RELATION_CODES);
+const partyOrgTypeSchema = z.enum(PARTY_ORG_TYPE_CODES);
 
 export const createEmployeeSchema = z.object({
   staffCode: optionalText(),
@@ -266,9 +244,7 @@ const contractFieldsSchema = z.object({
   effectiveFrom: requiredDate("Ngày hiệu lực không được để trống"),
   effectiveTo: requiredDate("Ngày hết hạn không được để trống"),
   orgUnitId: z.uuid({ error: "Đơn vị không được để trống" }),
-  status: z
-    .enum(CONTRACT_DOC_STATUS_CODES as [ContractDocStatusCode, ...ContractDocStatusCode[]])
-    .optional(),
+  status: z.enum(CONTRACT_DOC_STATUS_CODES).optional(),
   contentHtml: z.string().nullish(),
   contractFileId: z.string().uuid().nullish(),
 });

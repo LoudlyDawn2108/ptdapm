@@ -91,9 +91,9 @@ async function downloadAs(username: string, password: string, fileId: string) {
 }
 
 describe("POST /api/files/upload — Success", () => {
-  test("admin uploads valid PDF successfully", async () => {
+  test("TCCB uploads valid PDF with metadata successfully", async () => {
     const file = createTestPdf();
-    const res = await uploadAs("admin", "admin123", file);
+    const res = await uploadAs("tccb_user", "tccb1234", file);
     expect(res.status).toBe(200);
 
     const body = await res.json();
@@ -153,20 +153,20 @@ describe("POST /api/files/upload — Auth / Role", () => {
 describe("POST /api/files/upload — Validation", () => {
   test("wrong MIME type returns 400", async () => {
     const file = new File(["hello world"], "readme.txt", { type: "text/plain" });
-    const res = await uploadAs("admin", "admin123", file);
+    const res = await uploadAs("tccb_user", "tccb1234", file);
     expect(res.status).toBe(400);
   });
 
   test("file too large returns 400", async () => {
     const largeBuffer = new Uint8Array(11 * 1024 * 1024);
     const file = new File([largeBuffer], "huge.pdf", { type: "application/pdf" });
-    const res = await uploadAs("admin", "admin123", file);
+    const res = await uploadAs("tccb_user", "tccb1234", file);
     expect(res.status).toBe(400);
   });
 
   test("empty file (0 bytes) returns 400", async () => {
     const file = new File([], "empty.pdf", { type: "application/pdf" });
-    const res = await uploadAs("admin", "admin123", file);
+    const res = await uploadAs("tccb_user", "tccb1234", file);
     expect(res.status).toBe(400);
   });
 });
@@ -174,12 +174,12 @@ describe("POST /api/files/upload — Validation", () => {
 describe("GET /api/files/:id — Download Success", () => {
   test("download uploaded file returns binary with correct headers", async () => {
     const testFile = createTestPdf(512);
-    const uploadRes = await uploadAs("admin", "admin123", testFile);
+    const uploadRes = await uploadAs("tccb_user", "tccb1234", testFile);
     expect(uploadRes.status).toBe(200);
     const uploadBody = await uploadRes.json();
     createdFileIds.push(uploadBody.data.id);
 
-    const downloadRes = await downloadAs("admin", "admin123", uploadBody.data.id);
+    const downloadRes = await downloadAs("tccb_user", "tccb1234", uploadBody.data.id);
     expect(downloadRes.status).toBe(200);
     expect(downloadRes.headers.get("Content-Type")).toBe("application/pdf");
     expect(downloadRes.headers.get("Content-Disposition")).toContain("test-document.pdf");
@@ -191,7 +191,7 @@ describe("GET /api/files/:id — Download Success", () => {
 
   test("TCCB can download file uploaded by another user", async () => {
     const testFile = createTestPdf(256);
-    const uploadRes = await uploadAs("admin", "admin123", testFile);
+    const uploadRes = await uploadAs("tccb_user", "tccb1234", testFile);
     expect(uploadRes.status).toBe(200);
     const uploadBody = await uploadRes.json();
     createdFileIds.push(uploadBody.data.id);
@@ -199,12 +199,23 @@ describe("GET /api/files/:id — Download Success", () => {
     const downloadRes = await downloadAs("tccb_user", "tccb1234", uploadBody.data.id);
     expect(downloadRes.status).toBe(200);
   });
+
+  test("TCKT can download file uploaded by another user", async () => {
+    const testFile = createTestPdf(256);
+    const uploadRes = await uploadAs("tccb_user", "tccb1234", testFile);
+    expect(uploadRes.status).toBe(200);
+    const uploadBody = await uploadRes.json();
+    createdFileIds.push(uploadBody.data.id);
+
+    const downloadRes = await downloadAs("tckt_user", "tckt1234", uploadBody.data.id);
+    expect(downloadRes.status).toBe(200);
+  });
 });
 
 describe("GET /api/files/:id — Access Control", () => {
   test("EMPLOYEE cannot download file uploaded by another user", async () => {
     const testFile = createTestPdf(256);
-    const uploadRes = await uploadAs("admin", "admin123", testFile);
+    const uploadRes = await uploadAs("tccb_user", "tccb1234", testFile);
     expect(uploadRes.status).toBe(200);
     const uploadBody = await uploadRes.json();
     createdFileIds.push(uploadBody.data.id);
@@ -213,14 +224,14 @@ describe("GET /api/files/:id — Access Control", () => {
     expect(downloadRes.status).toBe(403);
   });
 
-  test("TCKT cannot download file uploaded by another user", async () => {
+  test("ADMIN cannot download file uploaded by another user", async () => {
     const testFile = createTestPdf(256);
-    const uploadRes = await uploadAs("admin", "admin123", testFile);
+    const uploadRes = await uploadAs("tccb_user", "tccb1234", testFile);
     expect(uploadRes.status).toBe(200);
     const uploadBody = await uploadRes.json();
     createdFileIds.push(uploadBody.data.id);
 
-    const downloadRes = await downloadAs("tckt_user", "tckt1234", uploadBody.data.id);
+    const downloadRes = await downloadAs("admin", "admin123", uploadBody.data.id);
     expect(downloadRes.status).toBe(403);
   });
 });

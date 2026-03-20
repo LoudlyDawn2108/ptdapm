@@ -1,6 +1,8 @@
 import {
   ACADEMIC_RANK_CODES,
   CONTRACT_STATUS_CODES,
+  EMPLOYEE_PROFILE_MANAGE_ROLES,
+  EMPLOYEE_PROFILE_VIEW_ROLES,
   GENDER_CODES,
   WORK_STATUS_CODES,
   createEmployeeSchema,
@@ -17,10 +19,10 @@ import * as employeeService from "./employee.service";
 const listQuerySchema = paginationSchema.extend({
   search: z.string().optional(),
   orgUnitId: z.string().optional(),
-  workStatus: z.enum(WORK_STATUS_CODES as [string, ...string[]]).optional(),
-  contractStatus: z.enum(CONTRACT_STATUS_CODES as [string, ...string[]]).optional(),
-  gender: z.enum(GENDER_CODES as [string, ...string[]]).optional(),
-  academicRank: z.enum(ACADEMIC_RANK_CODES as [string, ...string[]]).optional(),
+  workStatus: z.enum(WORK_STATUS_CODES).optional(),
+  contractStatus: z.enum(CONTRACT_STATUS_CODES).optional(),
+  gender: z.enum(GENDER_CODES).optional(),
+  academicRank: z.enum(ACADEMIC_RANK_CODES).optional(),
   positionTitle: z.string().optional(),
 });
 
@@ -39,7 +41,7 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
   .get(
     "/import/template",
     async ({ user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_MANAGE_ROLES);
       const data = await employeeService.generateImportTemplate();
       return new Response(data, {
         headers: {
@@ -53,7 +55,7 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
   .post(
     "/import",
     async ({ body, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_MANAGE_ROLES);
       const file = body.file;
       if (!file) throw new BadRequestError("File không được để trống");
       if (!file.name.endsWith(".xlsx") && !file.name.endsWith(".xls")) {
@@ -74,7 +76,7 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
   .get(
     "/",
     async ({ query, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB", "TCKT");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_VIEW_ROLES);
       const data = await employeeService.list(
         query.page,
         query.pageSize,
@@ -93,7 +95,7 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
   .get(
     "/:employeeId",
     async ({ params, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB", "TCKT");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_VIEW_ROLES);
       const data = await employeeService.getAggregateById(params.employeeId, user.role);
       return { data };
     },
@@ -102,7 +104,7 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
   .post(
     "/",
     async ({ body, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_MANAGE_ROLES);
       const data = await employeeService.create(body);
       return { data };
     },
@@ -111,7 +113,7 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
   .put(
     "/:employeeId",
     async ({ params, body, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_MANAGE_ROLES);
       const data = await employeeService.update(params.employeeId, body);
       return { data };
     },
@@ -120,7 +122,7 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
   .delete(
     "/:employeeId",
     async ({ params, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_MANAGE_ROLES);
       const data = await employeeService.remove(params.employeeId);
       return { data };
     },

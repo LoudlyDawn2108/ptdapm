@@ -1,6 +1,7 @@
 import {
   ACADEMIC_RANK_CODES,
   CONTRACT_STATUS_CODES,
+  EMPLOYEE_PROFILE_VIEW_ROLES,
   GENDER_CODES,
   WORK_STATUS_CODES,
 } from "@hrms/shared";
@@ -28,10 +29,10 @@ const exportListQuerySchema = z.object({
   format: listFormatSchema.optional(),
   search: z.string().optional(),
   orgUnitId: z.string().optional(),
-  workStatus: z.enum(WORK_STATUS_CODES as [string, ...string[]]).optional(),
-  contractStatus: z.enum(CONTRACT_STATUS_CODES as [string, ...string[]]).optional(),
-  gender: z.enum(GENDER_CODES as [string, ...string[]]).optional(),
-  academicRank: z.enum(ACADEMIC_RANK_CODES as [string, ...string[]]).optional(),
+  workStatus: z.enum(WORK_STATUS_CODES).optional(),
+  contractStatus: z.enum(CONTRACT_STATUS_CODES).optional(),
+  gender: z.enum(GENDER_CODES).optional(),
+  academicRank: z.enum(ACADEMIC_RANK_CODES).optional(),
   positionTitle: z.string().optional(),
 });
 
@@ -301,7 +302,7 @@ export const employeeExportRoutes = new Elysia({ prefix: "/api/employees" })
   .get(
     "/export",
     async ({ query, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB", "TCKT");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_VIEW_ROLES);
       const format = query.format ?? "csv";
 
       const employees = await listAllEmployees({
@@ -331,7 +332,7 @@ export const employeeExportRoutes = new Elysia({ prefix: "/api/employees" })
   .get(
     "/:employeeId/export",
     async ({ params, query, user }) => {
-      requireRole(user.role, "ADMIN", "TCCB", "TCKT");
+      requireRole(user.role, ...EMPLOYEE_PROFILE_VIEW_ROLES);
       const format = query.format ?? "csv";
 
       const aggregate = await getAggregateById(params.employeeId, user.role);
