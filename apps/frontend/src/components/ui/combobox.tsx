@@ -1,18 +1,16 @@
-import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useDebounce } from "@/hooks/use-debounce";
 import { cn } from "@/lib/utils";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { Command as CommandPrimitive } from "cmdk";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type DropdownOption = { value: string; label: string };
 
@@ -32,6 +30,7 @@ interface ComboboxProps {
   /** Message shown when search returns no results */
   emptyMessage?: string;
   disabled?: boolean;
+  invalid?: boolean;
   className?: string;
 }
 
@@ -44,11 +43,14 @@ export function Combobox({
   placeholder = "Chọn...",
   emptyMessage = "Không tìm thấy.",
   disabled = false,
+  invalid = false,
   className,
 }: ComboboxProps) {
   const [open, setOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const debouncedSearch = useDebounce(searchText, 300);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: options = [], isFetching } = useQuery({
     queryKey: [...queryKey, debouncedSearch],
@@ -69,77 +71,95 @@ export function Combobox({
     options.find((o) => o.value === value)?.label ??
     initialOptions.find((o) => o.value === value)?.label;
 
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setSearchText("");
+        onBlur?.();
+      }
+    };
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        setSearchText("");
+        inputRef.current?.blur();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [open, onBlur]);
+
   return (
-    <Popover
-      open={open}
-      onOpenChange={(isOpen: boolean) => {
-        setOpen(isOpen);
-        if (!isOpen) setSearchText("");
-      }}
-    >
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          disabled={disabled}
-          className={cn(
-            "w-full justify-between font-normal",
-            !value && "text-muted-foreground",
-            className,
-          )}
-          onClick={() => setOpen(!open)}
-          onBlur={onBlur}
-        >
-          <span className="truncate">{selectedLabel ?? (value ? value : placeholder)}</span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-        <Command shouldFilter={false}>
-          <CommandInput
-            placeholder="Tìm kiếm..."
-            value={searchText}
-            onValueChange={setSearchText}
+    <div ref={containerRef} className="relative">
+      <Command shouldFilter={false}>
+        <div className="relative">
+          <CommandPrimitive.Input
+            ref={inputRef}
+            data-slot="combobox-input"
+            aria-invalid={invalid}
+            value={open ? searchText : (selectedLabel ?? "")}
+            onValueChange={(v) => {
+              setSearchText(v);
+              if (!open) setOpen(true);
+            }}
+            onFocus={() => setOpen(true)}
+            disabled={disabled}
+            placeholder={placeholder}
+            className={cn(
+              "h-9 w-full min-w-0 rounded-lg border border-input bg-background px-3 pr-8 py-1 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/20 md:text-sm dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
+              !value && !open && "text-muted-foreground",
+              className,
+            )}
           />
-          <CommandList>
-            {isFetching && options.length === 0 ? (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              </div>
-            ) : options.length === 0 ? (
-              <CommandEmpty>{emptyMessage}</CommandEmpty>
-            ) : (
-              <CommandGroup>
-                {options.map((option) => (
-                  <CommandItem
-                    key={option.value}
-                    value={option.value}
-                    onSelect={() => {
-                      onChange(option.value === value ? "" : option.value);
-                      setOpen(false);
-                      setSearchText("");
-                    }}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        value === option.value ? "opacity-100" : "opacity-0",
-                      )}
-                    />
-                    {option.label}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
-            {isFetching && options.length > 0 && (
-              <div className="flex items-center justify-center border-t py-2">
-                <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-              </div>
-            )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+          <ChevronsUpDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 shrink-0 opacity-50" />
+        </div>
+        {open && (
+          <div className="absolute top-full left-0 z-50 mt-1 w-full overflow-hidden rounded-lg bg-popover p-1 shadow-2xl ring-1 ring-foreground/5 animate-in fade-in-0 zoom-in-95">
+            <CommandList>
+              {isFetching && options.length === 0 ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              ) : options.length === 0 ? (
+                <CommandEmpty>{emptyMessage}</CommandEmpty>
+              ) : (
+                <CommandGroup className="p-0">
+                  {options.map((option) => (
+                    <CommandItem
+                      key={option.value}
+                      value={option.value}
+                      onSelect={() => {
+                        onChange(option.value === value ? "" : option.value);
+                        setOpen(false);
+                        setSearchText("");
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          value === option.value ? "opacity-100" : "opacity-0",
+                        )}
+                      />
+                      {option.label}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+              {isFetching && options.length > 0 && (
+                <div className="flex items-center justify-center border-t py-2">
+                  <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                </div>
+              )}
+            </CommandList>
+          </div>
+        )}
+      </Command>
+    </div>
   );
 }

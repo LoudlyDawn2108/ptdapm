@@ -41,3 +41,11 @@ export async function fetchTrainingTypeDropdown(search: string): Promise<Dropdow
   if (error) throw handleApiError(error);
   return (data?.data ?? []) as DropdownOption[];
 }
+
+export async function fetchEmployeeDropdown(search: string): Promise<DropdownOption[]> {
+  const { data, error } = await api.api.employees.dropdown.get({
+    query: { search: search || undefined, limit: 20 },
+  });
+  if (error) throw handleApiError(error);
+  return (data?.data ?? []) as DropdownOption[];
+}

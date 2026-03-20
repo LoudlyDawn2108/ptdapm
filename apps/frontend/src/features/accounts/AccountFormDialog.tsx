@@ -23,18 +23,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { api } from "@/api/client";
-import { handleApiError } from "@/lib/error-handler";
+import { fetchEmployeeDropdown } from "@/lib/api/config-dropdowns";
 import { applyFieldErrors } from "@/lib/error-handler";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  type CreateAccountInput,
-  Role,
-  createAccountSchema,
-  enumToSortedList,
-} from "@hrms/shared";
+import { type CreateAccountInput, Role, createAccountSchema, enumToSortedList } from "@hrms/shared";
 import { Plus, Save } from "lucide-react";
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useCreateAccount } from "./api";
@@ -44,27 +38,8 @@ interface AccountFormDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function AccountFormDialog({
-  open,
-  onOpenChange,
-}: AccountFormDialogProps) {
+export function AccountFormDialog({ open, onOpenChange }: AccountFormDialogProps) {
   const createMutation = useCreateAccount();
-
-  const fetchEmployeeOptions = useCallback(async (search: string) => {
-    const { data, error } = await api.api.employees.get({
-      query: {
-        page: 1,
-        pageSize: 50,
-        ...(search ? { search } : {}),
-      } as any,
-    });
-    if (error) throw handleApiError(error);
-    const items = (data as any)?.data?.items ?? [];
-    return items.map((emp: any) => ({
-      value: emp.id,
-      label: `${emp.fullName} — ${emp.staffCode}`,
-    }));
-  }, []);
 
   const form = useForm<CreateAccountInput>({
     resolver: zodResolver(createAccountSchema),
@@ -110,22 +85,14 @@ export function AccountFormDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="employeeId"
+              name="email"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    Nhân sự <span className="text-destructive">*</span>
+                    Email <span className="text-destructive">*</span>
                   </FormLabel>
                   <FormControl>
-                    <Combobox
-                      queryKey={["employees", "combobox"]}
-                      fetchOptions={fetchEmployeeOptions}
-                      value={field.value}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      placeholder="Tìm kiếm nhân sự..."
-                      emptyMessage="Không tìm thấy nhân sự."
-                    />
+                    <Input {...field} type="email" placeholder="example@email.com" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -134,17 +101,22 @@ export function AccountFormDialog({
 
             <FormField
               control={form.control}
-              name="email"
-              render={({ field }) => (
+              name="employeeId"
+              render={({ field, fieldState }) => (
                 <FormItem>
                   <FormLabel>
-                    Email <span className="text-destructive">*</span>
+                    Hồ sơ nhân sự <span className="text-destructive">*</span>
                   </FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      type="email"
-                      placeholder="example@email.com"
+                    <Combobox
+                      queryKey={["employees", "combobox"]}
+                      fetchOptions={fetchEmployeeDropdown}
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      placeholder="Chọn hồ sơ nhân sự"
+                      emptyMessage="Không tìm thấy nhân sự."
+                      invalid={!!fieldState.error}
                     />
                   </FormControl>
                   <FormMessage />
@@ -160,16 +132,13 @@ export function AccountFormDialog({
                   <FormLabel>
                     Vai trò <span className="text-destructive">*</span>
                   </FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                  >
+                  <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Chọn vai trò" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent position="popper">
                       {enumToSortedList(Role).map((r) => (
                         <SelectItem key={r.code} value={r.code}>
                           {r.label}
@@ -183,11 +152,7 @@ export function AccountFormDialog({
             />
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Hủy
               </Button>
               <Button type="submit" disabled={isPending}>
@@ -201,4 +166,3 @@ export function AccountFormDialog({
     </Dialog>
   );
 }
-
