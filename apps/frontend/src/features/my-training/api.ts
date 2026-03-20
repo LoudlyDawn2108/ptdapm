@@ -2,7 +2,11 @@ import { api } from "@/api/client";
 import { trainingCourseKeys } from "@/features/training-courses/api";
 import { handleApiError } from "@/lib/error-handler";
 import type { ParticipationStatusCode } from "@hrms/shared";
-import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 // ---------------------------------------------------------------------------
 // Query keys
@@ -11,11 +15,13 @@ import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query
 export const myTrainingKeys = {
   all: ["my-training"] as const,
   lists: () => [...myTrainingKeys.all, "list"] as const,
-  list: (params: Record<string, unknown>) => [...myTrainingKeys.lists(), params] as const,
+  list: (params: Record<string, unknown>) =>
+    [...myTrainingKeys.lists(), params] as const,
   availableLists: () => [...myTrainingKeys.all, "available-list"] as const,
   availableList: (params: Record<string, unknown>) =>
     [...myTrainingKeys.availableLists(), params] as const,
-  courseDetail: (courseId: string) => [...myTrainingKeys.all, "course-detail", courseId] as const,
+  courseDetail: (courseId: string) =>
+    [...myTrainingKeys.all, "course-detail", courseId] as const,
 };
 
 // ---------------------------------------------------------------------------
@@ -101,16 +107,18 @@ export const myAvailableTrainingListOptions = (params: {
 export const myTrainingCourseDetailOptions = (courseId: string) =>
   queryOptions({
     queryKey: myTrainingKeys.courseDetail(courseId),
-    queryFn: async () => {
+    queryFn: async (): Promise<MyTrainingCourseDetail> => {
       const { data, error } = await api.api.my.training
         .courses({
           courseId,
         })
         .get();
       if (error) throw handleApiError(error);
-      return data?.data as unknown as MyTrainingCourseDetail;
+      if (!data?.data) {
+        throw new Error("Không thể tải chi tiết khóa đào tạo.");
+      }
+      return data.data as MyTrainingCourseDetail;
     },
-    enabled: !!courseId,
   });
 
 // ---------------------------------------------------------------------------

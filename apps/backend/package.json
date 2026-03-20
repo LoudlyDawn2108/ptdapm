@@ -23,7 +23,7 @@
     "seed:training-courses": "bun run --env-file ../../.env src/db/seed/training-courses.ts",
     "seed:training-registrations": "bun run --env-file ../../.env src/db/seed/training-registrations.ts",
     "seed:training-results": "bun run --env-file ../../.env src/db/seed/training-results.ts",
-    "seed": "bun run seed:roles && bun run seed:users && bun run seed:config && bun run seed:employees && bun run seed:training-courses-types && bun run seed:training-courses && bun run seed:training-registrations && bun run seed:training-results",
+    "seed": "bun run seed:roles && bun run seed:config && bun run seed:employees && bun run seed:users && bun run seed:training-courses-types && bun run seed:training-courses && bun run seed:training-registrations && bun run seed:training-results",
     "db:push": "bun run --bun --env-file ../../.env drizzle-kit push",
     "db:generate": "bun run --bun --env-file ../../.env drizzle-kit generate",
     "db:migrate": "bun run --bun --env-file ../../.env drizzle-kit migrate",
