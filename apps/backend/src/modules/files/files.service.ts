@@ -1,5 +1,7 @@
-import { mkdir, unlink } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { access, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { env } from "@hrms/env";
 import { eq } from "drizzle-orm";
 import { BadRequestError, NotFoundError } from "../../common/utils/errors";
@@ -9,7 +11,7 @@ import { files } from "../../db/schema";
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 // Anchor relative UPLOAD_DIR to project root (not CWD) so Turborepo vs direct-run both work
-const PROJECT_ROOT = path.resolve(import.meta.dir, "../../../../..");
+const PROJECT_ROOT = fileURLToPath(new URL("../../../../..", import.meta.url));
 const RESOLVED_UPLOAD_DIR = path.isAbsolute(env.UPLOAD_DIR)
   ? env.UPLOAD_DIR
   : path.resolve(PROJECT_ROOT, env.UPLOAD_DIR);
@@ -22,7 +24,14 @@ const ALLOWED_MIME_TYPES = [
   "image/png",
 ] as const;
 
-const ALLOWED_EXTENSIONS = [".pdf", ".xlsx", ".xls", ".jpg", ".jpeg", ".png"] as const;
+const ALLOWED_EXTENSIONS = [
+  ".pdf",
+  ".xlsx",
+  ".xls",
+  ".jpg",
+  ".jpeg",
+  ".png",
+] as const;
 
 function getExtension(filename: string): string {
   const lastDot = filename.lastIndexOf(".");
@@ -40,11 +49,19 @@ export async function uploadFile(file: File, userId: string) {
   }
 
   const ext = getExtension(file.name);
-  if (!ALLOWED_EXTENSIONS.includes(ext as (typeof ALLOWED_EXTENSIONS)[number])) {
-    throw new BadRequestError("Loại file không được hỗ trợ. Chỉ chấp nhận PDF, Excel, JPEG, PNG");
+  if (
+    !ALLOWED_EXTENSIONS.includes(ext as (typeof ALLOWED_EXTENSIONS)[number])
+  ) {
+    throw new BadRequestError(
+      "Loại file không được hỗ trợ. Chỉ chấp nhận PDF, Excel, JPEG, PNG",
+    );
   }
 
-  if (!ALLOWED_MIME_TYPES.includes(file.type as (typeof ALLOWED_MIME_TYPES)[number])) {
+  if (
+    !ALLOWED_MIME_TYPES.includes(
+      file.type as (typeof ALLOWED_MIME_TYPES)[number],
+    )
+  ) {
     throw new BadRequestError("Loại file không hợp lệ");
   }
 
@@ -54,10 +71,10 @@ export async function uploadFile(file: File, userId: string) {
 
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
-  const sha256 = new Bun.CryptoHasher("sha256").update(buffer).digest("hex");
+  const sha256 = createHash("sha256").update(buffer).digest("hex");
 
   const filePath = path.join(RESOLVED_UPLOAD_DIR, storageFilename);
-  await Bun.write(filePath, buffer);
+  await writeFile(filePath, buffer);
 
   try {
     const [inserted] = await db
@@ -84,25 +101,42 @@ export async function uploadFile(file: File, userId: string) {
 }
 
 export async function getFileById(id: string) {
-  const [fileRecord] = await db.select().from(files).where(eq(files.id, id)).limit(1);
+  const [fileRecord] = await db
+    .select()
+    .from(files)
+    .where(eq(files.id, id))
+    .limit(1);
 
   if (!fileRecord) {
     throw new NotFoundError("Không tìm thấy file");
   }
 
-  let bunFile = Bun.file(fileRecord.storagePath);
-  let exists = await bunFile.exists();
+  let resolvedPath = fileRecord.storagePath;
+  let exists = true;
+
+  try {
+    await access(resolvedPath);
+  } catch {
+    exists = false;
+  }
 
   if (!exists) {
     const filename = path.basename(fileRecord.storagePath);
     const fallbackPath = path.join(RESOLVED_UPLOAD_DIR, filename);
-    bunFile = Bun.file(fallbackPath);
-    exists = await bunFile.exists();
+    resolvedPath = fallbackPath;
+    try {
+      await access(resolvedPath);
+      exists = true;
+    } catch {
+      exists = false;
+    }
   }
 
   if (!exists) {
     throw new NotFoundError("File không tồn tại trên hệ thống");
   }
 
-  return { fileRecord, bunFile };
+  const fileBuffer = await readFile(resolvedPath);
+
+  return { fileRecord, fileBuffer };
 }

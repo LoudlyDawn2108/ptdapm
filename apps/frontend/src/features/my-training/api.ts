@@ -117,7 +117,12 @@ export const myTrainingCourseDetailOptions = (courseId: string) =>
       if (!data?.data) {
         throw new Error("Không thể tải chi tiết khóa đào tạo.");
       }
-      return data.data as MyTrainingCourseDetail;
+
+      return {
+        ...data.data,
+        createdAt: new Date(data.data.createdAt).toISOString(),
+        updatedAt: new Date(data.data.updatedAt).toISOString(),
+      };
     },
   });
 
