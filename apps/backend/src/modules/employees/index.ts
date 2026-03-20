@@ -6,6 +6,7 @@ import {
   GENDER_CODES,
   WORK_STATUS_CODES,
   createEmployeeSchema,
+  dropdownQuerySchema,
   paginationSchema,
   updateEmployeeSchema,
 } from "@hrms/shared";
@@ -38,7 +39,10 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
 
       const employee = await employeeService.getByEmail(user.email ?? "");
       if (!employee) throw new NotFoundError("Không tìm thấy hồ sơ nhân viên");
-      const data = await employeeService.getAggregateById(employee.id, user.role);
+      const data = await employeeService.getAggregateById(
+        employee.id,
+        user.role,
+      );
       return { data };
     },
     { auth: true },
@@ -50,7 +54,8 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
       const data = await employeeService.generateImportTemplate();
       return new Response(data, {
         headers: {
-          "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "Content-Type":
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           "Content-Disposition": 'attachment; filename="import-template.xlsx"',
         },
       });
@@ -98,10 +103,21 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
     { auth: true, query: listQuerySchema },
   )
   .get(
+    "/dropdown",
+    async ({ query, user }) => {
+      const data = await employeeService.dropdown(query.search, query.limit);
+      return { data };
+    },
+    { auth: true, query: dropdownQuerySchema },
+  )
+  .get(
     "/:employeeId",
     async ({ params, user }) => {
       requireRole(user.role, ...EMPLOYEE_PROFILE_VIEW_ROLES);
-      const data = await employeeService.getAggregateById(params.employeeId, user.role);
+      const data = await employeeService.getAggregateById(
+        params.employeeId,
+        user.role,
+      );
       return { data };
     },
     { auth: true, params: z.object({ employeeId: z.string().uuid() }) },
@@ -122,7 +138,11 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
       const data = await employeeService.update(params.employeeId, body);
       return { data };
     },
-    { auth: true, params: z.object({ employeeId: z.string().uuid() }), body: updateEmployeeSchema },
+    {
+      auth: true,
+      params: z.object({ employeeId: z.string().uuid() }),
+      body: updateEmployeeSchema,
+    },
   )
   .delete(
     "/:employeeId",

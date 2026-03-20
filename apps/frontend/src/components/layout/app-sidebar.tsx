@@ -36,6 +36,28 @@ interface NavGroupConfig {
   items: NavItem[];
 }
 
+function normalizePath(path: string) {
+  if (path === "/") {
+    return path;
+  }
+
+  return path.replace(/\/+$/, "");
+}
+
+function isNavItemActive(currentPath: string, itemPath: string) {
+  const normalizedCurrentPath = normalizePath(currentPath);
+  const normalizedItemPath = normalizePath(itemPath);
+
+  if (normalizedItemPath === "/") {
+    return normalizedCurrentPath === "/";
+  }
+
+  return (
+    normalizedCurrentPath === normalizedItemPath ||
+    normalizedCurrentPath.startsWith(`${normalizedItemPath}/`)
+  );
+}
+
 const navGroups: NavGroupConfig[] = [
   {
     label: "Tài khoản",
@@ -111,8 +133,7 @@ const navGroups: NavGroupConfig[] = [
 
 function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
   const { user } = useAuth();
-  const routerState = useRouterState();
-  const currentPath = routerState.location.pathname;
+  const currentPath = useRouterState({ select: (state) => state.location.pathname });
 
   const visibleItems = items.filter((item) => user && canAccessRoute(user.role, item.to));
 
@@ -128,7 +149,7 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
               <SidebarMenuButton
                 asChild
                 tooltip={item.title}
-                isActive={item.to === "/" ? currentPath === "/" : currentPath.startsWith(item.to)}
+                isActive={isNavItemActive(currentPath, item.to)}
               >
                 <Link to={item.to}>
                   <item.icon />
@@ -145,7 +166,7 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
 
 export function AppSidebar() {
   return (
-    <TooltipProvider delayDuration={0}>
+    <TooltipProvider delayDuration={0} disableHoverableContent>
       <Sidebar variant="inset" collapsible="icon">
         <SidebarHeader>
           <SidebarMenu>
@@ -155,7 +176,7 @@ export function AppSidebar() {
                   <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
                     <img src={tluLogo} alt="TLU Logo" className="size-7 object-contain" />
                   </div>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
+                  <div className="grid flex-1 text-left text-sm leading-tight transition-[opacity,transform] duration-200 ease-linear group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:translate-x-[-0.5rem]">
                     <span className="truncate font-semibold">Quản lý nhân sự</span>
                     <span className="truncate text-xs">Trường Đại học Thủy Lợi</span>
                   </div>

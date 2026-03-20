@@ -163,7 +163,7 @@ export function EmployeeForm({
               <Controller
                 name="currentOrgUnitId"
                 control={form.control}
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <Combobox
                     queryKey={["org-units", "dropdown"]}
                     fetchOptions={fetchOrgUnitDropdown}
@@ -171,6 +171,7 @@ export function EmployeeForm({
                     onChange={field.onChange}
                     onBlur={field.onBlur}
                     placeholder="Chọn đơn vị công tác..."
+                    invalid={!!fieldState.error}
                   />
                 )}
               />
@@ -186,7 +187,7 @@ export function EmployeeForm({
               <Controller
                 name="salaryGradeStepId"
                 control={form.control}
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <Combobox
                     queryKey={["salary-grades", "dropdown"]}
                     fetchOptions={fetchSalaryGradeDropdown}
@@ -194,6 +195,7 @@ export function EmployeeForm({
                     onChange={field.onChange}
                     onBlur={field.onBlur}
                     placeholder="Chọn bậc lương..."
+                    invalid={!!fieldState.error}
                   />
                 )}
               />

@@ -58,6 +58,13 @@ export class ApiResponseError extends Error {
 // Main handler — call this from queryFn / mutationFn
 // ──────────────────────────────────────────
 export function handleApiError(edenError: EdenApiError): ApiResponseError {
+  // Guard: skip redirect on login page to avoid infinite loops (login errors can also be 401)
+  if (edenError.status === 401 && !window.location.pathname.startsWith("/login")) {
+    toast.error("Phiên đăng nhập hết hạn");
+    window.location.href = "/login";
+    return new ApiResponseError("Phiên đăng nhập hết hạn");
+  }
+
   const value = edenError.value;
 
   // Plain string (401/403 from auth middleware)
