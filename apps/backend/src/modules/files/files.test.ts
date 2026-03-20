@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { cors } from "@elysiajs/cors";
@@ -187,6 +187,40 @@ describe("GET /api/files/:id — Download Success", () => {
 
     const downloadedBuffer = await downloadRes.arrayBuffer();
     expect(downloadedBuffer.byteLength).toBe(512);
+  });
+
+  test("legacy PDF without mimeType still opens inline", async () => {
+    const fileBuffer = new Uint8Array(384);
+    fileBuffer[0] = 0x25;
+    fileBuffer[1] = 0x50;
+    fileBuffer[2] = 0x44;
+    fileBuffer[3] = 0x46;
+
+    const filePath = path.join(tempDir, `legacy-inline-${Date.now()}.pdf`);
+    await writeFile(filePath, fileBuffer);
+
+    const [inserted] = await db
+      .insert(files)
+      .values({
+        storagePath: filePath,
+        originalName: "legacy-inline.pdf",
+        mimeType: null,
+        byteSize: fileBuffer.byteLength,
+      })
+      .returning();
+
+    expect(inserted).toBeDefined();
+    if (!inserted) {
+      throw new Error("Failed to create legacy PDF record for test");
+    }
+
+    createdFileIds.push(inserted.id);
+
+    const downloadRes = await downloadAs("tccb_user", "tccb1234", inserted.id);
+    expect(downloadRes.status).toBe(200);
+    expect(downloadRes.headers.get("Content-Type")).toBe("application/pdf");
+    expect(downloadRes.headers.get("Content-Disposition")).toContain("inline;");
+    expect(downloadRes.headers.get("Content-Disposition")).toContain("legacy-inline.pdf");
   });
 
   test("TCCB can download file uploaded by another user", async () => {

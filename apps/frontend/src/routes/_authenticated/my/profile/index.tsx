@@ -1,19 +1,18 @@
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { ReadOnlyField } from "@/components/shared/read-only-field";
 import { Button } from "@/components/ui/button";
-import { getFileUrl, useEmployeeDetail } from "@/features/employees/api";
+import { getFileUrl, useMyEmployeeDetail } from "@/features/employees/api";
 import { formatDate } from "@/lib/date-utils";
 import { Gender } from "@hrms/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import { Eye, Plus } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/employees_/$employeeId/")({
+export const Route = createFileRoute("/_authenticated/my/profile/")({
   component: GeneralInfoTab,
 });
 
 function GeneralInfoTab() {
-  const { employeeId } = Route.useParams();
-  const { aggregate, employee: emp, isLoading } = useEmployeeDetail(employeeId);
+  const { aggregate, employee: emp, isLoading } = useMyEmployeeDetail();
   const partyMemberships = aggregate?.partyMemberships;
   const bankAccounts = aggregate?.bankAccounts;
   const foreignWorkPermits = aggregate?.foreignWorkPermits;

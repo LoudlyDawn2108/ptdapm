@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useLogout } from "@/features/auth/api";
 import { useAuth } from "@/features/auth/hooks";
+import { useBreadcrumbOverrides } from "@/lib/breadcrumb-context";
 import { Role } from "@hrms/shared";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronsUpDown, Loader2, LogOut } from "lucide-react";
@@ -24,7 +25,7 @@ import { ChevronsUpDown, Loader2, LogOut } from "lucide-react";
 const BREADCRUMB_LABELS: Record<string, string> = {
   "": "Trang chủ",
   accounts: "Tài khoản",
-  employees: "Nhân sự",
+  employees: "Hồ sơ nhân sự",
   new: "Thêm mới",
   edit: "Chỉnh sửa",
   "org-units": "Đơn vị tổ chức",
@@ -69,12 +70,26 @@ export function AppHeader() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { user } = useAuth();
   const logoutMutation = useLogout();
+  const { overrides } = useBreadcrumbOverrides();
 
   const segments = pathname.replace(/\/$/, "").split("/").filter(Boolean);
-  const breadcrumbs = segments.map((seg, i) => ({
-    label: getLabel(seg),
-    path: `/${segments.slice(0, i + 1).join("/")}`,
-  }));
+  const overrideMap = new Map(overrides.map((o) => [o.segment, o]));
+
+  const breadcrumbs: { label: string; path: string }[] = [];
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i] as string;
+    const path = `/${segments.slice(0, i + 1).join("/")}`;
+    const override = overrideMap.get(seg);
+
+    if (override) {
+      breadcrumbs.push({ label: override.label, path });
+      if (override.collapseAfter) break;
+    } else if (UUID_RE.test(seg)) {
+      breadcrumbs.push({ label: "Chi tiết", path });
+    } else {
+      breadcrumbs.push({ label: getLabel(seg), path });
+    }
+  }
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 px-4 border-b">
