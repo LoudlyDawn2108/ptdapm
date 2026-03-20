@@ -1,8 +1,10 @@
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMyEmployeeDetail } from "@/features/employees/api";
+import { useBreadcrumbOverrides } from "@/lib/breadcrumb-context";
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useRouterState } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 const TAB_ITEMS = [
   { value: "", label: "Thông tin chung", path: "" },
@@ -24,8 +26,15 @@ function MyProfileLayout() {
   const navigate = useNavigate({ from: "/my/profile" });
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
+  const { setOverrides } = useBreadcrumbOverrides();
 
   const { employee: emp, isLoading } = useMyEmployeeDetail();
+
+  useEffect(() => {
+    setOverrides([{ segment: "my", label: "Hồ sơ cá nhân", collapseAfter: true }]);
+
+    return () => setOverrides([]);
+  }, [setOverrides]);
 
   // Determine active tab from current path
   const basePath = "/my/profile";

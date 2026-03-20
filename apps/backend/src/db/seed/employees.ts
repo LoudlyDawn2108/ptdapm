@@ -15,6 +15,7 @@ import {
   employees,
   employmentContracts,
 } from "../schema";
+import { authUsers } from "../schema/auth";
 import { orgUnits } from "../schema/organization";
 import { salaryGradeSteps, salaryGrades } from "../schema/salary";
 
@@ -228,6 +229,22 @@ async function seedEmployees() {
   }
 
   console.log(`\n${created} employees created, ${skipped} skipped\n`);
+
+  console.log("Linking auth users to seeded employees...");
+  let linkedUsers = 0;
+  for (const [index, employeeId] of employeeIds.entries()) {
+    const email = sampleEmployees[index]?.email;
+    if (!employeeId || !email) continue;
+
+    const linked = await db
+      .update(authUsers)
+      .set({ employeeId, updatedAt: new Date() })
+      .where(eq(authUsers.email, email))
+      .returning({ id: authUsers.id });
+
+    linkedUsers += linked.length;
+  }
+  console.log(`  ${linkedUsers} auth users linked`);
 
   // ── Seed family members ────────────────────────────────────────────────
   console.log("Seeding family members...");
