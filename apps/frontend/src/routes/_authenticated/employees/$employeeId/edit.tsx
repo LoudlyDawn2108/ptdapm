@@ -71,14 +71,14 @@ import { z } from "zod";
 const editFormSchema = z
   .object({
     // --- Flat employee fields ---
-    fullName: z.string().min(1, "Bắt buộc"),
-    gender: z.string().min(1, "Bắt buộc"),
-    dob: z.string().min(1, "Bắt buộc"),
-    hometown: z.string().min(1, "Bắt buộc"),
-    email: z.string().email("Email không hợp lệ"),
-    phone: z.string().min(1, "Bắt buộc"),
-    address: z.string().min(1, "Bắt buộc"),
-    nationalId: z.string().min(1, "Bắt buộc"),
+    fullName: z.string().min(1, "Họ tên không được để trống"),
+    gender: z.string().min(1, "Giới tính không được để trống"),
+    dob: z.string().min(1, "Ngày sinh không được để trống"),
+    hometown: z.string().min(1, "Quê quán không được để trống"),
+    email: z.string().min(1, "Email không được để trống").email("Email không hợp lệ"),
+    phone: z.string().min(1, "Số điện thoại không được để trống"),
+    address: z.string().min(1, "Địa chỉ không được để trống"),
+    nationalId: z.string().min(1, "Số CCCD/CMND không được để trống"),
     taxCode: z.string().optional(),
     socialInsuranceNo: z.string().optional(),
     healthInsuranceNo: z.string().optional(),
@@ -90,16 +90,16 @@ const editFormSchema = z
     workPermitNumber: z.string().optional(),
     workPermitExpiry: z.string().optional(),
     workPermitFileId: z.string().optional(),
-    educationLevel: z.string().min(1, "Bắt buộc"),
+    educationLevel: z.string().min(1, "Trình độ văn hóa không được để trống"),
     academicRank: z.string().optional(),
-    portraitFileId: z.string().min(1, "Ảnh chân dung là bắt buộc"),
+    portraitFileId: z.string().min(1, "Ảnh chân dung không được để trống"),
     // --- Sub-entity arrays ---
     familyMembers: z
       .array(
         z.object({
           id: z.string().optional(),
-          relation: z.string().min(1, "Bắt buộc"),
-          fullName: z.string().min(1, "Bắt buộc"),
+          relation: z.string().min(1, "Mối quan hệ không được để trống"),
+          fullName: z.string().min(1, "Họ tên không được để trống"),
         }),
       )
       .default([]),
@@ -107,8 +107,8 @@ const editFormSchema = z
       .array(
         z.object({
           id: z.string().optional(),
-          bankName: z.string().min(1, "Bắt buộc"),
-          accountNo: z.string().min(1, "Bắt buộc"),
+          bankName: z.string().min(1, "Tên ngân hàng không được để trống"),
+          accountNo: z.string().min(1, "Số tài khoản không được để trống"),
         }),
       )
       .default([]),
@@ -116,9 +116,9 @@ const editFormSchema = z
       .array(
         z.object({
           id: z.string().optional(),
-          workplace: z.string().min(1, "Bắt buộc"),
-          startedOn: z.string().min(1, "Bắt buộc"),
-          endedOn: z.string().min(1, "Bắt buộc"),
+          workplace: z.string().min(1, "Nơi làm việc không được để trống"),
+          startedOn: z.string().min(1, "Ngày bắt đầu không được để trống"),
+          endedOn: z.string().min(1, "Ngày kết thúc không được để trống"),
         }),
       )
       .default([]),
@@ -126,9 +126,9 @@ const editFormSchema = z
       .array(
         z.object({
           id: z.string().optional(),
-          organizationType: z.string().min(1, "Bắt buộc"),
-          joinedOn: z.string().min(1, "Bắt buộc"),
-          details: z.string().min(1, "Bắt buộc"),
+          organizationType: z.string().min(1, "Loại tổ chức không được để trống"),
+          joinedOn: z.string().min(1, "Ngày gia nhập không được để trống"),
+          details: z.string().min(1, "Thông tin chi tiết không được để trống"),
         }),
       )
       .default([]),
@@ -136,8 +136,8 @@ const editFormSchema = z
       .array(
         z.object({
           id: z.string().optional(),
-          degreeName: z.string().min(1, "Bắt buộc"),
-          school: z.string().min(1, "Bắt buộc"),
+          degreeName: z.string().min(1, "Tên bằng không được để trống"),
+          school: z.string().min(1, "Trường/Nơi cấp không được để trống"),
           degreeFileId: z.string().optional(),
         }),
       )
@@ -146,7 +146,7 @@ const editFormSchema = z
       .array(
         z.object({
           id: z.string().optional(),
-          certName: z.string().min(1, "Bắt buộc"),
+          certName: z.string().min(1, "Tên chứng chỉ không được để trống"),
           issuedBy: z.string().optional(),
           certFileId: z.string().optional(),
         }),
