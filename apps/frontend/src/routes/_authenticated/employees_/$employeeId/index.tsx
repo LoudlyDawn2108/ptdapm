@@ -97,7 +97,8 @@ function GeneralInfoTab() {
           className="gap-2 shrink-0"
           disabled={!permit?.workPermitFileId}
           onClick={() =>
-            permit?.workPermitFileId && window.open(getFileUrl(permit.workPermitFileId), "_blank")
+            permit?.workPermitFileId &&
+            window.open(getFileUrl(permit.workPermitFileId), "_blank", "noopener,noreferrer")
           }
         >
           <Eye className="h-4 w-4" />

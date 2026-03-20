@@ -48,7 +48,8 @@ function EducationTab() {
                   variant="outline"
                   disabled={!d.degreeFileId}
                   onClick={() =>
-                    d.degreeFileId && window.open(getFileUrl(d.degreeFileId), "_blank")
+                    d.degreeFileId &&
+                    window.open(getFileUrl(d.degreeFileId), "_blank", "noopener,noreferrer")
                   }
                 >
                   <Eye className="mr-1.5 h-3.5 w-3.5" />
@@ -78,7 +79,10 @@ function EducationTab() {
                   size="sm"
                   variant="outline"
                   disabled={!c.certFileId}
-                  onClick={() => c.certFileId && window.open(getFileUrl(c.certFileId), "_blank")}
+                  onClick={() =>
+                    c.certFileId &&
+                    window.open(getFileUrl(c.certFileId), "_blank", "noopener,noreferrer")
+                  }
                 >
                   <Eye className="mr-1.5 h-3.5 w-3.5" />
                   Xem PDF

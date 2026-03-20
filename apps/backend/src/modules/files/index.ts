@@ -11,6 +11,36 @@ function asciiSafe(filename: string): string {
 }
 
 const INLINE_MIME_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
+const INLINE_EXTENSIONS = new Set([".pdf", ".jpg", ".jpeg", ".png"]);
+
+function getExtension(filename: string): string {
+  const lastDot = filename.lastIndexOf(".");
+  if (lastDot === -1) return "";
+  return filename.slice(lastDot).toLowerCase();
+}
+
+function inferMimeType(originalName: string, mimeType: string | null): string {
+  if (mimeType) {
+    return mimeType;
+  }
+
+  const ext = getExtension(originalName);
+  switch (ext) {
+    case ".pdf":
+      return "application/pdf";
+    case ".jpg":
+    case ".jpeg":
+      return "image/jpeg";
+    case ".png":
+      return "image/png";
+    case ".xls":
+      return "application/vnd.ms-excel";
+    case ".xlsx":
+      return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    default:
+      return "application/octet-stream";
+  }
+}
 
 export const fileRoutes = new Elysia({ prefix: "/api/files" })
   .use(authPlugin)
@@ -38,8 +68,12 @@ export const fileRoutes = new Elysia({ prefix: "/api/files" })
       }
 
       const encoded = encodeURIComponent(fileRecord.originalName);
-      const contentType = fileRecord.mimeType || "application/octet-stream";
-      const disposition = INLINE_MIME_TYPES.has(contentType) ? "inline" : "attachment";
+      const contentType = inferMimeType(fileRecord.originalName, fileRecord.mimeType);
+      const extension = getExtension(fileRecord.originalName);
+      const disposition =
+        INLINE_MIME_TYPES.has(contentType) || INLINE_EXTENSIONS.has(extension)
+          ? "inline"
+          : "attachment";
       return new Response(fileContent, {
         headers: {
           "Content-Type": contentType,

@@ -41,7 +41,7 @@ export type UploadedFile = {
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export function getFileUrl(fileId: string): string {
-  return `${apiBaseUrl}/api/files/${fileId}`;
+  return `${apiBaseUrl}/api/files/${encodeURIComponent(fileId)}`;
 }
 
 function isUploadedFileResponse(value: unknown): value is { data: UploadedFile } {

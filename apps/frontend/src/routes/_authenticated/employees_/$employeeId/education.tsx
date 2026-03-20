@@ -168,9 +168,7 @@ function EducationTab() {
         <ReadOnlyField label="Học hàm/Học vị" value={rankLabel} />
       </div>
 
-      <SectionTitle
-        title="Thông tin bằng cấp"
-      />
+      <SectionTitle title="Thông tin bằng cấp" />
 
       {degrees && degrees.length > 0 ? (
         <div className="space-y-3">
@@ -187,7 +185,8 @@ function EducationTab() {
                   variant="outline"
                   disabled={!d.degreeFileId}
                   onClick={() =>
-                    d.degreeFileId && window.open(getFileUrl(d.degreeFileId), "_blank")
+                    d.degreeFileId &&
+                    window.open(getFileUrl(d.degreeFileId), "_blank", "noopener,noreferrer")
                   }
                 >
                   <Eye className="mr-1.5 h-3.5 w-3.5" />
@@ -201,9 +200,7 @@ function EducationTab() {
         <p className="text-sm text-muted-foreground">Chưa có bằng cấp.</p>
       )}
 
-      <SectionTitle
-        title="Thông tin chứng chỉ"
-      />
+      <SectionTitle title="Thông tin chứng chỉ" />
 
       {certifications.length > 0 ? (
         <div className="space-y-3">
@@ -219,7 +216,10 @@ function EducationTab() {
                   size="sm"
                   variant="outline"
                   disabled={!c.certFileId}
-                  onClick={() => c.certFileId && window.open(getFileUrl(c.certFileId), "_blank")}
+                  onClick={() =>
+                    c.certFileId &&
+                    window.open(getFileUrl(c.certFileId), "_blank", "noopener,noreferrer")
+                  }
                 >
                   <Eye className="mr-1.5 h-3.5 w-3.5" />
                   Xem PDF
