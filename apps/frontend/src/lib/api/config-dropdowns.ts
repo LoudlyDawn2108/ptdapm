@@ -49,15 +49,4 @@ export async function fetchTrainingTypeDropdown(search: string): Promise<Dropdow
   if (error) throw handleApiError(error);
   return (data?.data ?? []) as DropdownOption[];
 }
-
-export async function fetchTrainingTypeDropdown(
-  search: string,
-): Promise<DropdownOption[]> {
-  const { data, error } = await (api.api.config as any)[
-    "training-types"
-  ].dropdown.get({
-    query: { search: search || undefined, limit: 50 },
-  });
-  if (error) throw error;
-  return (data as any)?.data ?? [];
-}
+  
