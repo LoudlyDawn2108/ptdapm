@@ -172,7 +172,8 @@ export type EmployeeAllowance = {
   createdAt: string;
   updatedAt: string;
   allowanceName: string;
-  status?: string | null;
+  status: string;
+  allowanceTypeStatus?: string | null;
 };
 
 export type EmployeeSalaryGradeStep = {

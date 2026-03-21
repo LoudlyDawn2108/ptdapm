@@ -73,7 +73,7 @@ describe("RBAC — ADMIN/TCCB only", () => {
       new Request("http://localhost/api/config/allowance-types", {
         method: "POST",
         headers: { Cookie: cookies, "Content-Type": "application/json" },
-        body: JSON.stringify({ allowanceName: "Test" }),
+        body: JSON.stringify({ allowanceName: "Test", defaultAmount: 1000 }),
       }),
     );
     expect(res.status).toBe(403);
@@ -126,6 +126,7 @@ describe("POST /api/config/allowance-types — Create", () => {
   test("valid data creates allowance type", async () => {
     const res = await adminRequest("POST", "/api/config/allowance-types", {
       allowanceName: `Phụ cấp test ${suffix}`,
+      defaultAmount: 1250000,
       description: "Mô tả phụ cấp test",
       calcMethod: "Tính theo tháng",
     });
@@ -134,6 +135,7 @@ describe("POST /api/config/allowance-types — Create", () => {
     expect(body.data).toBeDefined();
     expect(body.data.id).toBeString();
     expect(body.data.allowanceName).toBe(`Phụ cấp test ${suffix}`);
+    expect(body.data.defaultAmount).toBe("1250000.00");
     expect(body.data.status).toBe("active");
     createdAllowanceTypeId = body.data.id;
   });
@@ -141,6 +143,7 @@ describe("POST /api/config/allowance-types — Create", () => {
   test("duplicate allowanceName → 409", async () => {
     const res = await adminRequest("POST", "/api/config/allowance-types", {
       allowanceName: `Phụ cấp test ${suffix}`,
+      defaultAmount: 1250000,
     });
     expect(res.status).toBe(409);
   });
@@ -155,10 +158,7 @@ describe("POST /api/config/allowance-types — Create", () => {
 
 describe("GET /api/config/allowance-types/:id — Get by ID", () => {
   test("valid ID returns detail", async () => {
-    const res = await adminRequest(
-      "GET",
-      `/api/config/allowance-types/${createdAllowanceTypeId}`,
-    );
+    const res = await adminRequest("GET", `/api/config/allowance-types/${createdAllowanceTypeId}`);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.id).toBe(createdAllowanceTypeId);
@@ -182,42 +182,36 @@ describe("GET /api/config/allowance-types/:id — Get by ID", () => {
 
 describe("PUT /api/config/allowance-types/:id — Update", () => {
   test("update description succeeds", async () => {
-    const res = await adminRequest(
-      "PUT",
-      `/api/config/allowance-types/${createdAllowanceTypeId}`,
-      { description: "Mô tả mới" },
-    );
+    const res = await adminRequest("PUT", `/api/config/allowance-types/${createdAllowanceTypeId}`, {
+      description: "Mô tả mới",
+      defaultAmount: 1500000,
+    });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.description).toBe("Mô tả mới");
+    expect(body.data.defaultAmount).toBe("1500000.00");
   });
 
   test("toggle status to inactive succeeds", async () => {
-    const res = await adminRequest(
-      "PUT",
-      `/api/config/allowance-types/${createdAllowanceTypeId}`,
-      { status: "inactive" },
-    );
+    const res = await adminRequest("PUT", `/api/config/allowance-types/${createdAllowanceTypeId}`, {
+      status: "inactive",
+    });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.status).toBe("inactive");
   });
 
   test("cannot edit inactive type (without status field) → 400", async () => {
-    const res = await adminRequest(
-      "PUT",
-      `/api/config/allowance-types/${createdAllowanceTypeId}`,
-      { description: "Should fail" },
-    );
+    const res = await adminRequest("PUT", `/api/config/allowance-types/${createdAllowanceTypeId}`, {
+      description: "Should fail",
+    });
     expect(res.status).toBe(400);
   });
 
   test("toggle status back to active succeeds", async () => {
-    const res = await adminRequest(
-      "PUT",
-      `/api/config/allowance-types/${createdAllowanceTypeId}`,
-      { status: "active" },
-    );
+    const res = await adminRequest("PUT", `/api/config/allowance-types/${createdAllowanceTypeId}`, {
+      status: "active",
+    });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.status).toBe("active");

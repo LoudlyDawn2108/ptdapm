@@ -41,6 +41,8 @@ import {
 import { ApiResponseError, applyFieldErrors } from "@/lib/error-handler";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  AllowanceAssignmentStatus,
+  type AllowanceAssignmentStatusCode,
   type CreateEmployeeAllowanceFormInput,
   type CreateEmployeeAllowanceInput,
   type DropdownOption,
@@ -78,7 +80,8 @@ type EmployeeAllowanceRow = {
   allowanceName?: string | null;
   amount?: number | string | null;
   note?: string | null;
-  status?: string | null;
+  status?: AllowanceAssignmentStatusCode | null;
+  allowanceTypeStatus?: string | null;
 };
 
 type SalaryAggregate = {
@@ -98,12 +101,13 @@ type SalaryGradeStepOption = {
 type AllowanceTypeOption = {
   id: string;
   allowanceName: string;
+  defaultAmount?: number | string | null;
   status?: string;
 };
 
 const EMPTY_ALLOWANCE_FORM_VALUES: CreateEmployeeAllowanceFormInput = {
   allowanceTypeId: "",
-  amount: undefined,
+  status: "active",
   note: "",
 };
 
@@ -214,13 +218,14 @@ function SalaryTab() {
     setEditingAllowance(allowance);
     allowanceForm.reset({
       allowanceTypeId: allowance.allowanceTypeId ?? "",
-      amount:
-        allowance.amount == null || Number.isNaN(Number(allowance.amount))
-          ? undefined
-          : Number(allowance.amount),
+      status: allowance.status ?? "active",
       note: allowance.note ?? "",
     });
   };
+
+  const selectedAllowanceTypeId = allowanceForm.watch("allowanceTypeId");
+  const selectedAllowanceType = allowanceTypes.find((type) => type.id === selectedAllowanceTypeId);
+  const selectedAllowanceAmount = selectedAllowanceType?.defaultAmount;
 
   const handleSalarySubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -310,6 +315,9 @@ function SalaryTab() {
                     Tên loại phụ cấp
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
+                    Mức phụ cấp
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
                     Trạng thái
                   </th>
                   <th className="rounded-r-lg px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">
@@ -321,6 +329,7 @@ function SalaryTab() {
                 {allowances.map((a, i) => (
                   <tr key={a.id ?? i} className="border-b border-gray-100 last:border-0">
                     <td className="px-4 py-3 font-medium">{a.allowanceName ?? "—"}</td>
+                    <td className="px-4 py-3">{a.amount == null ? "—" : a.amount}</td>
                     <td className="px-4 py-3">
                       <AllowanceStatusBadge status={a.status ?? undefined} />
                     </td>
@@ -476,7 +485,9 @@ function SalaryTab() {
                 name="allowanceTypeId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Loại phụ cấp</FormLabel>
+                    <FormLabel>
+                      Loại phụ cấp <span className="text-destructive">*</span>
+                    </FormLabel>
                     <Select value={field.value ?? ""} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger className="w-full">
@@ -498,25 +509,42 @@ function SalaryTab() {
 
               <FormField
                 control={allowanceForm.control}
-                name="amount"
+                name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Số tiền</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        inputMode="decimal"
-                        placeholder="Nhập số tiền"
-                        value={field.value == null ? "" : String(field.value)}
-                        onChange={(event) =>
-                          field.onChange(event.target.value === "" ? undefined : event.target.value)
-                        }
-                      />
-                    </FormControl>
+                    <FormLabel>
+                      Trạng thái <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <Select value={field.value ?? "active"} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Chọn trạng thái" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(AllowanceAssignmentStatus).map(([code, meta]) => (
+                          <SelectItem key={code} value={code}>
+                            {meta.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              <FormItem>
+                <FormLabel>Mức phụ cấp áp dụng</FormLabel>
+                <FormControl>
+                  <Input
+                    readOnly
+                    value={selectedAllowanceAmount == null ? "" : String(selectedAllowanceAmount)}
+                    placeholder="Chọn loại phụ cấp để xem mức tiền"
+                    className="bg-muted/50"
+                  />
+                </FormControl>
+              </FormItem>
 
               <FormField
                 control={allowanceForm.control}

@@ -6,6 +6,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 export interface AllowanceTypeRow {
   id: string;
   allowanceName: string;
+  defaultAmount: string;
   description: string | null;
   calcMethod: string | null;
   status: CatalogStatusCode;
@@ -25,6 +26,10 @@ export const allowanceTypeColumns: ColumnDef<AllowanceTypeRow, unknown>[] = [
     accessorKey: "description",
     header: "MÔ TẢ",
     cell: ({ row }) => row.original.description ?? "—",
+  },
+  {
+    accessorKey: "defaultAmount",
+    header: "MỨC PHỤ CẤP",
   },
   {
     accessorKey: "calcMethod",

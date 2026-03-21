@@ -1,4 +1,8 @@
-import type { ContractStatusCode, WorkStatusCode } from "@hrms/shared";
+import type {
+  AllowanceAssignmentStatusCode,
+  ContractStatusCode,
+  WorkStatusCode,
+} from "@hrms/shared";
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
@@ -236,6 +240,10 @@ export const employeeAllowances = pgTable("employee_allowances", {
     .notNull()
     .references(() => allowanceTypes.id, { onDelete: "restrict" }),
   amount: numeric("amount", { precision: 14, scale: 2 }),
+  status: varchar("status", { length: 20 })
+    .$type<AllowanceAssignmentStatusCode>()
+    .notNull()
+    .default("active"),
   note: text("note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

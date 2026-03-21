@@ -23,6 +23,7 @@ type EmployeeAllowanceRow = {
   amount?: number | string | null;
   note?: string | null;
   status?: string | null;
+  allowanceTypeStatus?: string | null;
 };
 
 type SalaryAggregate = {
@@ -82,6 +83,9 @@ function SalaryTab() {
                   Tên loại phụ cấp
                 </th>
                 <th className="rounded-r-lg px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
+                  Mức phụ cấp
+                </th>
+                <th className="rounded-r-lg px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
                   Trạng thái
                 </th>
               </tr>
@@ -90,6 +94,7 @@ function SalaryTab() {
               {allowances.map((a, i) => (
                 <tr key={a.id ?? i} className="border-b border-gray-100 last:border-0">
                   <td className="px-4 py-3 font-medium">{a.allowanceName ?? "—"}</td>
+                  <td className="px-4 py-3">{a.amount == null ? "—" : a.amount}</td>
                   <td className="px-4 py-3">
                     <AllowanceStatusBadge status={a.status ?? undefined} />
                   </td>

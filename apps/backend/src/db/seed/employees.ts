@@ -703,6 +703,7 @@ async function seedEmployees() {
             employeeId,
             allowanceTypeId: getType(al.typeName),
             amount: al.amount,
+            status: "active",
             note: al.note,
           })
           .onConflictDoNothing();

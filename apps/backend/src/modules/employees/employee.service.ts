@@ -376,11 +376,12 @@ export async function getAggregateById(id: string, userRole?: string) {
         employeeId: employeeAllowances.employeeId,
         allowanceTypeId: employeeAllowances.allowanceTypeId,
         amount: employeeAllowances.amount,
+        status: employeeAllowances.status,
         note: employeeAllowances.note,
         createdAt: employeeAllowances.createdAt,
         updatedAt: employeeAllowances.updatedAt,
         allowanceName: allowanceTypes.allowanceName,
-        status: allowanceTypes.status,
+        allowanceTypeStatus: allowanceTypes.status,
       })
       .from(employeeAllowances)
       .innerJoin(allowanceTypes, eq(employeeAllowances.allowanceTypeId, allowanceTypes.id))

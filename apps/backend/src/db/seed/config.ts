@@ -351,51 +351,61 @@ async function seedConfig() {
   const allowanceData = [
     {
       allowanceName: "Phụ cấp chức vụ",
+      defaultAmount: "2500000",
       description: "Phụ cấp cho các vị trí quản lý",
       calcMethod: "Hệ số × Lương cơ sở",
     },
     {
       allowanceName: "Phụ cấp thâm niên nhà giáo",
+      defaultAmount: "1800000",
       description: "Phụ cấp theo năm công tác giảng dạy",
       calcMethod: "5% mỗi 5 năm, tối đa 30%",
     },
     {
       allowanceName: "Phụ cấp ưu đãi nghề",
+      defaultAmount: "1200000",
       description: "Phụ cấp ưu đãi cho ngành giáo dục",
       calcMethod: "25-50% × Lương hiện hưởng",
     },
     {
       allowanceName: "Phụ cấp trách nhiệm",
+      defaultAmount: "1500000",
       description: "Phụ cấp cho các vị trí có trách nhiệm đặc biệt",
       calcMethod: "Hệ số × Lương cơ sở",
     },
     {
       allowanceName: "Phụ cấp độc hại",
+      defaultAmount: "900000",
       description: "Phụ cấp cho làm việc trong môi trường độc hại",
       calcMethod: "Theo mức quy định",
     },
     {
       allowanceName: "Phụ cấp khu vực",
+      defaultAmount: "800000",
       description: "Phụ cấp theo vùng miền",
       calcMethod: "Hệ số × Lương cơ sở",
     },
     {
       allowanceName: "Phụ cấp lưu động",
+      defaultAmount: "700000",
       description: "Phụ cấp cho công việc phải di chuyển nhiều",
       calcMethod: "Theo ngày công tác",
     },
     {
       allowanceName: "Phụ cấp kiêm nhiệm",
+      defaultAmount: "1000000",
       description: "Phụ cấp khi kiêm nhiệm thêm chức vụ",
       calcMethod: "10-40% phụ cấp chức vụ",
     },
     {
       allowanceName: "Phụ cấp đặc biệt",
+      defaultAmount: "2000000",
       description: "Phụ cấp cho các trường hợp đặc biệt",
       calcMethod: "Theo quyết định",
     },
     {
       allowanceName: "Phụ cấp thu hút",
+      defaultAmount: "3000000",
       description: "Phụ cấp thu hút nhân tài",
       calcMethod: "Theo hợp đồng thỏa thuận",
     },
