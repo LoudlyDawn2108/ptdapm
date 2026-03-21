@@ -1,12 +1,12 @@
-import { PageHeader } from "@/components/layout/page-header";
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { QueryError } from "@/components/shared/query-error";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useMyEmployeeDetail } from "@/features/employees/api";
 import { orgUnitDetailOptions } from "@/features/org-units/api";
-import { Card, CardContent } from "@/components/ui/card";
+import { useBreadcrumbOverrides } from "@/lib/breadcrumb-context";
+import { authorizeRoute } from "@/lib/permissions";
 import { useQuery } from "@tanstack/react-query";
 import { Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 const TAB_ITEMS = [
   { value: "", label: "Thông tin chung", path: "" },
@@ -14,33 +14,40 @@ const TAB_ITEMS = [
   { value: "children", label: "Đơn vị trực thuộc", path: "/children" },
 ] as const;
 
-export const Route = createFileRoute("/_authenticated/my/org")({
-  component: MyOrgLayout,
+export const Route = createFileRoute("/_authenticated/org-units_/$orgUnitId")({
+  beforeLoad: authorizeRoute("/org-units"),
+  component: OrgUnitDetailLayout,
 });
 
-function MyOrgLayout() {
+function OrgUnitDetailLayout() {
+  const { orgUnitId } = Route.useParams();
   const navigate = useNavigate();
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
-
-  const { employee, isLoading: empLoading } = useMyEmployeeDetail();
-  const orgUnitId = employee?.currentOrgUnitId;
+  const { setOverrides } = useBreadcrumbOverrides();
 
   const {
     data: orgDetail,
-    isLoading: orgLoading,
+    isLoading,
     isError,
     error,
     refetch,
-  } = useQuery({
-    ...orgUnitDetailOptions(orgUnitId ?? ""),
-    enabled: !!orgUnitId,
-  });
+  } = useQuery(orgUnitDetailOptions(orgUnitId));
 
-  const isLoading = empLoading || orgLoading;
+  const unit = orgDetail?.data;
+
+  // Set breadcrumb: "Sơ đồ tổ chức > DV001 - Ban Giám hiệu"
+  useEffect(() => {
+    if (unit) {
+      setOverrides([
+        { segment: orgUnitId, label: `${unit.unitCode} - ${unit.unitName}`, collapseAfter: true },
+      ]);
+    }
+    return () => setOverrides([]);
+  }, [orgUnitId, unit?.unitCode, unit?.unitName, setOverrides]);
 
   // Determine active tab from current path
-  const basePath = "/my/org";
+  const basePath = `/org-units/${orgUnitId}`;
   const activeTab = (() => {
     const suffix = currentPath.replace(basePath, "").replace(/^\//, "");
     return suffix || "";
@@ -49,51 +56,34 @@ function MyOrgLayout() {
   const navigateToTab = (path: string) => {
     switch (path) {
       case "":
-        return navigate({ to: "/my/org" });
+        return navigate({ to: "/org-units/$orgUnitId", params: { orgUnitId } });
       case "/staff":
-        return navigate({ to: "/my/org/staff" });
+        return navigate({ to: "/org-units/$orgUnitId/staff", params: { orgUnitId } });
       case "/children":
-        return navigate({ to: "/my/org/children" });
+        return navigate({ to: "/org-units/$orgUnitId/children", params: { orgUnitId } });
       default:
-        return navigate({ to: "/my/org" });
+        return navigate({ to: "/org-units/$orgUnitId", params: { orgUnitId } });
     }
   };
 
   if (isError) {
-    return (
-      <div>
-        <PageHeader title="Đơn vị công tác" description="Thông tin đơn vị công tác của bạn" />
-        <QueryError error={error} onRetry={refetch} />
-      </div>
-    );
+    return <QueryError error={error} onRetry={refetch} />;
   }
 
   if (isLoading) {
-    return (
-      <div>
-        <PageHeader title="Đơn vị công tác" description="Thông tin đơn vị công tác của bạn" />
-        <FormSkeleton fields={6} />
-      </div>
-    );
+    return <FormSkeleton fields={6} />;
   }
 
-  if (!orgUnitId || !orgDetail?.data) {
+  if (!unit) {
     return (
-      <div>
-        <PageHeader title="Đơn vị công tác" description="Thông tin đơn vị công tác của bạn" />
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            Chưa có thông tin đơn vị công tác.
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-center py-20">
+        <p className="text-muted-foreground">Không tìm thấy đơn vị tổ chức.</p>
       </div>
     );
   }
 
   return (
     <div>
-      <PageHeader title="Đơn vị công tác" description="Thông tin đơn vị công tác của bạn" />
-
       {/* ── Tab Navigation ───────────────── */}
       <Tabs
         value={activeTab}
@@ -105,7 +95,7 @@ function MyOrgLayout() {
         }}
         className="mb-6"
       >
-        <TabsList className="w-full justify-start" aria-label="Đơn vị công tác">
+        <TabsList className="w-full justify-start" aria-label="Chi tiết đơn vị">
           {TAB_ITEMS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value} aria-label={`Tab ${tab.label}`}>
               {tab.label}

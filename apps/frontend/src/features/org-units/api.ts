@@ -100,3 +100,47 @@ export function useMergeOrgUnit() {
     onSuccess: () => qc.invalidateQueries({ queryKey: orgUnitKeys.all }),
   });
 }
+
+export function useAddAssignment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      orgUnitId,
+      ...body
+    }: {
+      orgUnitId: string;
+      employeeId: string;
+      positionTitle?: string;
+      startedOn: string;
+    }) => {
+      const { data, error } = await api.api["org-units"]({ id: orgUnitId }).assignments.post(body);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: orgUnitKeys.detail(vars.orgUnitId) });
+    },
+  });
+}
+
+export function useEndAssignment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      orgUnitId,
+      assignmentId,
+    }: {
+      orgUnitId: string;
+      assignmentId: string;
+    }) => {
+      const { data, error } = await api.api["org-units"]({ id: orgUnitId }).assignments({
+        assignmentId,
+      }).end.post();
+      if (error) throw handleApiError(error);
+      return data;
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: orgUnitKeys.detail(vars.orgUnitId) });
+    },
+  });
+}

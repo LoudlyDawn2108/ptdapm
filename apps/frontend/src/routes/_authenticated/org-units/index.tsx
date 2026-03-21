@@ -19,7 +19,7 @@ import { ORG_TREE_BASE_PADDING_PX, ORG_TREE_INDENT_PX, SKELETON_ROW_COUNT } from
 import { authorizeRoute } from "@/lib/permissions";
 import { OrgUnitStatus, OrgUnitType } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Building2, ChevronDown, ChevronRight, Eye, Pencil, Plus } from "lucide-react";
 import { useState } from "react";
 
@@ -76,10 +76,19 @@ function OrgUnitNode({
         </span>
 
         {/* Dissolved badge */}
-        {isDissolved && (
+        {isDissolved ? (
           <span className="rounded border border-gray-300 px-2 py-0.5 text-xs text-muted-foreground">
             Giải thể
           </span>
+        ) : (
+          /* Eye icon — always visible */
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={(e) => { e.stopPropagation(); onView(node); }}
+          >
+            <Eye className="h-3.5 w-3.5" />
+          </Button>
         )}
 
         {/* Action buttons — visible on hover */}
@@ -99,20 +108,6 @@ function OrgUnitNode({
                 <TooltipContent>Thêm đơn vị con</TooltipContent>
               </Tooltip>
             )}
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={(e) => { e.stopPropagation(); onView(node); }}
-                >
-                  <Eye className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Xem chi tiết</TooltipContent>
-            </Tooltip>
-
             {!isDissolved && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -148,6 +143,7 @@ function OrgUnitNode({
 }
 
 function OrgUnitsPage() {
+  const navigate = useNavigate();
   const { data, isLoading, isError, error, refetch } = useQuery(orgUnitTreeOptions());
   const [searchText, setSearchText] = useState("");
   const debouncedSearch = useDebounce(searchText);
@@ -187,9 +183,7 @@ function OrgUnitsPage() {
   };
 
   const handleView = (node: any) => {
-    // For now, just open edit dialog in view mode
-    // TODO: implement dedicated detail view with tabs
-    handleEdit(node);
+    void navigate({ to: "/org-units/$orgUnitId", params: { orgUnitId: node.id } });
   };
 
   if (isError) {

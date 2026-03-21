@@ -6,7 +6,7 @@ import {
   mergeOrgUnitSchema,
   updateOrgUnitSchema,
 } from "@hrms/shared";
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import { authPlugin } from "../../common/plugins/auth";
 import { requireRole } from "../../common/utils/role-guard";
 import * as orgUnitService from "./org-unit.service";
@@ -72,4 +72,37 @@ export const orgUnitRoutes = new Elysia({ prefix: "/api/org-units" })
       return { data };
     },
     { auth: true, params: idParamSchema, body: mergeOrgUnitSchema },
+  )
+  // ── Assignment management ──────────────────────────────────────────────
+  .post(
+    "/:id/assignments",
+    async ({ params, body, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
+      const data = await orgUnitService.addAssignment(params.id, body, user.id);
+      return { data };
+    },
+    {
+      auth: true,
+      params: idParamSchema,
+      body: t.Object({
+        employeeId: t.String(),
+        positionTitle: t.Optional(t.String()),
+        startedOn: t.String(),
+      }),
+    },
+  )
+  .post(
+    "/:id/assignments/:assignmentId/end",
+    async ({ params, user }) => {
+      requireRole(user.role, "ADMIN", "TCCB");
+      const data = await orgUnitService.endAssignment(params.id, params.assignmentId);
+      return { data };
+    },
+    {
+      auth: true,
+      params: t.Object({
+        id: t.String(),
+        assignmentId: t.String(),
+      }),
+    },
   );
