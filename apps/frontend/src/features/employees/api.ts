@@ -478,7 +478,7 @@ export function useCreateCertification() {
     }: {
       employeeId: string;
       certName: string;
-      issuedBy?: string;
+      issuedBy: string;
       issuedOn?: string;
       expiresOn?: string;
       certFileId?: string;
@@ -502,8 +502,8 @@ export function useUpdateCertification() {
     }: {
       employeeId: string;
       id: string;
-      certName?: string;
-      issuedBy?: string;
+      certName: string;
+      issuedBy: string;
       issuedOn?: string;
       expiresOn?: string;
       certFileId?: string;

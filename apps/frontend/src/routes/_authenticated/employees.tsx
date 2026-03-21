@@ -52,6 +52,7 @@ export const Route = createFileRoute("/_authenticated/employees")({
 });
 
 function EmployeesLayout() {
+  const allOrgUnitsValue = "__all_org_units__";
   const navigate = useNavigate({ from: "/employees" });
   const search = Route.useSearch();
   const [searchText, setSearchText] = useState(search.search ?? "");
@@ -295,7 +296,12 @@ function EmployeesLayout() {
                     queryKey={["org-units", "dropdown", "filter"]}
                     fetchOptions={fetchOrgUnitDropdown}
                     value={search.orgUnitId ?? ""}
-                    onChange={(v) => updateSearch({ orgUnitId: v || undefined })}
+                    onChange={(v) =>
+                      updateSearch({
+                        orgUnitId: v === allOrgUnitsValue ? undefined : v || undefined,
+                      })
+                    }
+                    staticOptions={[{ value: allOrgUnitsValue, label: "Tất cả" }]}
                     placeholder="Đơn vị công tác"
                     className="h-10 w-full rounded-lg"
                   />

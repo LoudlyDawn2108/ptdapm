@@ -58,7 +58,7 @@ const formSchema = z
     phone: z.string().min(1, "Số điện thoại không được để trống"),
     address: z.string().min(1, "Địa chỉ không được để trống"),
     nationalId: z.string().min(1, "Số CCCD/CMND không được để trống"),
-    taxCode: z.string().optional(),
+    taxCode: z.string().min(1, "Mã số thuế không được để trống"),
     socialInsuranceNo: z.string().optional(),
     healthInsuranceNo: z.string().optional(),
     portraitFileId: z.string().min(1, "Ảnh chân dung không được để trống"),
@@ -70,7 +70,7 @@ const formSchema = z
     workPermitNumber: z.string().optional(),
     workPermitExpiry: z.string().optional(),
     educationLevel: z.string().min(1, "Trình độ văn hóa không được để trống"),
-    academicRank: z.string().optional(),
+    academicRank: z.string().min(1, "Học hàm/Học vị không được để trống"),
 
     // ── Sub-entity arrays ──
     familyMembers: z
@@ -111,7 +111,7 @@ const formSchema = z
       .array(
         z.object({
           certName: z.string().min(1, "Tên chứng chỉ không được để trống"),
-          issuedBy: z.string().optional(),
+          issuedBy: z.string().min(1, "Nơi cấp không được để trống"),
           certFileId: z.string().optional(),
         }),
       )
@@ -238,23 +238,25 @@ function NewEmployeePage() {
 
   const onSubmit = async (data: FormValues) => {
     try {
+      const formData = formSchema.parse(data);
+
       // Phase 1: Create employee (flat fields only)
       const employeePayload: CreateEmployeeInput = {
-        fullName: data.fullName,
-        dob: data.dob,
-        gender: data.gender as CreateEmployeeInput["gender"],
-        nationalId: data.nationalId,
-        hometown: data.hometown,
-        address: data.address,
-        email: data.email,
-        phone: data.phone,
-        taxCode: data.taxCode || undefined,
-        socialInsuranceNo: data.socialInsuranceNo || undefined,
-        healthInsuranceNo: data.healthInsuranceNo || undefined,
-        portraitFileId: data.portraitFileId || undefined,
-        isForeigner: data.isForeigner,
-        educationLevel: data.educationLevel as CreateEmployeeInput["educationLevel"],
-        academicRank: (data.academicRank || undefined) as CreateEmployeeInput["academicRank"],
+        fullName: formData.fullName,
+        dob: formData.dob,
+        gender: formData.gender as CreateEmployeeInput["gender"],
+        nationalId: formData.nationalId,
+        hometown: formData.hometown,
+        address: formData.address,
+        email: formData.email,
+        phone: formData.phone,
+        taxCode: formData.taxCode,
+        socialInsuranceNo: formData.socialInsuranceNo || undefined,
+        healthInsuranceNo: formData.healthInsuranceNo || undefined,
+        portraitFileId: formData.portraitFileId || undefined,
+        isForeigner: formData.isForeigner,
+        educationLevel: formData.educationLevel as CreateEmployeeInput["educationLevel"],
+        academicRank: formData.academicRank as CreateEmployeeInput["academicRank"],
       };
 
       const result = await createMutation.mutateAsync(employeePayload);
@@ -273,7 +275,7 @@ function NewEmployeePage() {
 
       const subEntityPromises: Promise<void>[] = [];
 
-      for (const fm of data.familyMembers ?? []) {
+      for (const fm of formData.familyMembers ?? []) {
         if (!fm.fullName || !fm.relation) continue;
         subEntityPromises.push(
           createFamilyMember
@@ -292,7 +294,7 @@ function NewEmployeePage() {
         );
       }
 
-      for (const ba of data.bankAccounts ?? []) {
+      for (const ba of formData.bankAccounts ?? []) {
         if (!ba.accountNo || !ba.bankName) continue;
         subEntityPromises.push(
           createBankAccount
@@ -311,7 +313,7 @@ function NewEmployeePage() {
         );
       }
 
-      for (const pm of data.partyMemberships ?? []) {
+      for (const pm of formData.partyMemberships ?? []) {
         if (!pm.organizationType || !pm.joinedOn || !pm.details) continue;
         subEntityPromises.push(
           createPartyMembership
@@ -330,7 +332,7 @@ function NewEmployeePage() {
         );
       }
 
-      for (const pj of data.previousJobs ?? []) {
+      for (const pj of formData.previousJobs ?? []) {
         if (!pj.workplace || !pj.startedOn || !pj.endedOn) continue;
         subEntityPromises.push(
           createPreviousJob
@@ -349,7 +351,7 @@ function NewEmployeePage() {
         );
       }
 
-      for (const d of data.degrees ?? []) {
+      for (const d of formData.degrees ?? []) {
         if (!d.degreeName || !d.school) continue;
         subEntityPromises.push(
           createDegree
@@ -368,14 +370,14 @@ function NewEmployeePage() {
         );
       }
 
-      for (const c of data.certificates ?? []) {
+      for (const c of formData.certificates ?? []) {
         if (!c.certName) continue;
         subEntityPromises.push(
           createCertification
             .mutateAsync({
               employeeId,
               certName: c.certName,
-              issuedBy: c.issuedBy || undefined,
+              issuedBy: c.issuedBy,
               certFileId: c.certFileId || undefined,
             })
             .then(() => {})
@@ -387,27 +389,27 @@ function NewEmployeePage() {
         );
       }
 
-      if (data.isForeigner) {
+      if (formData.isForeigner) {
         const hasWorkPermitData =
-          data.visaNumber ||
-          data.visaExpiry ||
-          data.passportNumber ||
-          data.passportExpiry ||
-          data.workPermitNumber ||
-          data.workPermitExpiry ||
-          data.workPermitFileId;
+          formData.visaNumber ||
+          formData.visaExpiry ||
+          formData.passportNumber ||
+          formData.passportExpiry ||
+          formData.workPermitNumber ||
+          formData.workPermitExpiry ||
+          formData.workPermitFileId;
         if (hasWorkPermitData) {
           subEntityPromises.push(
             createForeignWorkPermit
               .mutateAsync({
                 employeeId,
-                visaNo: data.visaNumber || undefined,
-                visaExpiresOn: data.visaExpiry || undefined,
-                passportNo: data.passportNumber || undefined,
-                passportExpiresOn: data.passportExpiry || undefined,
-                workPermitNo: data.workPermitNumber || undefined,
-                workPermitExpiresOn: data.workPermitExpiry || undefined,
-                workPermitFileId: data.workPermitFileId || undefined,
+                visaNo: formData.visaNumber || undefined,
+                visaExpiresOn: formData.visaExpiry || undefined,
+                passportNo: formData.passportNumber || undefined,
+                passportExpiresOn: formData.passportExpiry || undefined,
+                workPermitNo: formData.workPermitNumber || undefined,
+                workPermitExpiresOn: formData.workPermitExpiry || undefined,
+                workPermitFileId: formData.workPermitFileId || undefined,
               })
               .then(() => {})
               .catch((err: unknown) => {
@@ -536,7 +538,7 @@ function NewEmployeePage() {
 
               <div className="mt-4 grid grid-cols-2 gap-4">
                 <FieldInput form={form} name="nationalId" label="CCCD *" />
-                <FieldInput form={form} name="taxCode" label="Mã số thuế" />
+                <FieldInput form={form} name="taxCode" label="Mã số thuế *" />
                 <FieldInput form={form} name="socialInsuranceNo" label="Số bảo hiểm xã hội" />
                 <FieldInput form={form} name="healthInsuranceNo" label="Số bảo hiểm y tế" />
               </div>
@@ -754,7 +756,7 @@ function NewEmployeePage() {
                 <FormFieldSelect
                   form={form}
                   name="academicRank"
-                  label="Học hàm/Học vị"
+                  label="Học hàm/Học vị *"
                   items={enumToSortedList(AcademicRank)}
                 />
               </div>
@@ -821,7 +823,11 @@ function NewEmployeePage() {
                     name={`certificates.${index}.certName`}
                     label="Tên chứng chỉ *"
                   />
-                  <FieldInput form={form} name={`certificates.${index}.issuedBy`} label="Nơi cấp" />
+                  <FieldInput
+                    form={form}
+                    name={`certificates.${index}.issuedBy`}
+                    label="Nơi cấp *"
+                  />
                   <div>
                     <input
                       type="file"

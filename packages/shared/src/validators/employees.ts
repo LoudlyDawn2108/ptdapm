@@ -3,9 +3,11 @@ import {
   ACADEMIC_RANK_CODES,
   ACADEMIC_TITLE_CODES,
   ALLOWANCE_ASSIGNMENT_STATUS_CODES,
+  AcademicRank,
   CONTRACT_DOC_STATUS_CODES,
   CONTRACT_STATUS_CODES,
   EDUCATION_LEVEL_CODES,
+  EducationLevel,
   FAMILY_RELATION_CODES,
   GENDER_CODES,
   PARTY_ORG_TYPE_CODES,
@@ -59,6 +61,44 @@ const requiredEnum = <T extends Readonly<Record<string, string>>>(
     z.custom<T[keyof T]>((value) => schema.safeParse(value).success, { message }),
   );
 
+const educationLevelDisplayToCode = new Map<string, (typeof EDUCATION_LEVEL_CODES)[number]>(
+  Object.values(EducationLevel).map((item) => [item.label, item.code]),
+);
+
+const academicRankDisplayToCode = new Map<string, (typeof ACADEMIC_RANK_CODES)[number]>(
+  Object.values(AcademicRank).map((item) => [item.label, item.code]),
+);
+
+const requiredEducationLevel = (message: string) =>
+  z.preprocess(
+    (value) => {
+      if (typeof value !== "string") return value;
+
+      const trimmedValue = value.trim();
+      return educationLevelDisplayToCode.get(trimmedValue) ?? trimmedValue;
+    },
+    z.custom<(typeof EDUCATION_LEVEL_CODES)[number]>(
+      (value) => educationLevelSchema.safeParse(value).success,
+      { message },
+    ),
+  );
+
+const requiredAcademicRank = (message: string) =>
+  z.preprocess(
+    (value) => {
+      if (typeof value !== "string") return value;
+
+      const trimmedValue = value.trim();
+      return academicRankDisplayToCode.get(trimmedValue) ?? trimmedValue;
+    },
+    z.custom<(typeof ACADEMIC_RANK_CODES)[number]>(
+      (value) => academicRankSchema.safeParse(value).success,
+      {
+        message,
+      },
+    ),
+  );
+
 const requiredDate = (message: string) =>
   z.preprocess(
     (value) => (typeof value === "string" ? value.trim() : value),
@@ -101,16 +141,16 @@ export const createEmployeeSchema = z.object({
   nationalId: requiredText("Số CCCD/CMND không được để trống"),
   hometown: requiredText("Quê quán không được để trống"),
   address: requiredText("Địa chỉ không được để trống"),
-  taxCode: optionalText(),
+  taxCode: requiredText("Mã số thuế không được để trống"),
   socialInsuranceNo: optionalText(),
   healthInsuranceNo: optionalText(),
   email: requiredEmail("Email không được để trống", "Email không hợp lệ"),
   phone: requiredText("Số điện thoại không được để trống"),
   isForeigner: z.boolean({ error: "Giá trị quốc tịch không hợp lệ" }).default(false),
-  educationLevel: requiredEnum(educationLevelSchema, "Trình độ văn hóa không được để trống"),
+  educationLevel: requiredEducationLevel("Trình độ văn hóa không được để trống"),
   trainingLevel: optionalField(trainingLevelSchema),
   academicTitle: optionalField(academicTitleSchema),
-  academicRank: optionalField(academicRankSchema),
+  academicRank: requiredAcademicRank("Học hàm/học vị không được để trống"),
   // NOTE: workStatus, contractStatus, and salaryGradeStepId are optional at creation time.
   // The DB schema defines defaults: workStatus='pending', contractStatus='none'.
   // Backend does NOT need explicit values — Postgres defaults apply on INSERT.
@@ -340,7 +380,7 @@ const certificationFieldsSchema = z.object({
   certName: z
     .string({ error: "Tên chứng chỉ không được để trống" })
     .min(1, "Tên chứng chỉ không được để trống"),
-  issuedBy: optionalText(),
+  issuedBy: requiredText("Nơi cấp không được để trống"),
   issuedOn: optionalDate(),
   expiresOn: optionalDate(),
   certFileId: optionalUuid("File chứng chỉ không hợp lệ"),
@@ -362,7 +402,7 @@ export const createEmployeeCertificationSchema = certificationFieldsSchema.super
   },
 );
 export type CreateEmployeeCertificationInput = z.infer<typeof createEmployeeCertificationSchema>;
-export const updateEmployeeCertificationSchema = certificationFieldsSchema.partial();
+export const updateEmployeeCertificationSchema = createEmployeeCertificationSchema;
 export type UpdateEmployeeCertificationInput = z.infer<typeof updateEmployeeCertificationSchema>;
 
 export const createForeignWorkPermitSchema = z.object({

@@ -79,7 +79,7 @@ const editFormSchema = z
     phone: z.string().min(1, "Số điện thoại không được để trống"),
     address: z.string().min(1, "Địa chỉ không được để trống"),
     nationalId: z.string().min(1, "Số CCCD/CMND không được để trống"),
-    taxCode: z.string().optional(),
+    taxCode: z.string().min(1, "Mã số thuế không được để trống"),
     socialInsuranceNo: z.string().optional(),
     healthInsuranceNo: z.string().optional(),
     isForeigner: z.boolean().default(false),
@@ -91,7 +91,7 @@ const editFormSchema = z
     workPermitExpiry: z.string().optional(),
     workPermitFileId: z.string().optional(),
     educationLevel: z.string().min(1, "Trình độ văn hóa không được để trống"),
-    academicRank: z.string().optional(),
+    academicRank: z.string().min(1, "Học hàm/Học vị không được để trống"),
     portraitFileId: z.string().min(1, "Ảnh chân dung không được để trống"),
     // --- Sub-entity arrays ---
     familyMembers: z
@@ -147,7 +147,7 @@ const editFormSchema = z
         z.object({
           id: z.string().optional(),
           certName: z.string().min(1, "Tên chứng chỉ không được để trống"),
-          issuedBy: z.string().optional(),
+          issuedBy: z.string().min(1, "Nơi cấp không được để trống"),
           certFileId: z.string().optional(),
         }),
       )
@@ -187,7 +187,7 @@ type FormValues = Omit<
   | "degrees"
   | "certificates"
 > & {
-  academicRank?: string;
+  academicRank: string;
   isForeigner?: boolean;
   familyMembers?: SubmitValues["familyMembers"];
   bankAccounts?: SubmitValues["bankAccounts"];
@@ -449,13 +449,7 @@ function EditEmployeeFormContent({
         ...employeeData
       } = formData;
 
-      const optionalFields = new Set([
-        "taxCode",
-        "socialInsuranceNo",
-        "healthInsuranceNo",
-        "academicRank",
-        "portraitFileId",
-      ]);
+      const optionalFields = new Set(["socialInsuranceNo", "healthInsuranceNo", "portraitFileId"]);
       const cleanedEmployeeData = Object.fromEntries(
         Object.entries(employeeData).filter(
           ([key, value]) => !(optionalFields.has(key) && value === ""),
@@ -577,7 +571,7 @@ function EditEmployeeFormContent({
             employeeId,
             id,
             certName: body.certName,
-            issuedBy: body.issuedBy || undefined,
+            issuedBy: body.issuedBy,
             certFileId: body.certFileId || undefined,
           }),
         remove: (id) => deleteCertificationMutation.mutateAsync({ employeeId, id }),
@@ -761,7 +755,7 @@ function EditEmployeeFormContent({
 
               <div className="mt-4 grid grid-cols-2 gap-4">
                 <FieldInput form={form} name="nationalId" label="CCCD *" />
-                <FieldInput form={form} name="taxCode" label="Mã số thuế" />
+                <FieldInput form={form} name="taxCode" label="Mã số thuế *" />
                 <FieldInput form={form} name="socialInsuranceNo" label="Số bảo hiểm xã hội" />
                 <FieldInput form={form} name="healthInsuranceNo" label="Số bảo hiểm y tế" />
               </div>
@@ -974,7 +968,7 @@ function EditEmployeeFormContent({
                 <FormFieldSelect
                   form={form}
                   name="academicRank"
-                  label="Học hàm/Học vị"
+                  label="Học hàm/Học vị *"
                   items={enumToSortedList(AcademicRank)}
                 />
               </div>
@@ -1041,7 +1035,11 @@ function EditEmployeeFormContent({
                     name={`certificates.${index}.certName`}
                     label="Tên chứng chỉ *"
                   />
-                  <FieldInput form={form} name={`certificates.${index}.issuedBy`} label="Nơi cấp" />
+                  <FieldInput
+                    form={form}
+                    name={`certificates.${index}.issuedBy`}
+                    label="Nơi cấp *"
+                  />
                   <div>
                     <input
                       type="file"

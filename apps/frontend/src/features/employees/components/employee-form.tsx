@@ -56,6 +56,7 @@ export function EmployeeForm({
       address: "",
       email: "",
       phone: "",
+      taxCode: "",
       isForeigner: false,
       educationLevel: "",
       academicRank: "",
@@ -139,6 +140,7 @@ export function EmployeeForm({
             {renderInput("address", "Địa chỉ")}
             {renderInput("email", "Email", "email")}
             {renderInput("phone", "Số điện thoại", "tel")}
+            {renderInput("taxCode", "Mã số thuế *")}
             <div className="flex items-center gap-2">
               <Checkbox
                 id="isForeigner"
@@ -212,7 +214,7 @@ export function EmployeeForm({
               enumToSortedList(ContractStatus),
             )}
             {renderSelect("educationLevel", "Trình độ văn hóa", enumToSortedList(EducationLevel))}
-            {renderSelect("academicRank", "Học hàm", enumToSortedList(AcademicRank))}
+            {renderSelect("academicRank", "Học hàm/Học vị *", enumToSortedList(AcademicRank))}
           </CardContent>
         </Card>
       </div>

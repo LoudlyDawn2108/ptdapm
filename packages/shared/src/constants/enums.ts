@@ -207,13 +207,11 @@ export const ASSIGNMENT_EVENT_TYPE_CODES = Object.keys(AssignmentEventType) as [
 // 0.12  Trình độ văn hóa (ref_education_levels)
 // ---------------------------------------------------------------------------
 export const EducationLevel = {
-  THCS: { code: "THCS", label: "Trung học cơ sở", sortOrder: 1 },
-  THPT: { code: "THPT", label: "Trung học phổ thông", sortOrder: 2 },
-  TRUNG_CAP: { code: "TRUNG_CAP", label: "Trung cấp", sortOrder: 3 },
-  CAO_DANG: { code: "CAO_DANG", label: "Cao đẳng", sortOrder: 4 },
-  DAI_HOC: { code: "DAI_HOC", label: "Đại học", sortOrder: 5 },
-  THAC_SI: { code: "THAC_SI", label: "Thạc sĩ", sortOrder: 6 },
-  TIEN_SI: { code: "TIEN_SI", label: "Tiến sĩ", sortOrder: 7 },
+  CAP_1: { code: "CAP_1", label: "Tiểu học", sortOrder: 1 },
+  CAP_2: { code: "CAP_2", label: "Trung học cơ sở", sortOrder: 2 },
+  LOP_10_12: { code: "LOP_10_12", label: "10/12", sortOrder: 3 },
+  LOP_11_12: { code: "LOP_11_12", label: "11/12", sortOrder: 4 },
+  LOP_12_12: { code: "LOP_12_12", label: "12/12", sortOrder: 5 },
 } as const;
 export type EducationLevelCode = keyof typeof EducationLevel;
 export const EDUCATION_LEVEL_CODES = Object.keys(EducationLevel) as [
@@ -282,8 +280,11 @@ export const ACADEMIC_TITLE_CODES = Object.keys(AcademicTitle) as [
 // 0.15  Chức danh khoa học / Học hàm (ref_academic_ranks)
 // ---------------------------------------------------------------------------
 export const AcademicRank = {
-  GS: { code: "GS", label: "Giáo sư", sortOrder: 1 },
-  PGS: { code: "PGS", label: "Phó Giáo sư", sortOrder: 2 },
+  DAI_HOC: { code: "DAI_HOC", label: "Đại học", sortOrder: 1 },
+  THAC_SI: { code: "THAC_SI", label: "Thạc sĩ", sortOrder: 2 },
+  TIEN_SI: { code: "TIEN_SI", label: "Tiến sĩ", sortOrder: 3 },
+  PGS: { code: "PGS", label: "Phó Giáo sư", sortOrder: 4 },
+  GS: { code: "GS", label: "Giáo sư", sortOrder: 5 },
 } as const;
 export type AcademicRankCode = keyof typeof AcademicRank;
 export const ACADEMIC_RANK_CODES = Object.keys(AcademicRank) as [

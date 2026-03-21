@@ -42,11 +42,14 @@ import { z } from "zod";
 
 const certFormSchema = z.object({
   certName: z.string().min(1, "Tên chứng chỉ không được để trống"),
-  issuedBy: z.string().optional(),
+  issuedBy: z.string().min(1, "Nơi cấp không được để trống"),
   issuedOn: z.string().optional(),
   expiresOn: z.string().optional(),
   certFileId: z.string().uuid().optional(),
 });
+
+type CertificationFormInput = z.input<typeof certFormSchema>;
+type CertificationFormValues = z.output<typeof certFormSchema>;
 
 export const Route = createFileRoute("/_authenticated/employees_/$employeeId/certifications")({
   component: CertificationsTab,
@@ -227,18 +230,18 @@ function CertificationFormDialog({
   certification?: Certification | null;
   isSubmitting: boolean;
   onSubmit: (
-    input: CreateEmployeeCertificationInput,
-    setError: UseFormSetError<CreateEmployeeCertificationInput>,
+    input: CertificationFormValues,
+    setError: UseFormSetError<CertificationFormInput>,
   ) => Promise<void>;
 }) {
   const isEditing = !!certification;
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const form = useForm<CreateEmployeeCertificationInput>({
+  const form = useForm<CertificationFormInput, unknown, CertificationFormValues>({
     resolver: zodResolver(certFormSchema),
     defaultValues: {
       certName: "",
-      issuedBy: undefined,
+      issuedBy: "",
       issuedOn: undefined,
       expiresOn: undefined,
       certFileId: undefined,
@@ -250,7 +253,7 @@ function CertificationFormDialog({
 
     form.reset({
       certName: certification?.certName ?? "",
-      issuedBy: certification?.issuedBy ?? undefined,
+      issuedBy: certification?.issuedBy ?? "",
       issuedOn: certification?.issuedOn ?? undefined,
       expiresOn: certification?.expiresOn ?? undefined,
       certFileId: certification?.certFileId ?? undefined,
@@ -302,7 +305,9 @@ function CertificationFormDialog({
               name="issuedBy"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nơi cấp</FormLabel>
+                  <FormLabel>
+                    Nơi cấp <span className="text-red-500">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="Nhập nơi cấp" {...field} value={field.value ?? ""} />
                   </FormControl>

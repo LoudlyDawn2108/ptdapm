@@ -14,6 +14,8 @@ import { useEffect, useRef, useState } from "react";
 
 export type DropdownOption = { value: string; label: string };
 
+const EMPTY_VALUE_SENTINEL = "__empty__";
+
 interface ComboboxProps {
   /** TanStack Query cache key base */
   queryKey: string[];
@@ -29,6 +31,7 @@ interface ComboboxProps {
   placeholder?: string;
   /** Message shown when search returns no results */
   emptyMessage?: string;
+  staticOptions?: DropdownOption[];
   disabled?: boolean;
   invalid?: boolean;
   className?: string;
@@ -42,6 +45,7 @@ export function Combobox({
   onBlur,
   placeholder = "Chọn...",
   emptyMessage = "Không tìm thấy.",
+  staticOptions = [],
   disabled = false,
   invalid = false,
   className,
@@ -67,9 +71,28 @@ export function Combobox({
     enabled: !!value && !open,
   });
 
+  const mergedOptions = [
+    ...staticOptions,
+    ...options.filter(
+      (option) => !staticOptions.some((staticOption) => staticOption.value === option.value),
+    ),
+  ];
+
+  const mergedInitialOptions = [
+    ...staticOptions,
+    ...initialOptions.filter(
+      (option) => !staticOptions.some((staticOption) => staticOption.value === option.value),
+    ),
+  ];
+
+  const commandValueForOption = (optionValue: string) =>
+    optionValue.length > 0 ? optionValue : EMPTY_VALUE_SENTINEL;
+
+  const isSelected = (optionValue: string) => optionValue === value;
+
   const selectedLabel =
-    options.find((o) => o.value === value)?.label ??
-    initialOptions.find((o) => o.value === value)?.label;
+    mergedOptions.find((o) => o.value === value)?.label ??
+    mergedInitialOptions.find((o) => o.value === value)?.label;
 
   useEffect(() => {
     if (!open) return;
@@ -122,20 +145,20 @@ export function Combobox({
         {open && (
           <div className="absolute top-full left-0 z-50 mt-1 w-full overflow-hidden rounded-lg bg-popover p-1 shadow-2xl ring-1 ring-foreground/5 animate-in fade-in-0 zoom-in-95">
             <CommandList>
-              {isFetching && options.length === 0 ? (
+              {isFetching && mergedOptions.length === 0 ? (
                 <div className="flex items-center justify-center py-6">
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 </div>
-              ) : options.length === 0 ? (
+              ) : mergedOptions.length === 0 ? (
                 <CommandEmpty>{emptyMessage}</CommandEmpty>
               ) : (
                 <CommandGroup className="p-0">
-                  {options.map((option) => (
+                  {mergedOptions.map((option) => (
                     <CommandItem
                       key={option.value}
-                      value={option.value}
+                      value={commandValueForOption(option.value)}
                       onSelect={() => {
-                        onChange(option.value === value ? "" : option.value);
+                        onChange(option.value);
                         setOpen(false);
                         setSearchText("");
                       }}
@@ -143,7 +166,7 @@ export function Combobox({
                       <Check
                         className={cn(
                           "mr-2 h-4 w-4",
-                          value === option.value ? "opacity-100" : "opacity-0",
+                          isSelected(option.value) ? "opacity-100" : "opacity-0",
                         )}
                       />
                       {option.label}
@@ -151,7 +174,7 @@ export function Combobox({
                   ))}
                 </CommandGroup>
               )}
-              {isFetching && options.length > 0 && (
+              {isFetching && mergedOptions.length > 0 && (
                 <div className="flex items-center justify-center border-t py-2">
                   <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
                 </div>
