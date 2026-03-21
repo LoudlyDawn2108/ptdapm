@@ -6,15 +6,22 @@ import type {
   UpdateSalaryGradeInput,
   UpdateSalaryGradeStepInput,
 } from "@hrms/shared";
-import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 export const salaryGradeKeys = {
   all: ["salary-grades"] as const,
   lists: () => [...salaryGradeKeys.all, "list"] as const,
-  list: (params: Record<string, unknown>) => [...salaryGradeKeys.lists(), params] as const,
+  list: (params: Record<string, unknown>) =>
+    [...salaryGradeKeys.lists(), params] as const,
   detail: (id: string) => [...salaryGradeKeys.all, "detail", id] as const,
-  dropdown: (search?: string) => [...salaryGradeKeys.all, "dropdown", search ?? ""] as const,
-  steps: (gradeId: string) => [...salaryGradeKeys.all, "steps", gradeId] as const,
+  dropdown: (search?: string) =>
+    [...salaryGradeKeys.all, "dropdown", search ?? ""] as const,
+  steps: (gradeId: string) =>
+    [...salaryGradeKeys.all, "steps", gradeId] as const,
 };
 
 export const salaryGradeListOptions = (params: {
@@ -50,7 +57,9 @@ export const salaryGradeDropdownOptions = (search?: string) =>
   queryOptions({
     queryKey: salaryGradeKeys.dropdown(search),
     queryFn: async () => {
-      const { data, error } = await api.api.config["salary-grades"].dropdown.get({
+      const { data, error } = await api.api.config[
+        "salary-grades"
+      ].dropdown.get({
         query: { search, limit: 50 },
       });
       if (error) throw handleApiError(error);
@@ -80,7 +89,8 @@ export function useCreateSalaryGrade() {
       if (error) throw handleApiError(error);
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: salaryGradeKeys.lists() }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: salaryGradeKeys.lists() }),
   });
 }
 
@@ -109,7 +119,8 @@ export function useDeleteSalaryGrade() {
       if (error) throw handleApiError(error);
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: salaryGradeKeys.lists() }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: salaryGradeKeys.lists() }),
   });
 }
 

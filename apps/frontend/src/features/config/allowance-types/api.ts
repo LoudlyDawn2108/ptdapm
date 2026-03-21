@@ -1,12 +1,20 @@
 import { api } from "@/api/client";
 import { handleApiError } from "@/lib/error-handler";
-import type { CreateAllowanceTypeInput, UpdateAllowanceTypeInput } from "@hrms/shared";
-import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
+import type {
+  CreateAllowanceTypeInput,
+  UpdateAllowanceTypeInput,
+} from "@hrms/shared";
+import {
+  queryOptions,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 export const allowanceTypeKeys = {
   all: ["allowance-types"] as const,
   lists: () => [...allowanceTypeKeys.all, "list"] as const,
-  list: (params: Record<string, unknown>) => [...allowanceTypeKeys.lists(), params] as const,
+  list: (params: Record<string, unknown>) =>
+    [...allowanceTypeKeys.lists(), params] as const,
 };
 
 export const allowanceTypeListOptions = (params: {
@@ -33,7 +41,8 @@ export function useCreateAllowanceType() {
       if (error) throw handleApiError(error);
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: allowanceTypeKeys.lists() }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: allowanceTypeKeys.lists() }),
   });
 }
 
@@ -47,7 +56,8 @@ export function useUpdateAllowanceType() {
       if (error) throw handleApiError(error);
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: allowanceTypeKeys.lists() }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: allowanceTypeKeys.lists() }),
   });
 }
 
@@ -65,6 +75,7 @@ export function useDeleteAllowanceType() {
       if (error) throw handleApiError(error);
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: allowanceTypeKeys.lists() }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: allowanceTypeKeys.lists() }),
   });
 }

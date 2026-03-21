@@ -15,7 +15,8 @@ import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query
 export const accountKeys = {
   all: ["accounts"] as const,
   lists: () => [...accountKeys.all, "list"] as const,
-  list: (params: Record<string, unknown>) => [...accountKeys.lists(), params] as const,
+  list: (params: Record<string, unknown>) =>
+    [...accountKeys.lists(), params] as const,
   detail: (id: string) => [...accountKeys.all, "detail", id] as const,
 };
 
@@ -73,7 +74,10 @@ export function useCreateAccount() {
 export function useUpdateAccount() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: UpdateAccountInput & { id: string }) => {
+    mutationFn: async ({
+      id,
+      ...input
+    }: UpdateAccountInput & { id: string }) => {
       const { data, error } = await api.api.accounts({ id }).put(input);
       if (error) throw handleApiError(error);
       return data;

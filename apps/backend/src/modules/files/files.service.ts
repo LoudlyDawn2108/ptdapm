@@ -25,7 +25,14 @@ const ALLOWED_MIME_TYPES = [
   "image/png",
 ] as const;
 
-const ALLOWED_EXTENSIONS = [".pdf", ".xlsx", ".xls", ".jpg", ".jpeg", ".png"] as const;
+const ALLOWED_EXTENSIONS = [
+  ".pdf",
+  ".xlsx",
+  ".xls",
+  ".jpg",
+  ".jpeg",
+  ".png",
+] as const;
 
 function getExtension(filename: string): string {
   const lastDot = filename.lastIndexOf(".");
@@ -43,11 +50,19 @@ export async function uploadFile(file: File, userId: string) {
   }
 
   const ext = getExtension(file.name);
-  if (!ALLOWED_EXTENSIONS.includes(ext as (typeof ALLOWED_EXTENSIONS)[number])) {
-    throw new BadRequestError("Loại file không được hỗ trợ. Chỉ chấp nhận PDF, Excel, JPEG, PNG");
+  if (
+    !ALLOWED_EXTENSIONS.includes(ext as (typeof ALLOWED_EXTENSIONS)[number])
+  ) {
+    throw new BadRequestError(
+      "Loại file không được hỗ trợ. Chỉ chấp nhận PDF, Excel, JPEG, PNG",
+    );
   }
 
-  if (!ALLOWED_MIME_TYPES.includes(file.type as (typeof ALLOWED_MIME_TYPES)[number])) {
+  if (
+    !ALLOWED_MIME_TYPES.includes(
+      file.type as (typeof ALLOWED_MIME_TYPES)[number],
+    )
+  ) {
     throw new BadRequestError("Loại file không hợp lệ");
   }
 
@@ -87,7 +102,11 @@ export async function uploadFile(file: File, userId: string) {
 }
 
 export async function getFileById(id: string) {
-  const [fileRecord] = await db.select().from(files).where(eq(files.id, id)).limit(1);
+  const [fileRecord] = await db
+    .select()
+    .from(files)
+    .where(eq(files.id, id))
+    .limit(1);
 
   if (!fileRecord) {
     throw new NotFoundError("Không tìm thấy file");

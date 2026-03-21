@@ -534,9 +534,16 @@ function CourseDetailDialog({
   } | null;
   onClose: () => void;
 }) {
-  const { data: course, isLoading } = useQuery({
-    ...myTrainingCourseDetailOptions(courseId ?? ""),
-    enabled: !!courseId,
+  const normalizedCourseId = courseId ?? "";
+
+  const {
+    data: course,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    ...myTrainingCourseDetailOptions(normalizedCourseId),
+    enabled: !!normalizedCourseId,
   });
 
   const registerMutation = useRegisterForCourse();
@@ -547,7 +554,8 @@ function CourseDetailDialog({
   // Determine if user is already registered for this course
   const effectiveRegistration =
     registration ??
-    (course?.myRegistration
+    (course?.myRegistration?.registrationId &&
+    course?.myRegistration?.participationStatus
       ? {
           registrationId: course.myRegistration.registrationId,
           participationStatus: course.myRegistration.participationStatus,
@@ -573,7 +581,7 @@ function CourseDetailDialog({
   }, [course]);
 
   const handleRegister = async () => {
-    if (!courseId) return;
+    if (!courseId || isError) return;
     try {
       await registerMutation.mutateAsync({ courseId });
       toast.success("Đăng ký khóa đào tạo thành công");
@@ -584,7 +592,8 @@ function CourseDetailDialog({
   };
 
   const handleCancel = async () => {
-    if (!courseId || !effectiveRegistration || cancelMutation.isPending) return;
+    if (!courseId || !effectiveRegistration || cancelMutation.isPending || isError)
+      return;
     try {
       await cancelMutation.mutateAsync({
         courseId,
@@ -619,6 +628,20 @@ function CourseDetailDialog({
         {isLoading ? (
           <div className="px-6 py-8">
             <TableSkeleton rows={4} />
+          </div>
+        ) : isError ? (
+          <div className="px-6 py-8">
+            <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 flex items-start gap-2">
+              <Info className="h-4 w-4 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium">Không thể tải chi tiết khóa đào tạo.</p>
+                <p className="mt-1 text-amber-700">
+                  {error instanceof Error
+                    ? error.message
+                    : "Vui lòng thử lại sau."}
+                </p>
+              </div>
+            </div>
           </div>
         ) : course ? (
           <div className="px-6 py-5 space-y-5">
@@ -718,7 +741,7 @@ function CourseDetailDialog({
         )}
 
         {/* Footer actions */}
-        {course && (
+        {course && !isError && (
           <DialogFooter className="px-6 py-4 border-t border-border">
             <Button variant="outline" onClick={onClose}>
               Đóng

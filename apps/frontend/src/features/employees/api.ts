@@ -44,14 +44,19 @@ export function getFileUrl(fileId: string): string {
   return `${apiBaseUrl}/api/files/${encodeURIComponent(fileId)}`;
 }
 
-function isUploadedFileResponse(value: unknown): value is { data: UploadedFile } {
+function isUploadedFileResponse(
+  value: unknown,
+): value is { data: UploadedFile } {
   if (!value || typeof value !== "object" || !("data" in value)) {
     return false;
   }
 
   const payload = value.data;
   return (
-    !!payload && typeof payload === "object" && "id" in payload && typeof payload.id === "string"
+    !!payload &&
+    typeof payload === "object" &&
+    "id" in payload &&
+    typeof payload.id === "string"
   );
 }
 
@@ -96,7 +101,8 @@ export async function uploadFile(file: File): Promise<UploadedFile> {
 export const employeeKeys = {
   all: ["employees"] as const,
   lists: () => [...employeeKeys.all, "list"] as const,
-  list: (params: Record<string, unknown>) => [...employeeKeys.lists(), params] as const,
+  list: (params: Record<string, unknown>) =>
+    [...employeeKeys.lists(), params] as const,
   detail: (id: string) => [...employeeKeys.all, "detail", id] as const,
   me: () => [...employeeKeys.all, "me"] as const,
 };
@@ -199,7 +205,9 @@ export function useDeleteEmployee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await api.api.employees({ employeeId: id }).delete();
+      const { data, error } = await api.api
+        .employees({ employeeId: id })
+        .delete();
       if (error) throw handleApiError(error);
       return data;
     },
