@@ -82,7 +82,7 @@ function SalaryTab() {
                 <th className="rounded-l-lg px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
                   Tên loại phụ cấp
                 </th>
-                <th className="rounded-r-lg px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
                   Mức phụ cấp
                 </th>
                 <th className="rounded-r-lg px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
