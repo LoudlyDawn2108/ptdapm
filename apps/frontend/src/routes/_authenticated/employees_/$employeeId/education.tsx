@@ -181,8 +181,8 @@ function EducationTab() {
               <ReadOnlyField label="Nơi cấp" value={d.school} />
               <div className="flex items-center gap-2 pb-0.5">
                 <Button
-                  size="sm"
-                  variant="outline"
+                  size="default"
+                  variant="default"
                   disabled={!d.degreeFileId}
                   onClick={() =>
                     d.degreeFileId &&
@@ -213,8 +213,8 @@ function EducationTab() {
               <ReadOnlyField label="Nơi cấp" value={c.issuedBy} />
               <div className="flex items-center gap-2 pb-0.5">
                 <Button
-                  size="sm"
-                  variant="outline"
+                  size="default"
+                  variant="default"
                   disabled={!c.certFileId}
                   onClick={() =>
                     c.certFileId &&
