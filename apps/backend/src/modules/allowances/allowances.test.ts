@@ -84,6 +84,7 @@ beforeAll(async () => {
     .insert(allowanceTypes)
     .values({
       allowanceName: `Test Allowance Type ${Date.now()}`,
+      defaultAmount: "500000",
       description: "For testing",
       calcMethod: "fixed",
     })
@@ -131,7 +132,7 @@ describe("RBAC — Allowances role guards", () => {
   test("EMPLOYEE cannot create allowance (403)", async () => {
     const res = await requestAs("employee_user", "employee1234", "POST", BASE(), {
       allowanceTypeId: testAllowanceTypeId,
-      amount: 500000,
+      status: "active",
     });
     expect(res.status).toBe(403);
   });
@@ -139,7 +140,7 @@ describe("RBAC — Allowances role guards", () => {
   test("TCKT cannot create allowance (403)", async () => {
     const res = await requestAs("tckt_user", "tckt1234", "POST", BASE(), {
       allowanceTypeId: testAllowanceTypeId,
-      amount: 500000,
+      status: "active",
     });
     expect(res.status).toBe(403);
   });
@@ -151,12 +152,14 @@ describe("CRUD — Allowances", () => {
   test("TCCB can create allowance (200)", async () => {
     const res = await tccbRequest("POST", BASE(), {
       allowanceTypeId: testAllowanceTypeId,
-      amount: 1500000,
+      status: "active",
       note: "Phu cap an trua",
     });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.allowanceTypeId).toBe(testAllowanceTypeId);
+    expect(body.data.amount).toBe("500000.00");
+    expect(body.data.status).toBe("active");
     expect(body.data.note).toBe("Phu cap an trua");
     allowanceId = body.data.id;
     createdAllowanceIds.push(allowanceId);
@@ -165,7 +168,7 @@ describe("CRUD — Allowances", () => {
   test("ADMIN cannot create allowance (403)", async () => {
     const res = await requestAs("admin", "admin123", "POST", BASE(), {
       allowanceTypeId: testAllowanceTypeId,
-      amount: 700000,
+      status: "active",
       note: "Blocked admin allowance",
     });
     expect(res.status).toBe(403);
@@ -174,7 +177,7 @@ describe("CRUD — Allowances", () => {
   test("TCCB can create additional allowance (200)", async () => {
     const res = await requestAs("tccb_user", "tccb1234", "POST", BASE(), {
       allowanceTypeId: testAllowanceTypeId,
-      amount: 800000,
+      status: "inactive",
       note: "Phu cap di lai",
     });
     expect(res.status).toBe(200);
@@ -192,11 +195,13 @@ describe("CRUD — Allowances", () => {
 
   test("TCCB can update allowance (200)", async () => {
     const res = await tccbRequest("PUT", `${BASE()}/${allowanceId}`, {
-      amount: 2000000,
+      status: "inactive",
       note: "Cap nhat phu cap",
     });
     expect(res.status).toBe(200);
     const body = await res.json();
+    expect(body.data.amount).toBe("500000.00");
+    expect(body.data.status).toBe("inactive");
     expect(body.data.note).toBe("Cap nhat phu cap");
   });
 
@@ -235,18 +240,20 @@ describe("Validation — Allowances", () => {
   test("invalid allowanceTypeId returns error", async () => {
     const res = await tccbRequest("POST", BASE(), {
       allowanceTypeId: "00000000-0000-0000-0000-000000000000",
-      amount: 100000,
+      status: "active",
     });
     expect(res.status).toBeGreaterThanOrEqual(400);
   });
 
-  test("allowance with null amount is valid (200)", async () => {
+  test("allowance without manual amount is valid (200)", async () => {
     const res = await tccbRequest("POST", BASE(), {
       allowanceTypeId: testAllowanceTypeId,
+      status: "active",
       note: "No amount specified",
     });
     expect(res.status).toBe(200);
     const body = await res.json();
+    expect(body.data.amount).toBe("500000.00");
     createdAllowanceIds.push(body.data.id);
   });
 });

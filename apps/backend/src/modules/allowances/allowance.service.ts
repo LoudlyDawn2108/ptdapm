@@ -9,19 +9,19 @@ import { buildPaginatedResponse, countRows } from "../../common/utils/pagination
 import { db } from "../../db";
 import { type EmployeeAllowance, allowanceTypes, employeeAllowances } from "../../db/schema";
 
-function normalizeAmount(amount?: number): string | undefined {
-  if (typeof amount === "number") return amount.toString();
-  return undefined;
-}
-
-async function ensureAllowanceTypeExists(allowanceTypeId: string): Promise<void> {
+async function getAllowanceType(allowanceTypeId: string) {
   const [item] = await db
-    .select({ id: allowanceTypes.id })
+    .select({
+      id: allowanceTypes.id,
+      status: allowanceTypes.status,
+      defaultAmount: allowanceTypes.defaultAmount,
+    })
     .from(allowanceTypes)
     .where(eq(allowanceTypes.id, allowanceTypeId))
     .limit(1);
 
   if (!item) throw new NotFoundError("Không tìm thấy loại phụ cấp");
+  return item;
 }
 
 export async function listByEmployee(
@@ -58,13 +58,19 @@ export async function create(
   employeeId: string,
   data: CreateEmployeeAllowanceInput,
 ): Promise<EmployeeAllowance> {
-  await ensureAllowanceTypeExists(data.allowanceTypeId);
-  const { amount, ...rest } = data;
-  const normalizedAmount = normalizeAmount(amount ?? undefined);
-  const payload =
-    normalizedAmount === undefined
-      ? { ...rest, employeeId }
-      : { ...rest, amount: normalizedAmount, employeeId };
+  const allowanceType = await getAllowanceType(data.allowanceTypeId);
+
+  if (allowanceType.status !== "active") {
+    throw new BadRequestError("Loại phụ cấp đã ngừng sử dụng");
+  }
+
+  const payload = {
+    employeeId,
+    allowanceTypeId: data.allowanceTypeId,
+    amount: allowanceType.defaultAmount,
+    status: data.status,
+    note: data.note ?? null,
+  };
 
   const [created] = await db.insert(employeeAllowances).values(payload).returning();
 
@@ -77,17 +83,20 @@ export async function update(
   id: string,
   data: UpdateEmployeeAllowanceInput,
 ): Promise<EmployeeAllowance> {
-  await getByIdForEmployee(employeeId, id);
+  const existing = await getByIdForEmployee(employeeId, id);
 
-  if (data.allowanceTypeId) {
-    await ensureAllowanceTypeExists(data.allowanceTypeId);
+  const nextAllowanceTypeId = data.allowanceTypeId ?? existing.allowanceTypeId;
+  const allowanceType = await getAllowanceType(nextAllowanceTypeId);
+
+  if (allowanceType.status !== "active") {
+    throw new BadRequestError("Loại phụ cấp đã ngừng sử dụng");
   }
 
-  const { amount, ...rest } = data;
-  const normalizedAmount = normalizeAmount(amount ?? undefined);
   const payload = {
-    ...rest,
-    ...(normalizedAmount !== undefined ? { amount: normalizedAmount } : {}),
+    allowanceTypeId: nextAllowanceTypeId,
+    amount: allowanceType.defaultAmount,
+    status: data.status ?? existing.status,
+    note: data.note ?? existing.note,
     updatedAt: new Date(),
   };
   const [updated] = await db

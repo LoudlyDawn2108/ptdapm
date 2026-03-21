@@ -33,10 +33,7 @@ import { Pencil, Plus, Save } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import {
-  useCreateAllowanceType,
-  useUpdateAllowanceType,
-} from "./api";
+import { useCreateAllowanceType, useUpdateAllowanceType } from "./api";
 import type { AllowanceTypeRow } from "./columns";
 
 interface AllowanceTypeFormDialogProps {
@@ -58,6 +55,7 @@ export function AllowanceTypeFormDialog({
     resolver: zodResolver(createAllowanceTypeSchema),
     defaultValues: {
       allowanceName: "",
+      defaultAmount: 0,
       description: "",
       calcMethod: "",
     },
@@ -68,12 +66,14 @@ export function AllowanceTypeFormDialog({
     if (editingItem) {
       form.reset({
         allowanceName: editingItem.allowanceName,
+        defaultAmount: Number(editingItem.defaultAmount ?? 0),
         description: editingItem.description ?? "",
         calcMethod: editingItem.calcMethod ?? "",
       });
     } else {
       form.reset({
         allowanceName: "",
+        defaultAmount: 0,
         description: "",
         calcMethod: "",
       });
@@ -84,6 +84,7 @@ export function AllowanceTypeFormDialog({
     // Sanitize: strip empty optional fields (Zod .optional() rejects null)
     const sanitized: Record<string, any> = {
       allowanceName: values.allowanceName,
+      defaultAmount: values.defaultAmount,
     };
     if (values.description) sanitized.description = values.description;
     if (values.calcMethod) sanitized.calcMethod = values.calcMethod;
@@ -159,6 +160,28 @@ export function AllowanceTypeFormDialog({
 
             <FormField
               control={form.control}
+              name="defaultAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Mức phụ cấp <span className="text-destructive">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      value={field.value == null ? "" : String(field.value)}
+                      onChange={(event) => field.onChange(event.target.value)}
+                      placeholder="1000000"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="calcMethod"
               render={({ field }) => (
                 <FormItem>
@@ -182,11 +205,7 @@ export function AllowanceTypeFormDialog({
                 <FormItem>
                   <FormLabel>Mô tả</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      value={field.value ?? ""}
-                      placeholder="Phụ cấp chức vụ"
-                    />
+                    <Input {...field} value={field.value ?? ""} placeholder="Phụ cấp chức vụ" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -226,11 +245,7 @@ export function AllowanceTypeFormDialog({
             )}
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Hủy
               </Button>
               <Button type="submit" disabled={isPending}>

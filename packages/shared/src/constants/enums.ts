@@ -380,9 +380,16 @@ export const CATALOG_STATUS_CODES = Object.keys(CatalogStatus) as [
   ...CatalogStatusCode[],
 ];
 
-// ---------------------------------------------------------------------------
-// 0.22  Vai trò người dùng (ref_roles)
-// ---------------------------------------------------------------------------
+export const AllowanceAssignmentStatus = {
+  active: { code: "active", label: "Đang áp dụng", sortOrder: 1 },
+  inactive: { code: "inactive", label: "Ngừng áp dụng", sortOrder: 2 },
+} as const;
+export type AllowanceAssignmentStatusCode = keyof typeof AllowanceAssignmentStatus;
+export const ALLOWANCE_ASSIGNMENT_STATUS_CODES = Object.keys(AllowanceAssignmentStatus) as [
+  AllowanceAssignmentStatusCode,
+  ...AllowanceAssignmentStatusCode[],
+];
+
 export const Role = {
   ADMIN: { code: "ADMIN", label: "Quản trị viên", sortOrder: 1 },
   TCCB: { code: "TCCB", label: "Phòng Tổ chức Cán bộ", sortOrder: 2 },

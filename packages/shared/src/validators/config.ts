@@ -43,6 +43,9 @@ export const createAllowanceTypeSchema = z.object({
   allowanceName: z
     .string({ error: "Tên loại phụ cấp không được để trống" })
     .min(1, "Tên loại phụ cấp không được để trống"),
+  defaultAmount: z.coerce
+    .number({ error: "Mức phụ cấp phải là một số" })
+    .min(0, "Mức phụ cấp phải lớn hơn hoặc bằng 0"),
   description: z.string().optional(),
   calcMethod: z.string().optional(),
 });

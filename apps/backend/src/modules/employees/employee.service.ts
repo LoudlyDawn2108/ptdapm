@@ -7,15 +7,8 @@ import {
 } from "@hrms/shared";
 import { type SQL, and, eq, ilike, inArray, ne, or } from "drizzle-orm";
 import ExcelJS from "exceljs";
-import {
-  BadRequestError,
-  FieldValidationError,
-  NotFoundError,
-} from "../../common/utils/errors";
-import {
-  buildPaginatedResponse,
-  countRows,
-} from "../../common/utils/pagination";
+import { BadRequestError, FieldValidationError, NotFoundError } from "../../common/utils/errors";
+import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
 import { db } from "../../db";
 import type { NewEmployee } from "../../db/schema";
 import {
@@ -32,8 +25,9 @@ import {
   employeePreviousJobs,
   employees,
   employmentContracts,
+  salaryGradeSteps,
+  salaryGrades,
 } from "../../db/schema";
-import { phoneNumber } from "better-auth/plugins";
 
 function normalizeOptional(value?: string | null): string | undefined {
   const trimmed = value?.trim();
@@ -44,18 +38,12 @@ function undefinedToNull<T extends Record<string, unknown>>(data: T) {
   return Object.fromEntries(
     Object.entries(data).map(([k, v]) => [k, v === undefined ? null : v]),
   ) as {
-    [K in keyof T]: undefined extends T[K]
-      ? Exclude<T[K], undefined> | null
-      : T[K];
+    [K in keyof T]: undefined extends T[K] ? Exclude<T[K], undefined> | null : T[K];
   };
 }
 
 async function hasConflict(condition: SQL): Promise<boolean> {
-  const existing = await db
-    .select({ id: employees.id })
-    .from(employees)
-    .where(condition)
-    .limit(1);
+  const existing = await db.select({ id: employees.id }).from(employees).where(condition).limit(1);
   return existing.length > 0;
 }
 
@@ -95,15 +83,11 @@ export async function list(
 ) {
   const normalizedSearch = normalizeOptional(search);
   const normalizedOrgUnitId = normalizeOptional(orgUnitId);
-  const normalizedWorkStatus = normalizeOptional(workStatus) as
-    | Employee["workStatus"]
-    | undefined;
+  const normalizedWorkStatus = normalizeOptional(workStatus) as Employee["workStatus"] | undefined;
   const normalizedContractStatus = normalizeOptional(contractStatus) as
     | Employee["contractStatus"]
     | undefined;
-  const normalizedGender = normalizeOptional(gender) as
-    | Employee["gender"]
-    | undefined;
+  const normalizedGender = normalizeOptional(gender) as Employee["gender"] | undefined;
   const normalizedAcademicRank = normalizeOptional(academicRank) as
     | Employee["academicRank"]
     | undefined;
@@ -146,15 +130,11 @@ export async function list(
   }
 
   if (normalizedPositionTitle) {
-    conditions.push(
-      ilike(employees.currentPositionTitle, `%${normalizedPositionTitle}%`),
-    );
+    conditions.push(ilike(employees.currentPositionTitle, `%${normalizedPositionTitle}%`));
   }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
-  const itemsQuery = where
-    ? db.select().from(employees).where(where)
-    : db.select().from(employees);
+  const itemsQuery = where ? db.select().from(employees).where(where) : db.select().from(employees);
 
   const [items, total]: [Employee[], number] = await Promise.all([
     itemsQuery
@@ -169,10 +149,7 @@ export async function list(
 
 // ── Dropdown ────────────────────────────────────────────────────────────────
 
-export async function dropdown(
-  search?: string,
-  limit = 20,
-): Promise<DropdownOption[]> {
+export async function dropdown(search?: string, limit = 20): Promise<DropdownOption[]> {
   const workStatusFilter = or(
     eq(employees.workStatus, "working"),
     eq(employees.workStatus, "pending"),
@@ -207,17 +184,15 @@ export async function dropdown(
 }
 
 async function getById(id: string): Promise<Employee> {
-  const [employee] = await db
-    .select()
-    .from(employees)
-    .where(eq(employees.id, id));
+  const [employee] = await db.select().from(employees).where(eq(employees.id, id));
   if (!employee) throw new NotFoundError("Không tìm thấy nhân viên");
   return employee;
 }
 
-function filterEvaluationsByRole<
-  T extends { visibleToEmployee: boolean; visibleToTckt: boolean },
->(evaluations: T[], userRole?: string) {
+function filterEvaluationsByRole<T extends { visibleToEmployee: boolean; visibleToTckt: boolean }>(
+  evaluations: T[],
+  userRole?: string,
+) {
   if (userRole === "EMPLOYEE") {
     return evaluations.filter((evaluation) => evaluation.visibleToEmployee);
   }
@@ -264,9 +239,7 @@ function normalizeCellText(value: unknown): string | undefined {
     if ("richText" in value && Array.isArray(value.richText)) {
       const text = value.richText
         .map((item) =>
-          typeof item === "object" && item !== null && "text" in item
-            ? item.text
-            : "",
+          typeof item === "object" && item !== null && "text" in item ? item.text : "",
         )
         .join("");
       return normalizeCellText(text);
@@ -297,11 +270,7 @@ function collectRowErrors(rowErrors: Map<number, string[]>) {
     .map(([row, errors]) => ({ row, errors }));
 }
 
-function addRowError(
-  rowErrors: Map<number, string[]>,
-  row: number,
-  message: string,
-) {
+function addRowError(rowErrors: Map<number, string[]>, row: number, message: string) {
   const errors = rowErrors.get(row) ?? [];
 
   if (!errors.includes(message)) {
@@ -322,17 +291,12 @@ type ImportRowCandidate = {
   address?: string;
 };
 
-function mapImportRow(
-  row: ExcelJS.Row,
-  headers: Map<number, string>,
-): ImportRowCandidate | null {
+function mapImportRow(row: ExcelJS.Row, headers: Map<number, string>): ImportRowCandidate | null {
   const values = Object.fromEntries(
     Array.from(headers.entries()).map(([columnIndex, header]) => {
       const cellValue = row.getCell(columnIndex).value;
       const normalizedValue =
-        header === "dob"
-          ? normalizeImportedDate(cellValue)
-          : normalizeCellText(cellValue);
+        header === "dob" ? normalizeImportedDate(cellValue) : normalizeCellText(cellValue);
       return [header, normalizedValue];
     }),
   );
@@ -348,9 +312,7 @@ function mapImportRow(
     address: values.address,
   };
 
-  const hasAnyValue = Object.values(candidate).some(
-    (value) => value != null && value !== "",
-  );
+  const hasAnyValue = Object.values(candidate).some((value) => value != null && value !== "");
   if (!hasAnyValue) {
     return null;
   }
@@ -360,6 +322,36 @@ function mapImportRow(
 
 export async function getAggregateById(id: string, userRole?: string) {
   const employee = await getById(id);
+
+  const salaryGradeStep = employee.salaryGradeStepId
+    ? await db
+        .select({
+          id: salaryGradeSteps.id,
+          salaryGradeId: salaryGradeSteps.salaryGradeId,
+          gradeId: salaryGrades.id,
+          gradeName: salaryGrades.gradeName,
+          stepNo: salaryGradeSteps.stepNo,
+          coefficient: salaryGradeSteps.coefficient,
+        })
+        .from(salaryGradeSteps)
+        .innerJoin(salaryGrades, eq(salaryGradeSteps.salaryGradeId, salaryGrades.id))
+        .where(eq(salaryGradeSteps.id, employee.salaryGradeStepId))
+        .then((rows) => {
+          const row = rows[0];
+          if (!row) {
+            return null;
+          }
+
+          return {
+            id: row.id,
+            salaryGradeId: row.salaryGradeId,
+            gradeId: row.gradeId,
+            gradeName: row.gradeName,
+            stepName: `Bậc ${row.stepNo}`,
+            coefficient: row.coefficient,
+          };
+        })
+    : null;
 
   const [
     familyMembers,
@@ -373,56 +365,34 @@ export async function getAggregateById(id: string, userRole?: string) {
     contracts,
     evaluationsRaw,
   ] = await Promise.all([
-    db
-      .select()
-      .from(employeeFamilyMembers)
-      .where(eq(employeeFamilyMembers.employeeId, id)),
-    db
-      .select()
-      .from(employeeBankAccounts)
-      .where(eq(employeeBankAccounts.employeeId, id)),
-    db
-      .select()
-      .from(employeePreviousJobs)
-      .where(eq(employeePreviousJobs.employeeId, id)),
-    db
-      .select()
-      .from(employeePartyMemberships)
-      .where(eq(employeePartyMemberships.employeeId, id)),
+    db.select().from(employeeFamilyMembers).where(eq(employeeFamilyMembers.employeeId, id)),
+    db.select().from(employeeBankAccounts).where(eq(employeeBankAccounts.employeeId, id)),
+    db.select().from(employeePreviousJobs).where(eq(employeePreviousJobs.employeeId, id)),
+    db.select().from(employeePartyMemberships).where(eq(employeePartyMemberships.employeeId, id)),
     db
       .select({
         id: employeeAllowances.id,
         employeeId: employeeAllowances.employeeId,
         allowanceTypeId: employeeAllowances.allowanceTypeId,
         amount: employeeAllowances.amount,
+        status: employeeAllowances.status,
         note: employeeAllowances.note,
         createdAt: employeeAllowances.createdAt,
         updatedAt: employeeAllowances.updatedAt,
         allowanceName: allowanceTypes.allowanceName,
+        allowanceTypeStatus: allowanceTypes.status,
       })
       .from(employeeAllowances)
-      .innerJoin(
-        allowanceTypes,
-        eq(employeeAllowances.allowanceTypeId, allowanceTypes.id),
-      )
+      .innerJoin(allowanceTypes, eq(employeeAllowances.allowanceTypeId, allowanceTypes.id))
       .where(eq(employeeAllowances.employeeId, id)),
     db.select().from(employeeDegrees).where(eq(employeeDegrees.employeeId, id)),
-    db
-      .select()
-      .from(employeeCertifications)
-      .where(eq(employeeCertifications.employeeId, id)),
+    db.select().from(employeeCertifications).where(eq(employeeCertifications.employeeId, id)),
     db
       .select()
       .from(employeeForeignWorkPermits)
       .where(eq(employeeForeignWorkPermits.employeeId, id)),
-    db
-      .select()
-      .from(employmentContracts)
-      .where(eq(employmentContracts.employeeId, id)),
-    db
-      .select()
-      .from(employeeEvaluations)
-      .where(eq(employeeEvaluations.employeeId, id)),
+    db.select().from(employmentContracts).where(eq(employmentContracts.employeeId, id)),
+    db.select().from(employeeEvaluations).where(eq(employeeEvaluations.employeeId, id)),
   ]);
 
   const allowances = allowancesRaw;
@@ -430,6 +400,7 @@ export async function getAggregateById(id: string, userRole?: string) {
 
   return {
     employee,
+    salaryGradeStep,
     familyMembers,
     bankAccounts,
     previousJobs,
@@ -470,8 +441,7 @@ export async function importFromExcel(buffer: ArrayBuffer) {
     throw new BadRequestError("File Excel không có tiêu đề cột");
   }
 
-  const parsedRows: Array<{ rowNumber: number; data: ImportEmployeeRowInput }> =
-    [];
+  const parsedRows: Array<{ rowNumber: number; data: ImportEmployeeRowInput }> = [];
   const rowErrors = new Map<number, string[]>();
 
   worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
@@ -510,11 +480,7 @@ export async function importFromExcel(buffer: ArrayBuffer) {
   for (const rows of rowsByNationalId.values()) {
     if (rows.length > 1) {
       for (const rowNumber of rows) {
-        addRowError(
-          rowErrors,
-          rowNumber,
-          "Số CCCD/CMND bị trùng trong file import",
-        );
+        addRowError(rowErrors, rowNumber, "Số CCCD/CMND bị trùng trong file import");
       }
     }
   }
@@ -529,17 +495,11 @@ export async function importFromExcel(buffer: ArrayBuffer) {
       .select({ nationalId: employees.nationalId })
       .from(employees)
       .where(inArray(employees.nationalId, nationalIds));
-    const existingNationalIds = new Set(
-      existingEmployees.map((employee) => employee.nationalId),
-    );
+    const existingNationalIds = new Set(existingEmployees.map((employee) => employee.nationalId));
 
     for (const { rowNumber, data } of parsedRows) {
       if (existingNationalIds.has(data.nationalId)) {
-        addRowError(
-          rowErrors,
-          rowNumber,
-          "Số CCCD/CMND đã tồn tại trong hệ thống",
-        );
+        addRowError(rowErrors, rowNumber, "Số CCCD/CMND đã tồn tại trong hệ thống");
       }
     }
   }
@@ -561,10 +521,7 @@ export async function importFromExcel(buffer: ArrayBuffer) {
     contractStatus: "none",
   }));
 
-  const inserted = await db
-    .insert(employees)
-    .values(insertValues)
-    .returning({ id: employees.id });
+  const inserted = await db.insert(employees).values(insertValues).returning({ id: employees.id });
 
   return { imported: inserted.length, errors: [] };
 }
@@ -591,16 +548,10 @@ export async function generateImportTemplate() {
 export async function getByEmail(email: string): Promise<Employee | null> {
   const normalizedEmail = normalizeOptional(email);
   if (!normalizedEmail) {
-    throw new FieldValidationError(
-      { email: "Email không hợp lệ" },
-      "Email không hợp lệ",
-    );
+    throw new FieldValidationError({ email: "Email không hợp lệ" }, "Email không hợp lệ");
   }
 
-  const [employee] = await db
-    .select()
-    .from(employees)
-    .where(eq(employees.email, normalizedEmail));
+  const [employee] = await db.select().from(employees).where(eq(employees.email, normalizedEmail));
 
   return employee ?? null;
 }
@@ -674,16 +625,11 @@ export async function create(data: CreateEmployeeInput): Promise<Employee> {
   }
 }
 
-export async function update(
-  id: string,
-  data: UpdateEmployeeInput,
-): Promise<Employee> {
+export async function update(id: string, data: UpdateEmployeeInput): Promise<Employee> {
   const existing = await getById(id);
 
   if (!["pending", "working"].includes(existing.workStatus)) {
-    throw new BadRequestError(
-      "Không thể chỉnh sửa hồ sơ ở trạng thái hiện tại",
-    );
+    throw new BadRequestError("Không thể chỉnh sửa hồ sơ ở trạng thái hiện tại");
   }
 
   if (Object.keys(data).length === 0) {
@@ -710,10 +656,7 @@ export async function update(
       };
 
       if (nationalId) {
-        const condition = and(
-          eq(employees.nationalId, nationalId),
-          ne(employees.id, id),
-        );
+        const condition = and(eq(employees.nationalId, nationalId), ne(employees.id, id));
         if (condition && (await txHasConflict(condition))) {
           throw new FieldValidationError({
             nationalId: "Số CCCD/CMND đã tồn tại",

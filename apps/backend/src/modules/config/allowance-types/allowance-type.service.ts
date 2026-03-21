@@ -65,24 +65,31 @@ export async function create(data: CreateAllowanceTypeInput): Promise<AllowanceT
     throw new ConflictError("Loại phụ cấp đã tồn tại");
   }
 
-  const [created] = await db.insert(allowanceTypes).values(data).returning();
+  const [created] = await db
+    .insert(allowanceTypes)
+    .values({
+      ...data,
+      defaultAmount: data.defaultAmount.toString(),
+    })
+    .returning();
   if (!created) throw new BadRequestError("Không thể tạo loại phụ cấp");
   return created;
 }
 
 export async function update(id: string, data: UpdateAllowanceTypeInput): Promise<AllowanceType> {
   const item = await getById(id);
+  const { defaultAmount, ...rest } = data;
 
   // Cannot edit if inactive (except status toggle)
-  if (item.status === "inactive" && !data.status) {
+  if (item.status === "inactive" && !rest.status) {
     throw new BadRequestError("Không thể chỉnh sửa danh mục đã ngừng sử dụng");
   }
 
-  if (data.allowanceName && data.allowanceName !== item.allowanceName) {
+  if (rest.allowanceName && rest.allowanceName !== item.allowanceName) {
     const existing = await db
       .select({ id: allowanceTypes.id })
       .from(allowanceTypes)
-      .where(and(eq(allowanceTypes.allowanceName, data.allowanceName), ne(allowanceTypes.id, id)))
+      .where(and(eq(allowanceTypes.allowanceName, rest.allowanceName), ne(allowanceTypes.id, id)))
       .limit(1);
 
     if (existing.length > 0) {
@@ -92,7 +99,11 @@ export async function update(id: string, data: UpdateAllowanceTypeInput): Promis
 
   const [updated] = await db
     .update(allowanceTypes)
-    .set({ ...data, updatedAt: new Date() })
+    .set({
+      ...rest,
+      ...(defaultAmount !== undefined ? { defaultAmount: defaultAmount.toString() } : {}),
+      updatedAt: new Date(),
+    })
     .where(eq(allowanceTypes.id, id))
     .returning();
 

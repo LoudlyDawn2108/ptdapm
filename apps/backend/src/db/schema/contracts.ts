@@ -1,5 +1,14 @@
 import type { CatalogStatusCode, ContractDocStatusCode } from "@hrms/shared";
-import { date, integer, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  date,
+  integer,
+  numeric,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 // Circular import with employees.ts is safe — Drizzle's .references() callback is lazy-evaluated
 import { employees } from "./employees";
 import { files } from "./files";
@@ -8,6 +17,7 @@ import { orgUnits } from "./organization";
 export const allowanceTypes = pgTable("allowance_types", {
   id: uuid("id").primaryKey().defaultRandom(),
   allowanceName: varchar("allowance_name", { length: 200 }).notNull().unique(),
+  defaultAmount: numeric("default_amount", { precision: 14, scale: 2 }).notNull().default("0"),
   description: text("description"),
   calcMethod: text("calc_method"),
   status: varchar("status", { length: 20 }).$type<CatalogStatusCode>().notNull().default("active"),

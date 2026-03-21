@@ -8,7 +8,8 @@
     "build": "turbo build",
     "type-check": "turbo type-check",
     "lint": "turbo lint",
-    "format": "turbo format"
+    "format": "turbo format",
+    "seed": "bun run --filter @hrms/backend seed"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",

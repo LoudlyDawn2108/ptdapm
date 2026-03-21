@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   ACADEMIC_RANK_CODES,
   ACADEMIC_TITLE_CODES,
+  ALLOWANCE_ASSIGNMENT_STATUS_CODES,
   CONTRACT_DOC_STATUS_CODES,
   CONTRACT_STATUS_CODES,
   EDUCATION_LEVEL_CODES,
@@ -79,6 +80,7 @@ const requiredEmail = (requiredMessage: string, invalidMessage: string) =>
 const genderSchema = z.enum(GENDER_CODES);
 const workStatusSchema = z.enum(WORK_STATUS_CODES);
 const contractStatusSchema = z.enum(CONTRACT_STATUS_CODES);
+const allowanceAssignmentStatusSchema = z.enum(ALLOWANCE_ASSIGNMENT_STATUS_CODES);
 const educationLevelSchema = z.enum(EDUCATION_LEVEL_CODES);
 const trainingLevelSchema = z.enum(TRAINING_LEVEL_CODES);
 const academicTitleSchema = z.enum(ACADEMIC_TITLE_CODES);
@@ -224,14 +226,20 @@ export type UpdateEmployeePartyMembershipInput = z.infer<
 
 export const createEmployeeAllowanceSchema = z.object({
   allowanceTypeId: z.uuid({ error: "Loại phụ cấp không được để trống" }),
-  amount: z.coerce.number({ error: "Số tiền phải là một số" }).nullish(),
+  status: z.enum(ALLOWANCE_ASSIGNMENT_STATUS_CODES, {
+    error: "Trạng thái phụ cấp không được để trống",
+  }),
   note: z.string().nullish(),
 });
 
 export type CreateEmployeeAllowanceInput = z.infer<typeof createEmployeeAllowanceSchema>;
 export type CreateEmployeeAllowanceFormInput = z.input<typeof createEmployeeAllowanceSchema>;
 
-export const updateEmployeeAllowanceSchema = createEmployeeAllowanceSchema.partial();
+export const updateEmployeeAllowanceSchema = z.object({
+  allowanceTypeId: z.uuid({ error: "Loại phụ cấp không hợp lệ" }).optional(),
+  status: allowanceAssignmentStatusSchema.optional(),
+  note: z.string().nullish(),
+});
 
 export type UpdateEmployeeAllowanceInput = z.infer<typeof updateEmployeeAllowanceSchema>;
 

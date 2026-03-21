@@ -3,6 +3,7 @@ import { toApi } from "@/api/helpers";
 import { handleApiError } from "@/lib/error-handler";
 import type {
   AcademicRankCode,
+  AllowanceAssignmentStatusCode,
   ContractStatusCode,
   CreateEmployeeBankAccountInput,
   CreateEmployeeDegreeInput,
@@ -715,7 +716,7 @@ export function useCreateAllowance() {
     }: {
       employeeId: string;
       allowanceTypeId: string;
-      amount?: number | null;
+      status: AllowanceAssignmentStatusCode;
       note?: string | null;
     }) => {
       const { data, error } = await api.api.employees({ employeeId }).allowances.post(input);
@@ -738,7 +739,7 @@ export function useUpdateAllowance() {
       employeeId: string;
       id: string;
       allowanceTypeId?: string;
-      amount?: number | null;
+      status?: AllowanceAssignmentStatusCode;
       note?: string | null;
     }) => {
       const { data, error } = await api.api.employees({ employeeId }).allowances({ id }).put(input);
