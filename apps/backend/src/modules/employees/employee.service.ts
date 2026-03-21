@@ -25,9 +25,14 @@ import {
   employeePreviousJobs,
   employees,
   employmentContracts,
+  orgUnits,
   salaryGradeSteps,
   salaryGrades,
 } from "../../db/schema";
+
+type EmployeeListItem = Employee & {
+  currentOrgUnitName: string | null;
+};
 
 function normalizeOptional(value?: string | null): string | undefined {
   const trimmed = value?.trim();
@@ -134,9 +139,43 @@ export async function list(
   }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
-  const itemsQuery = where ? db.select().from(employees).where(where) : db.select().from(employees);
+  const itemsQuery = db
+    .select({
+      id: employees.id,
+      staffCode: employees.staffCode,
+      fullName: employees.fullName,
+      dob: employees.dob,
+      gender: employees.gender,
+      nationalId: employees.nationalId,
+      hometown: employees.hometown,
+      address: employees.address,
+      taxCode: employees.taxCode,
+      socialInsuranceNo: employees.socialInsuranceNo,
+      healthInsuranceNo: employees.healthInsuranceNo,
+      email: employees.email,
+      phone: employees.phone,
+      isForeigner: employees.isForeigner,
+      educationLevel: employees.educationLevel,
+      trainingLevel: employees.trainingLevel,
+      academicRank: employees.academicRank,
+      academicTitle: employees.academicTitle,
+      workStatus: employees.workStatus,
+      contractStatus: employees.contractStatus,
+      currentOrgUnitId: employees.currentOrgUnitId,
+      currentOrgUnitName: orgUnits.unitName,
+      currentPositionTitle: employees.currentPositionTitle,
+      salaryGradeStepId: employees.salaryGradeStepId,
+      portraitFileId: employees.portraitFileId,
+      terminatedOn: employees.terminatedOn,
+      terminationReason: employees.terminationReason,
+      createdAt: employees.createdAt,
+      updatedAt: employees.updatedAt,
+    })
+    .from(employees)
+    .leftJoin(orgUnits, eq(employees.currentOrgUnitId, orgUnits.id))
+    .where(where);
 
-  const [items, total]: [Employee[], number] = await Promise.all([
+  const [items, total]: [EmployeeListItem[], number] = await Promise.all([
     itemsQuery
       .limit(pageSize)
       .offset((page - 1) * pageSize)
