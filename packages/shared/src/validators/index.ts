@@ -1,4 +1,9 @@
-export { loginSchema, type LoginInput } from "./auth";
+export {
+  loginSchema,
+  type LoginInput,
+  changePasswordSchema,
+  type ChangePasswordInput,
+} from "./auth";
 export {
   paginationSchema,
   type PaginationQuery,

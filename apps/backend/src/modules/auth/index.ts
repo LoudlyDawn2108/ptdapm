@@ -1,6 +1,7 @@
-import { loginSchema } from "@hrms/shared";
+import { changePasswordSchema, loginSchema } from "@hrms/shared";
 import type { SessionInfo } from "@hrms/shared";
 import Elysia from "elysia";
+import { auth } from "../../common/auth";
 import { authPlugin } from "../../common/plugins/auth";
 import { requireRole } from "../../common/utils/role-guard";
 import {
@@ -96,4 +97,33 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
       return { message: "Admin access granted" };
     },
     { auth: true },
+  )
+  .post(
+    "/change-password",
+    async ({ body, request }) => {
+      try {
+        await auth.api.changePassword({
+          body: {
+            currentPassword: body.currentPassword,
+            newPassword: body.newPassword,
+            revokeOtherSessions: false,
+          },
+          headers: request.headers,
+        });
+        return { message: "Đổi mật khẩu thành công" };
+      } catch (error) {
+        const message =
+          error instanceof Error && error.message === "Invalid password"
+            ? "Mật khẩu hiện tại không đúng"
+            : "Không thể đổi mật khẩu";
+        return new Response(JSON.stringify({ error: message }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    },
+    {
+      auth: true,
+      body: changePasswordSchema,
+    },
   );

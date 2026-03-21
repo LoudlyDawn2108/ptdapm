@@ -70,3 +70,20 @@ export function useLogout() {
     },
   });
 }
+
+// ──────────────────────────────────────────
+// Change Password Mutation
+// ──────────────────────────────────────────
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: async (body: {
+      currentPassword: string;
+      newPassword: string;
+      confirmPassword: string;
+    }) => {
+      const { data, error } = await api.auth["change-password"].post(body);
+      if (error) throw handleApiError(error);
+      return data;
+    },
+  });
+}

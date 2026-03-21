@@ -20,7 +20,7 @@ import { useAuth } from "@/features/auth/hooks";
 import { useBreadcrumbOverrides } from "@/lib/breadcrumb-context";
 import { Role } from "@hrms/shared";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronsUpDown, Loader2, LogOut } from "lucide-react";
+import { ChevronsUpDown, KeyRound, Loader2, LogOut } from "lucide-react";
 
 const BREADCRUMB_LABELS: Record<string, string> = {
   "": "Trang chủ",
@@ -139,6 +139,12 @@ export function AppHeader() {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" sideOffset={4}>
+            <DropdownMenuItem asChild>
+              <Link to="/my/change-password">
+                <KeyRound />
+                Đổi mật khẩu
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => logoutMutation.mutate()}
               disabled={logoutMutation.isPending}
