@@ -1,5 +1,4 @@
 import { PageHeader } from "@/components/layout/page-header";
-import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { QueryError } from "@/components/shared/query-error";
 import { StatusBadgeFromCode } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
@@ -12,8 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AccountEditDialog } from "@/features/accounts/AccountEditDialog";
 import { AccountFormDialog } from "@/features/accounts/AccountFormDialog";
-import { accountListOptions, useSetAccountStatus } from "@/features/accounts/api";
+import { accountListOptions } from "@/features/accounts/api";
 import { useListPage } from "@/hooks/use-list-page";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { authorizeRoute } from "@/lib/permissions";
@@ -22,9 +22,8 @@ import type { AuthUserStatusCode, RoleCode } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Lock, Plus, Unlock } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 import { z } from "zod";
 
 const searchSchema = z.object({
@@ -44,6 +43,14 @@ export const Route = createFileRoute("/_authenticated/accounts/")({
 function AccountsPage() {
   const navigate = useNavigate({ from: "/accounts/" });
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<{
+    id: string;
+    username: string;
+    email: string | null;
+    roleCode: string;
+    status: string;
+  } | null>(null);
   const search = Route.useSearch();
   const { searchText, setSearchText, debouncedSearch, pagination, onPaginationChange } =
     useListPage({
@@ -60,7 +67,6 @@ function AccountsPage() {
   };
 
   const { data, isLoading, isError, error, refetch } = useQuery(accountListOptions(params));
-  const setStatusMutation = useSetAccountStatus();
   const result = data?.data;
 
   const columns: ColumnDef<any>[] = [
@@ -103,35 +109,23 @@ function AccountsPage() {
       id: "actions",
       header: "Thao tác",
       cell: ({ row }) => {
-        const isLocked = row.original.status === "locked";
         return (
-          <ConfirmDialog
-            trigger={
-              <Button variant="ghost" size="sm">
-                {isLocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-              </Button>
-            }
-            title={isLocked ? "Mở khóa tài khoản" : "Khóa tài khoản"}
-            description={
-              isLocked
-                ? `Bạn có chắc muốn mở khóa tài khoản "${row.original.username}"?`
-                : `Bạn có chắc muốn khóa tài khoản "${row.original.username}"?`
-            }
-            confirmLabel={isLocked ? "Mở khóa" : "Khóa"}
-            variant={isLocked ? "default" : "destructive"}
-            onConfirm={() =>
-              setStatusMutation.mutate(
-                {
-                  id: row.original.id,
-                  status: isLocked ? "active" : "locked",
-                },
-                {
-                  onSuccess: () =>
-                    toast.success(isLocked ? "Đã mở khóa tài khoản" : "Đã khóa tài khoản"),
-                },
-              )
-            }
-          />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setEditingAccount({
+                id: row.original.id,
+                username: row.original.username,
+                email: row.original.email,
+                roleCode: row.original.roleCode,
+                status: row.original.status,
+              });
+              setEditDialogOpen(true);
+            }}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
         );
       },
     },
@@ -155,10 +149,11 @@ function AccountsPage() {
         <div className="mb-4 flex gap-3">
           <Input
             placeholder="Tìm kiếm theo tên, email..."
-            className="max-w-sm"
+            className="w-96"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
           />
+
           <Select
             value={search.role ?? "all"}
             onValueChange={(v) =>
@@ -171,10 +166,10 @@ function AccountsPage() {
               })
             }
           >
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-60 shrink-0">
               <SelectValue placeholder="Vai trò" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="popper">
               <SelectItem value="all">Tất cả vai trò</SelectItem>
               {enumToSortedList(Role).map((r) => (
                 <SelectItem key={r.code} value={r.code}>
@@ -195,10 +190,10 @@ function AccountsPage() {
               })
             }
           >
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-60">
               <SelectValue placeholder="Trạng thái" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="popper">
               <SelectItem value="all">Tất cả trạng thái</SelectItem>
               {enumToSortedList(AuthUserStatus).map((s) => (
                 <SelectItem key={s.code} value={s.code}>
@@ -210,7 +205,7 @@ function AccountsPage() {
         </div>
         <Button onClick={() => setDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Tạo tài khoản
+          Thêm tài khoản
         </Button>
       </div>
 
@@ -225,6 +220,11 @@ function AccountsPage() {
       />
 
       <AccountFormDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <AccountEditDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        account={editingAccount}
+      />
     </div>
   );
 }

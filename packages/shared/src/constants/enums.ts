@@ -357,7 +357,7 @@ export const RESULT_STATUS_CODES = Object.keys(ResultStatus) as [
 // ---------------------------------------------------------------------------
 export const AuthUserStatus = {
   active: { code: "active", label: "Đang hoạt động", sortOrder: 1 },
-  locked: { code: "locked", label: "Đã khóa", sortOrder: 2 },
+  locked: { code: "locked", label: "Bị khóa", sortOrder: 2 },
 } as const;
 export type AuthUserStatusCode = keyof typeof AuthUserStatus;
 export const AUTH_USER_STATUS_CODES = Object.keys(AuthUserStatus) as [

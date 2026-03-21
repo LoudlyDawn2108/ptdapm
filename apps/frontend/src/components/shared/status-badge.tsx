@@ -50,15 +50,25 @@ const VARIANT_CLASSES: Record<StatusVariant, string> = {
   outline: "",
 };
 
+const DOT_CLASSES: Record<StatusVariant, string> = {
+  default: "bg-muted-foreground",
+  success: "bg-emerald-500 dark:bg-emerald-400",
+  warning: "bg-amber-500 dark:bg-amber-400",
+  destructive: "bg-red-500 dark:bg-red-400",
+  outline: "bg-muted-foreground",
+};
+
 export function StatusBadge({ label, variant, className }: StatusBadgeProps) {
   const resolvedVariant = variant ?? "default";
   const variantClass = VARIANT_CLASSES[resolvedVariant] ?? "";
+  const dotClass = DOT_CLASSES[resolvedVariant] ?? "";
 
   return (
     <Badge
       variant={resolvedVariant === "outline" ? "outline" : "secondary"}
       className={cn(variantClass, className)}
     >
+      <span className={cn("inline-block h-[6px] w-[6px] shrink-0 rounded-full", dotClass)} />
       {label}
     </Badge>
   );

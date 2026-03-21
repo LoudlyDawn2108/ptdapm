@@ -1,5 +1,5 @@
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Combobox } from "@/components/ui/combobox";
 import {
   Dialog,
   DialogContent,
@@ -23,53 +23,68 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { fetchEmployeeDropdown } from "@/lib/api/config-dropdowns";
 import { applyFieldErrors } from "@/lib/error-handler";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { type CreateAccountInput, Role, createAccountSchema, enumToSortedList } from "@hrms/shared";
-import { Plus, Save } from "lucide-react";
+import {
+  AuthUserStatus,
+  Role,
+  type UpdateAccountInput,
+  enumToSortedList,
+  updateAccountSchema,
+} from "@hrms/shared";
+import { Pencil, Save } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { useCreateAccount } from "./api";
+import { useUpdateAccount } from "./api";
 
-interface AccountFormDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface AccountData {
+  id: string;
+  username: string;
+  email: string | null;
+  roleCode: string;
+  status: string;
 }
 
-export function AccountFormDialog({ open, onOpenChange }: AccountFormDialogProps) {
-  const createMutation = useCreateAccount();
+interface AccountEditDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  account: AccountData | null;
+}
 
-  const form = useForm<CreateAccountInput>({
-    resolver: zodResolver(createAccountSchema),
+export function AccountEditDialog({ open, onOpenChange, account }: AccountEditDialogProps) {
+  const updateMutation = useUpdateAccount();
+
+  const form = useForm<UpdateAccountInput>({
+    resolver: zodResolver(updateAccountSchema),
     defaultValues: {
       email: "",
-      employeeId: "",
-      roleCode: undefined as any,
+      roleCode: undefined,
+      status: undefined,
     },
   });
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !account) return;
     form.reset({
-      email: "",
-      employeeId: "",
-      roleCode: undefined as any,
+      email: account.email ?? "",
+      roleCode: account.roleCode as UpdateAccountInput["roleCode"],
+      status: account.status as UpdateAccountInput["status"],
     });
-  }, [open, form]);
+  }, [open, account, form]);
 
-  const onSubmit = async (values: CreateAccountInput) => {
+  const onSubmit = async (values: UpdateAccountInput) => {
+    if (!account) return;
     try {
-      await createMutation.mutateAsync(values);
-      toast.success("Tạo tài khoản thành công");
+      await updateMutation.mutateAsync({ id: account.id, ...values });
+      toast.success("Cập nhật tài khoản thành công");
       onOpenChange(false);
     } catch (error) {
       applyFieldErrors(form.setError, error);
     }
   };
 
-  const isPending = createMutation.isPending;
+  const isPending = updateMutation.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -77,9 +92,14 @@ export function AccountFormDialog({ open, onOpenChange }: AccountFormDialogProps
         <DialogHeader className="border-b pb-4">
           <DialogTitle className="flex items-center gap-2">
             <div className="p-2 rounded-md bg-[#CAD6ED]">
-              <Plus className="h-5 w-5 bg-[#CAD6ED] text-primary" />
+              <Pencil className="h-5 w-5 bg-[#CAD6ED] text-primary" />
             </div>
-            Tạo tài khoản
+            Cập nhật tài khoản
+            {account && (
+              <div className="ms-auto p-3 rounded-lg bg-[#CAD6ED] text-primary text-[12px] font-medium font-mono">
+                Mã nhân sự: {account.username}
+              </div>
+            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -95,31 +115,6 @@ export function AccountFormDialog({ open, onOpenChange }: AccountFormDialogProps
                   </FormLabel>
                   <FormControl>
                     <Input {...field} type="email" placeholder="example@email.com" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="employeeId"
-              render={({ field, fieldState }) => (
-                <FormItem>
-                  <FormLabel>
-                    Hồ sơ nhân sự <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Combobox
-                      queryKey={["employees", "combobox"]}
-                      fetchOptions={fetchEmployeeDropdown}
-                      value={field.value}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      placeholder="Chọn hồ sơ nhân sự"
-                      emptyMessage="Không tìm thấy nhân sự."
-                      invalid={!!fieldState.error}
-                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -153,13 +148,40 @@ export function AccountFormDialog({ open, onOpenChange }: AccountFormDialogProps
               )}
             />
 
-            <DialogFooter className="pt-4 border-t" showCloseButton={false}>
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Trạng thái <span className="text-destructive">*</span>
+                  </FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Chọn trạng thái" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent position="popper">
+                      {enumToSortedList(AuthUserStatus).map((s) => (
+                        <SelectItem key={s.code} value={s.code}>
+                          {s.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter className="pt-6 border-t" showCloseButton={false}>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Hủy
               </Button>
               <Button type="submit" disabled={isPending}>
                 <Save className="mr-2 h-4 w-4" />
-                {isPending ? "Đang tạo..." : "Tạo tài khoản"}
+                {isPending ? "Đang lưu..." : "Lưu tài khoản"}
               </Button>
             </DialogFooter>
           </form>

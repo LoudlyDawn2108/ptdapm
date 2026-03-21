@@ -25,6 +25,11 @@ export const updateAccountSchema = z.object({
       error: "Vai trò không hợp lệ",
     })
     .optional(),
+  status: z
+    .enum(AUTH_USER_STATUS_CODES, {
+      error: "Trạng thái không hợp lệ",
+    })
+    .optional(),
 });
 
 export type UpdateAccountInput = z.infer<typeof updateAccountSchema>;
