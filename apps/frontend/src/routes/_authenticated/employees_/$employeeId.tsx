@@ -31,7 +31,7 @@ const TAB_ITEMS = [
   // { value: "party", label: "Đảng/Đoàn", path: "/party" },
   { value: "salary", label: "Lương và phụ cấp", path: "/salary" },
   { value: "contracts", label: "Hợp đồng", path: "/contracts" },
-  { value: "assignments", label: "Bổ nhiệm", path: "/assignments" },
+  // { value: "assignments", label: "Bổ nhiệm", path: "/assignments" },
   { value: "rewards", label: "Khen thưởng/Kỷ luật", path: "/rewards" },
 ] as const;
 
@@ -104,8 +104,8 @@ function EmployeeDetailLayout() {
         return navigate({ to: "/employees/$employeeId/salary", params: { employeeId } });
       case "/contracts":
         return navigate({ to: "/employees/$employeeId/contracts", params: { employeeId } });
-      case "/assignments":
-        return navigate({ to: "/employees/$employeeId/assignments", params: { employeeId } });
+      // case "/assignments":
+      //   return navigate({ to: "/employees/$employeeId/assignments", params: { employeeId } });
       case "/rewards":
         return navigate({ to: "/employees/$employeeId/rewards", params: { employeeId } });
       default:

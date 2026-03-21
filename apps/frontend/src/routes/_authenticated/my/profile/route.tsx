@@ -14,7 +14,7 @@ const TAB_ITEMS = [
   // { value: "party", label: "Đảng/Đoàn", path: "/party" },
   { value: "salary", label: "Lương và phụ cấp", path: "/salary" },
   { value: "contracts", label: "Hợp đồng", path: "/contracts" },
-  { value: "assignments", label: "Bổ nhiệm", path: "/assignments" },
+  // { value: "assignments", label: "Bổ nhiệm", path: "/assignments" },
   { value: "rewards", label: "Khen thưởng/Kỷ luật", path: "/rewards" },
 ] as const;
 
@@ -71,8 +71,8 @@ function MyProfileLayout() {
         return navigate({ to: "/my/profile/salary" });
       case "/contracts":
         return navigate({ to: "/my/profile/contracts" });
-      case "/assignments":
-        return navigate({ to: "/my/profile/assignments" });
+      // case "/assignments":
+      //   return navigate({ to: "/my/profile/assignments" });
       case "/rewards":
         return navigate({ to: "/my/profile/rewards" });
       default:
