@@ -28,6 +28,7 @@ import {
 import { useAuth } from "@/features/auth/hooks";
 import { contractTypeListOptions } from "@/features/config/contract-types/api";
 import {
+  getFileUrl,
   uploadFile,
   useCreateContract,
   useEmployeeDetail,
@@ -47,7 +48,6 @@ import { formatDate, formatForInput } from "@/lib/date-utils";
 import { applyFieldErrors } from "@/lib/error-handler";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  ContractDocStatus,
   type CreateEmploymentContractInput,
   EMPLOYEE_PROFILE_MANAGE_ROLES,
   createEmploymentContractSchema,
@@ -95,7 +95,6 @@ function ContractsTab() {
   const updateContract = useUpdateContract();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingContract, setEditingContract] = useState<ContractRow | null>(null);
-  const [viewingContract, setViewingContract] = useState<ContractRow | null>(null);
   const contracts = aggregate?.contracts as ContractRow[] | undefined;
   const staffCode = aggregate?.employee?.staffCode ?? "";
   const contractTypes = (contractTypesData?.data?.items ?? []) as Array<{
@@ -213,7 +212,17 @@ function ContractsTab() {
                       <button
                         type="button"
                         className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-                        onClick={() => setViewingContract(c)}
+                        onClick={() => {
+                          if (c.contractFileId) {
+                            window.open(
+                              getFileUrl(c.contractFileId),
+                              "_blank",
+                              "noopener,noreferrer",
+                            );
+                          } else {
+                            toast.warning("Hợp đồng này chưa có file PDF đính kèm");
+                          }
+                        }}
                       >
                         <Eye className="h-4 w-4" />
                       </button>
@@ -253,24 +262,6 @@ function ContractsTab() {
         orgUnits={orgUnitOptions}
         isSubmitting={updateContract.isPending}
         onSubmit={(input, setError) => handleUpdate(editingContract!.id, input, setError)}
-      />
-
-      <ContractDetailDialog
-        contract={viewingContract}
-        onOpenChange={(open) => {
-          if (!open) setViewingContract(null);
-        }}
-        contractTypeName={
-          viewingContract
-            ? (viewingContract.contractTypeName ??
-              contractTypeMap.get(viewingContract.contractTypeId))
-            : undefined
-        }
-        orgUnitName={
-          viewingContract
-            ? (viewingContract.orgUnitName ?? orgUnitMap.get(viewingContract.orgUnitId))
-            : undefined
-        }
       />
     </div>
   );
@@ -538,75 +529,5 @@ function ContractFormDialog({
         </Form>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function ContractDetailDialog({
-  contract,
-  onOpenChange,
-  contractTypeName,
-  orgUnitName,
-}: {
-  contract: ContractRow | null;
-  onOpenChange: (open: boolean) => void;
-  contractTypeName?: string;
-  orgUnitName?: string;
-}) {
-  const statusLabel = contract
-    ? (ContractDocStatus[contract.status as keyof typeof ContractDocStatus]?.label ??
-      contract.status)
-    : "";
-
-  return (
-    <Dialog open={!!contract} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Chi tiết hợp đồng</DialogTitle>
-          <DialogDescription>Xem thông tin chi tiết của hợp đồng lao động.</DialogDescription>
-        </DialogHeader>
-
-        {contract ? (
-          <div className="grid gap-3 text-sm">
-            <DetailRow label="Loại hợp đồng" value={contractTypeName ?? "—"} />
-            <DetailRow label="Số hợp đồng" value={contract.contractNo ?? "—"} />
-            <DetailRow label="Ngày ký" value={formatDate(contract.signedOn) || "—"} />
-            <DetailRow label="Ngày hiệu lực" value={formatDate(contract.effectiveFrom) || "—"} />
-            <DetailRow label="Ngày hết hạn" value={formatDate(contract.effectiveTo) || "—"} />
-            <DetailRow label="Đơn vị công tác" value={orgUnitName ?? "—"} />
-            <DetailRow label="Trạng thái" value={statusLabel || "—"} />
-            <DetailRow label="Nội dung" value={contract.contentHtml ?? "—"} multiline />
-          </div>
-        ) : null}
-
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Đóng
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function DetailRow({
-  label,
-  value,
-  multiline = false,
-}: {
-  label: string;
-  value: string;
-  multiline?: boolean;
-}) {
-  return (
-    <div className={multiline ? "space-y-1" : "flex items-start justify-between gap-4"}>
-      <p className="font-medium text-muted-foreground">{label}</p>
-      <p
-        className={
-          multiline ? "rounded-md border bg-muted/30 p-3 whitespace-pre-wrap" : "text-right"
-        }
-      >
-        {value}
-      </p>
-    </div>
   );
 }
