@@ -105,6 +105,88 @@ export async function getDetail(id: string) {
   return { ...unit, children, assignments, statusEvents };
 }
 
+// ── Assignment management ────────────────────────────────────────────────
+
+export async function addAssignment(
+  orgUnitId: string,
+  data: { employeeId: string; positionTitle?: string; startedOn: string },
+  createdByUserId?: string,
+) {
+  // Validate org unit exists and is active
+  const unit = await getById(orgUnitId);
+  if (unit.status !== "active") {
+    throw new BadRequestError("Không thể bổ nhiệm vào đơn vị đã giải thể/sáp nhập");
+  }
+
+  // Validate employee exists
+  const [emp] = await db
+    .select({ id: employees.id })
+    .from(employees)
+    .where(eq(employees.id, data.employeeId))
+    .limit(1);
+  if (!emp) throw new NotFoundError("Không tìm thấy nhân sự");
+
+  // Check for duplicate active assignment
+  const [existing] = await db
+    .select({ id: employeeAssignments.id })
+    .from(employeeAssignments)
+    .where(
+      and(
+        eq(employeeAssignments.orgUnitId, orgUnitId),
+        eq(employeeAssignments.employeeId, data.employeeId),
+        isNull(employeeAssignments.endedOn),
+      ),
+    )
+    .limit(1);
+
+  if (existing) {
+    throw new ConflictError("Nhân sự đã được bổ nhiệm tại đơn vị này");
+  }
+
+  const [assignment] = await db
+    .insert(employeeAssignments)
+    .values({
+      orgUnitId,
+      employeeId: data.employeeId,
+      positionTitle: data.positionTitle ?? null,
+      eventType: "APPOINT",
+      startedOn: data.startedOn,
+      createdByUserId,
+    })
+    .returning();
+
+  // Update employee's currentOrgUnitId
+  await db
+    .update(employees)
+    .set({ currentOrgUnitId: orgUnitId, updatedAt: new Date() })
+    .where(eq(employees.id, data.employeeId));
+
+  return assignment;
+}
+
+export async function endAssignment(orgUnitId: string, assignmentId: string) {
+  const [assignment] = await db
+    .select()
+    .from(employeeAssignments)
+    .where(
+      and(eq(employeeAssignments.id, assignmentId), eq(employeeAssignments.orgUnitId, orgUnitId)),
+    )
+    .limit(1);
+
+  if (!assignment) throw new NotFoundError("Không tìm thấy bổ nhiệm");
+  if (assignment.endedOn) throw new BadRequestError("Bổ nhiệm đã kết thúc");
+
+  const today = new Date().toISOString().split("T")[0]!;
+
+  const [updated] = await db
+    .update(employeeAssignments)
+    .set({ endedOn: today })
+    .where(eq(employeeAssignments.id, assignmentId))
+    .returning();
+
+  return updated;
+}
+
 export async function create(data: CreateOrgUnitInput, createdByUserId?: string) {
   // Check parent validity
   if (data.parentId) {

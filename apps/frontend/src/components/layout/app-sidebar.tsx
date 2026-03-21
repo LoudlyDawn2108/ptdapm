@@ -123,6 +123,11 @@ const navGroups: NavGroupConfig[] = [
         icon: CircleUserRound,
       },
       {
+        title: "Đơn vị công tác",
+        to: "/my/org",
+        icon: Building2,
+      },
+      {
         title: "Đào tạo của tôi",
         to: "/my/training",
         icon: BookOpen,
