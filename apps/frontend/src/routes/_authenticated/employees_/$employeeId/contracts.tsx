@@ -48,6 +48,8 @@ import { formatDate, formatForInput } from "@/lib/date-utils";
 import { applyFieldErrors } from "@/lib/error-handler";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  CONTRACT_DOC_STATUS_CODES,
+  ContractDocStatus,
   type CreateEmploymentContractInput,
   EMPLOYEE_PROFILE_MANAGE_ROLES,
   createEmploymentContractSchema,
@@ -58,6 +60,12 @@ import { Eye, Pencil, Plus, Save, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type UseFormSetError, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
+
+const contractFormSchema = createEmploymentContractSchema.extend({
+  status: z.enum(CONTRACT_DOC_STATUS_CODES).optional(),
+});
+type ContractFormInput = z.infer<typeof contractFormSchema>;
 
 export const Route = createFileRoute("/_authenticated/employees_/$employeeId/contracts")({
   component: ContractsTab,
@@ -130,8 +138,8 @@ function ContractsTab() {
   if (isLoading) return <FormSkeleton fields={3} />;
 
   const handleCreate = async (
-    input: CreateEmploymentContractInput,
-    setError: UseFormSetError<CreateEmploymentContractInput>,
+    input: ContractFormInput,
+    setError: UseFormSetError<ContractFormInput>,
   ) => {
     try {
       await createContract.mutateAsync({ employeeId, ...input });
@@ -144,8 +152,8 @@ function ContractsTab() {
 
   const handleUpdate = async (
     id: string,
-    input: CreateEmploymentContractInput,
-    setError: UseFormSetError<CreateEmploymentContractInput>,
+    input: ContractFormInput,
+    setError: UseFormSetError<ContractFormInput>,
   ) => {
     try {
       await updateContract.mutateAsync({ employeeId, id, ...input });
@@ -289,15 +297,15 @@ function ContractFormDialog({
   orgUnits: Array<{ id: string; unitName: string }>;
   isSubmitting: boolean;
   onSubmit: (
-    input: CreateEmploymentContractInput,
-    setError: UseFormSetError<CreateEmploymentContractInput>,
+    input: ContractFormInput,
+    setError: UseFormSetError<ContractFormInput>,
   ) => Promise<void>;
 }) {
   const isEditing = !!contract;
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const form = useForm<CreateEmploymentContractInput>({
-    resolver: zodResolver(createEmploymentContractSchema),
+  const form = useForm<ContractFormInput>({
+    resolver: zodResolver(contractFormSchema),
     defaultValues: {
       contractTypeId: "",
       contractNo: "",
@@ -307,6 +315,7 @@ function ContractFormDialog({
       orgUnitId: "",
       contentHtml: undefined,
       contractFileId: undefined,
+      status: undefined,
     },
   });
 
@@ -322,6 +331,7 @@ function ContractFormDialog({
       orgUnitId: contract?.orgUnitId ?? "",
       contentHtml: contract?.contentHtml ?? undefined,
       contractFileId: contract?.contractFileId ?? undefined,
+      status: (contract?.status as ContractFormInput["status"]) ?? undefined,
     });
   }, [contract, form, open]);
 
@@ -482,6 +492,7 @@ function ContractFormDialog({
               />
 
               <Button
+                className="mb-[8px]"
                 type="button"
                 disabled={isUploading}
                 onClick={() => fileInputRef.current?.click()}
@@ -515,6 +526,33 @@ function ContractFormDialog({
                 }}
               />
             </div>
+
+            {isEditing && (
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Trạng thái</FormLabel>
+                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Chọn trạng thái" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent position="popper">
+                        {CONTRACT_DOC_STATUS_CODES.map((code) => (
+                          <SelectItem key={code} value={code}>
+                            {ContractDocStatus[code].label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
