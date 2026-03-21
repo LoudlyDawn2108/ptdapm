@@ -10,6 +10,7 @@ import {
   employeeCertifications,
   employeeDegrees,
   employeeFamilyMembers,
+  employeeForeignWorkPermits,
   employeePartyMemberships,
   employeePreviousJobs,
   employees,
@@ -203,6 +204,14 @@ async function seedEmployees() {
       .limit(1);
 
     if (existingEmployee) {
+      await db
+        .update(employees)
+        .set({
+          currentOrgUnitId: orgUnitIds[i] ?? null,
+          salaryGradeStepId: salaryStepIds[i] ?? null,
+          updatedAt: new Date(),
+        })
+        .where(eq(employees.id, existingEmployee.id));
       console.log(`  Skipping ${emp.fullName} (nationalId ${emp.nationalId} already exists)`);
       employeeIds.push(existingEmployee.id);
       skipped++;
@@ -245,6 +254,29 @@ async function seedEmployees() {
     linkedUsers += linked.length;
   }
   console.log(`  ${linkedUsers} auth users linked`);
+
+  console.log("Resetting dependent employee seed data...");
+  for (const employeeId of employeeIds) {
+    if (!employeeId) continue;
+
+    await db.delete(employeeAssignments).where(eq(employeeAssignments.employeeId, employeeId));
+    await db.delete(employmentContracts).where(eq(employmentContracts.employeeId, employeeId));
+    await db.delete(employeeAllowances).where(eq(employeeAllowances.employeeId, employeeId));
+    await db
+      .delete(employeeForeignWorkPermits)
+      .where(eq(employeeForeignWorkPermits.employeeId, employeeId));
+    await db
+      .delete(employeeCertifications)
+      .where(eq(employeeCertifications.employeeId, employeeId));
+    await db.delete(employeeDegrees).where(eq(employeeDegrees.employeeId, employeeId));
+    await db
+      .delete(employeePartyMemberships)
+      .where(eq(employeePartyMemberships.employeeId, employeeId));
+    await db.delete(employeePreviousJobs).where(eq(employeePreviousJobs.employeeId, employeeId));
+    await db.delete(employeeBankAccounts).where(eq(employeeBankAccounts.employeeId, employeeId));
+    await db.delete(employeeFamilyMembers).where(eq(employeeFamilyMembers.employeeId, employeeId));
+  }
+  console.log(`  Reset dependent data for ${employeeIds.length} seeded employees`);
 
   // ── Seed family members ────────────────────────────────────────────────
   console.log("Seeding family members...");

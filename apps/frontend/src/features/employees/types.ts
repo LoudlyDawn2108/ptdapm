@@ -172,12 +172,23 @@ export type EmployeeAllowance = {
   createdAt: string;
   updatedAt: string;
   allowanceName: string;
+  status?: string | null;
+};
+
+export type EmployeeSalaryGradeStep = {
+  id: string;
+  salaryGradeId: string;
+  gradeId: string;
+  gradeName: string;
+  stepName: string;
+  coefficient: string;
 };
 
 // ─── Aggregate (GET /api/employees/:id response.data) ────────────────
 
 export type EmployeeAggregate = {
   employee: EmployeeRecord;
+  salaryGradeStep: EmployeeSalaryGradeStep | null;
   familyMembers: FamilyMember[];
   bankAccounts: BankAccount[];
   previousJobs: PreviousJob[];

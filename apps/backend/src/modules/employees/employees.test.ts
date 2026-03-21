@@ -6,7 +6,7 @@ import { authPlugin } from "../../common/plugins/auth";
 import { dbPlugin } from "../../common/plugins/db";
 import { errorPlugin } from "../../common/plugins/error-handler";
 import { db } from "../../db";
-import { employeeEvaluations, employees } from "../../db/schema";
+import { employeeEvaluations, employees, salaryGradeSteps, salaryGrades } from "../../db/schema";
 import { authUsers } from "../../db/schema/auth";
 import { authRoutes } from "../auth";
 import { employeeRoutes } from "./index";
@@ -275,7 +275,7 @@ describe("GET /api/employees — Search behavior", () => {
 });
 
 describe("GET /api/employees/:id — Aggregate response", () => {
-  test("returns object with all 11 aggregate keys", async () => {
+  test("returns object with all aggregate keys including salaryGradeStep", async () => {
     const res = await tccbRequest("GET", `/api/employees/${testEmployeeId}`);
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -283,6 +283,7 @@ describe("GET /api/employees/:id — Aggregate response", () => {
 
     const expectedKeys = [
       "employee",
+      "salaryGradeStep",
       "familyMembers",
       "bankAccounts",
       "previousJobs",
@@ -332,6 +333,52 @@ describe("GET /api/employees/:id — Aggregate response", () => {
     expect(body.data.bankAccounts).toEqual([]);
     expect(body.data.previousJobs).toEqual([]);
   });
+
+  test("returns salaryGradeStep summary when employee has assigned salary step", async () => {
+    const [salaryGrade] = await db
+      .select({ id: salaryGrades.id, gradeName: salaryGrades.gradeName })
+      .from(salaryGrades)
+      .limit(1);
+
+    expect(salaryGrade).toBeDefined();
+    if (!salaryGrade) {
+      throw new Error("Expected at least one salary grade in seed data");
+    }
+
+    const [salaryStep] = await db
+      .select({
+        id: salaryGradeSteps.id,
+        salaryGradeId: salaryGradeSteps.salaryGradeId,
+        coefficient: salaryGradeSteps.coefficient,
+        stepNo: salaryGradeSteps.stepNo,
+      })
+      .from(salaryGradeSteps)
+      .where(eq(salaryGradeSteps.salaryGradeId, salaryGrade.id))
+      .limit(1);
+
+    expect(salaryStep).toBeDefined();
+    if (!salaryStep) {
+      throw new Error("Expected at least one salary step in seed data");
+    }
+
+    await db
+      .update(employees)
+      .set({ salaryGradeStepId: salaryStep.id, updatedAt: new Date() })
+      .where(eq(employees.id, testEmployeeId));
+
+    const res = await tccbRequest("GET", `/api/employees/${testEmployeeId}`);
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.data.salaryGradeStep).toEqual({
+      id: salaryStep.id,
+      salaryGradeId: salaryStep.salaryGradeId,
+      gradeId: salaryGrade.id,
+      gradeName: salaryGrade.gradeName,
+      stepName: `Bậc ${salaryStep.stepNo}`,
+      coefficient: salaryStep.coefficient,
+    });
+  });
 });
 
 describe("GET /api/employees/me — Aggregate + visibility filtering", () => {
@@ -373,7 +420,7 @@ describe("GET /api/employees/me — Aggregate + visibility filtering", () => {
     }
   });
 
-  test("EMPLOYEE /me returns full aggregate with 11 keys", async () => {
+  test("EMPLOYEE /me returns full aggregate with salaryGradeStep", async () => {
     const res = await requestAs("employee_user", "employee1234", "GET", "/api/employees/me");
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -383,6 +430,7 @@ describe("GET /api/employees/me — Aggregate + visibility filtering", () => {
     expect(data.employee.email).toBe("employee@test.local");
     expect(data.employee.id).toBe(employeeForMeId);
 
+    expect(data).toHaveProperty("salaryGradeStep");
     expect(data).toHaveProperty("familyMembers");
     expect(data).toHaveProperty("bankAccounts");
     expect(data).toHaveProperty("previousJobs");

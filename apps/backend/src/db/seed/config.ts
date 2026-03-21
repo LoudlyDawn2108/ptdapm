@@ -9,6 +9,35 @@ async function seedConfig() {
   console.log("🗑️  Clearing existing config data...");
 
   // Delete in correct order (children first to avoid FK violations)
+  try {
+    await db.execute(sql`DELETE FROM employee_allowances`);
+  } catch {
+    /* table may not exist */
+  }
+  try {
+    await db.execute(sql`DELETE FROM contract_appendices`);
+  } catch {
+    /* table may not exist */
+  }
+  try {
+    await db.execute(sql`DELETE FROM employment_contracts`);
+  } catch {
+    /* table may not exist */
+  }
+  try {
+    await db.execute(
+      sql`UPDATE employees SET salary_grade_step_id = NULL WHERE salary_grade_step_id IS NOT NULL`,
+    );
+  } catch {
+    /* table may not exist */
+  }
+  try {
+    await db.execute(
+      sql`UPDATE employees SET current_org_unit_id = NULL WHERE current_org_unit_id IS NOT NULL`,
+    );
+  } catch {
+    /* table may not exist */
+  }
   await db.delete(salaryGradeSteps);
   await db.delete(salaryGrades);
   await db.delete(allowanceTypes);
