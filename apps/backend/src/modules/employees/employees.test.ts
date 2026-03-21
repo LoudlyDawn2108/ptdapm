@@ -447,12 +447,30 @@ describe("GET /api/employees/me — Aggregate + visibility filtering", () => {
     const res = await requestAs("employee_user", "employee1234", "GET", "/api/employees/me");
     expect(res.status).toBe(200);
     const body = await res.json();
-    const evaluations = body.data.evaluations;
+    const evaluations = body.data.evaluations as Array<{
+      id: string;
+      visibleToEmployee: boolean;
+      disciplineName?: string | null;
+      rewardName?: string | null;
+    }>;
 
-    expect(evaluations.length).toBe(2);
+    const evaluationIds = evaluations.map((evaluation) => evaluation.id);
+    expect(evaluationIds).toContain(testEvalIds[0]);
+    expect(evaluationIds).toContain(testEvalIds[2]);
+    expect(evaluationIds).not.toContain(testEvalIds[1]);
+    expect(evaluationIds).not.toContain(testEvalIds[3]);
+
     for (const evaluation of evaluations) {
       expect(evaluation.visibleToEmployee).toBe(true);
     }
+
+    expect(
+      evaluations.some(
+        (evaluation) =>
+          evaluation.rewardName === "Visible to all" ||
+          evaluation.rewardName === "Hidden from TCKT",
+      ),
+    ).toBe(true);
   });
 
   test("TCKT sees only visibleToTckt evaluations via /:id", async () => {
@@ -464,12 +482,30 @@ describe("GET /api/employees/me — Aggregate + visibility filtering", () => {
     );
     expect(res.status).toBe(200);
     const body = await res.json();
-    const evaluations = body.data.evaluations;
+    const evaluations = body.data.evaluations as Array<{
+      id: string;
+      visibleToTckt: boolean;
+      disciplineName?: string | null;
+      rewardName?: string | null;
+    }>;
 
-    expect(evaluations.length).toBe(2);
+    const evaluationIds = evaluations.map((evaluation) => evaluation.id);
+    expect(evaluationIds).toContain(testEvalIds[0]);
+    expect(evaluationIds).toContain(testEvalIds[1]);
+    expect(evaluationIds).not.toContain(testEvalIds[2]);
+    expect(evaluationIds).not.toContain(testEvalIds[3]);
+
     for (const evaluation of evaluations) {
       expect(evaluation.visibleToTckt).toBe(true);
     }
+
+    expect(
+      evaluations.some(
+        (evaluation) =>
+          evaluation.rewardName === "Visible to all" ||
+          evaluation.disciplineName === "Hidden from employee",
+      ),
+    ).toBe(true);
   });
 
   test("TCCB sees all evaluations (no filter)", async () => {
@@ -481,8 +517,12 @@ describe("GET /api/employees/me — Aggregate + visibility filtering", () => {
     );
     expect(res.status).toBe(200);
     const body = await res.json();
-    const evaluations = body.data.evaluations;
+    const evaluations = body.data.evaluations as Array<{ id: string }>;
 
-    expect(evaluations.length).toBe(4);
+    const evaluationIds = evaluations.map((evaluation) => evaluation.id);
+    expect(evaluationIds).toContain(testEvalIds[0]);
+    expect(evaluationIds).toContain(testEvalIds[1]);
+    expect(evaluationIds).toContain(testEvalIds[2]);
+    expect(evaluationIds).toContain(testEvalIds[3]);
   });
 });

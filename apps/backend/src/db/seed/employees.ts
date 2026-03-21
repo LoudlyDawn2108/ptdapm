@@ -9,6 +9,7 @@ import {
   employeeBankAccounts,
   employeeCertifications,
   employeeDegrees,
+  employeeEvaluations,
   employeeFamilyMembers,
   employeeForeignWorkPermits,
   employeePartyMemberships,
@@ -259,6 +260,7 @@ async function seedEmployees() {
   for (const employeeId of employeeIds) {
     if (!employeeId) continue;
 
+    await db.delete(employeeEvaluations).where(eq(employeeEvaluations.employeeId, employeeId));
     await db.delete(employeeAssignments).where(eq(employeeAssignments.employeeId, employeeId));
     await db.delete(employmentContracts).where(eq(employmentContracts.employeeId, employeeId));
     await db.delete(employeeAllowances).where(eq(employeeAllowances.employeeId, employeeId));
@@ -277,6 +279,105 @@ async function seedEmployees() {
     await db.delete(employeeFamilyMembers).where(eq(employeeFamilyMembers.employeeId, employeeId));
   }
   console.log(`  Reset dependent data for ${employeeIds.length} seeded employees`);
+
+  console.log("Seeding employee evaluations...");
+  const evaluationData = [
+    {
+      employeeIdx: 0,
+      evalType: "REWARD" as const,
+      rewardType: "Khen thưởng cấp trường",
+      rewardName: "Giảng viên tiêu biểu năm 2024",
+      decisionOn: "2024-11-20",
+      decisionNo: "KT-2024-001",
+      content: "Có thành tích xuất sắc trong giảng dạy và chuyển đổi số.",
+      rewardAmount: "5000000",
+      visibleToEmployee: true,
+      visibleToTckt: true,
+    },
+    {
+      employeeIdx: 0,
+      evalType: "DISCIPLINE" as const,
+      disciplineType: "Nhắc nhở",
+      disciplineName: "Nhắc nhở chậm nộp báo cáo",
+      decisionOn: "2023-09-12",
+      reason: "Nộp báo cáo tổng kết học kỳ trễ hạn.",
+      actionForm: "Nhắc nhở bằng văn bản",
+      visibleToEmployee: true,
+      visibleToTckt: true,
+    },
+    {
+      employeeIdx: 1,
+      evalType: "REWARD" as const,
+      rewardType: "Khen thưởng đột xuất",
+      rewardName: "Hoàn thành tốt công tác tuyển dụng",
+      decisionOn: "2024-08-05",
+      decisionNo: "KT-2024-014",
+      content: "Hoàn thành vượt tiến độ kế hoạch tuyển dụng năm học mới.",
+      rewardAmount: "3000000",
+      visibleToEmployee: true,
+      visibleToTckt: true,
+    },
+    {
+      employeeIdx: 2,
+      evalType: "DISCIPLINE" as const,
+      disciplineType: "Phê bình",
+      disciplineName: "Phê bình sai sót chứng từ",
+      decisionOn: "2024-03-18",
+      reason: "Để xảy ra sai sót trong đối chiếu chứng từ nội bộ.",
+      actionForm: "Phê bình và yêu cầu rút kinh nghiệm",
+      visibleToEmployee: true,
+      visibleToTckt: true,
+    },
+    {
+      employeeIdx: 3,
+      evalType: "REWARD" as const,
+      rewardType: "Khen thưởng cấp khoa",
+      rewardName: "Giảng viên trẻ xuất sắc",
+      decisionOn: "2024-06-10",
+      decisionNo: "KT-2024-021",
+      content: "Có nhiều đóng góp trong hướng dẫn sinh viên nghiên cứu khoa học.",
+      rewardAmount: "2000000",
+      visibleToEmployee: true,
+      visibleToTckt: true,
+    },
+    {
+      employeeIdx: 3,
+      evalType: "DISCIPLINE" as const,
+      disciplineType: "Nhắc nhở",
+      disciplineName: "Nhắc nhở cập nhật hồ sơ chuyên môn",
+      decisionOn: "2023-12-01",
+      reason: "Chậm cập nhật minh chứng chuyên môn theo yêu cầu.",
+      actionForm: "Nhắc nhở trực tiếp",
+      visibleToEmployee: true,
+      visibleToTckt: false,
+    },
+    {
+      employeeIdx: 4,
+      evalType: "REWARD" as const,
+      rewardType: "Khen thưởng phong trào",
+      rewardName: "Hỗ trợ tốt công tác trợ giảng",
+      decisionOn: "2024-05-22",
+      decisionNo: "KT-2024-030",
+      content: "Hỗ trợ hiệu quả các hoạt động học tập của sinh viên.",
+      rewardAmount: "1000000",
+      visibleToEmployee: true,
+      visibleToTckt: true,
+    },
+  ];
+
+  let evaluationCount = 0;
+  for (const evaluation of evaluationData) {
+    const employeeId = employeeIds[evaluation.employeeIdx];
+    if (!employeeId) continue;
+
+    const { employeeIdx, ...data } = evaluation;
+    await db.insert(employeeEvaluations).values({
+      employeeId,
+      ...data,
+    });
+    evaluationCount++;
+  }
+  console.log(`  ${evaluationCount} employee evaluations seeded`);
 
   // ── Seed family members ────────────────────────────────────────────────
   console.log("Seeding family members...");
