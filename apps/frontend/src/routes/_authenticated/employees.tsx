@@ -249,7 +249,11 @@ function EmployeesLayout() {
       cell: ({ row }) => (
         <div className="flex items-center justify-center">
           <Button variant="ghost" size="sm" asChild title="Chỉnh sửa">
-            <Link to="/employees/$employeeId/edit" params={{ employeeId: row.original.id }}>
+            <Link
+              to="/employees/$employeeId/edit"
+              params={{ employeeId: row.original.id }}
+              search={{ from: "list" }}
+            >
               <Pencil className="h-4 w-4" />
             </Link>
           </Button>

@@ -65,7 +65,11 @@ import {
   useWatch,
 } from "react-hook-form";
 import { toast } from "sonner";
-import type { z } from "zod";
+import { z } from "zod";
+
+const editSearchSchema = z.object({
+  from: z.enum(["list", "detail"]).optional(),
+});
 
 type SubmitValues = z.output<typeof editEmployeeFormSchema>;
 type FormValues = Omit<
@@ -137,11 +141,13 @@ function syncSubEntities<T extends { id?: string }>(opts: {
 
 export const Route = createFileRoute("/_authenticated/employees/$employeeId/edit")({
   beforeLoad: authorizeRoute("/employees/new"),
+  validateSearch: editSearchSchema,
   component: EditEmployeePage,
 });
 
 function EditEmployeePage() {
   const { employeeId } = Route.useParams();
+  const search = Route.useSearch();
   const navigate = useNavigate();
   const { data, isLoading } = useQuery(employeeDetailOptions(employeeId));
 
@@ -169,7 +175,11 @@ function EditEmployeePage() {
         <Button
           variant="outline"
           className="mt-4"
-          onClick={() => navigate({ to: "/employees/$employeeId", params: { employeeId } })}
+          onClick={() =>
+            search.from === "detail"
+              ? navigate({ to: "/employees/$employeeId", params: { employeeId } })
+              : navigate({ to: "/employees" })
+          }
         >
           Quay lại
         </Button>
@@ -177,15 +187,24 @@ function EditEmployeePage() {
     );
   }
 
-  return <EditEmployeeFormContent key={employeeId} employeeId={employeeId} aggregate={agg} />;
+  return (
+    <EditEmployeeFormContent
+      key={employeeId}
+      employeeId={employeeId}
+      aggregate={agg}
+      from={search.from}
+    />
+  );
 }
 
 function EditEmployeeFormContent({
   employeeId,
   aggregate,
+  from,
 }: {
   employeeId: string;
   aggregate: EmployeeAggregate;
+  from?: "list" | "detail";
 }) {
   const navigate = useNavigate();
   const updateMutation = useUpdateEmployee();
@@ -975,10 +994,12 @@ function EditEmployeeFormContent({
                 variant="outline"
                 className="h-9 rounded-md"
                 onClick={() =>
-                  navigate({
-                    to: "/employees/$employeeId",
-                    params: { employeeId },
-                  })
+                  from === "detail"
+                    ? navigate({
+                        to: "/employees/$employeeId",
+                        params: { employeeId },
+                      })
+                    : navigate({ to: "/employees" })
                 }
               >
                 Hủy
