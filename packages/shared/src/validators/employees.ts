@@ -435,6 +435,8 @@ const genderDisplayToCode = new Map<string, (typeof GENDER_CODES)[number]>(
   Object.values(Gender).map((item) => [item.label, item.code]),
 );
 
+const importOptionalDate = () => optionalText();
+
 export const importEmployeeRowSchema = z
   .object({
     fullName: z.string().min(1, "Họ tên không được để trống"),
@@ -470,11 +472,11 @@ export const importEmployeeRowSchema = z
       return false;
     }, z.boolean().default(false)),
     visaNo: optionalText(),
-    visaExpiresOn: optionalText(),
+    visaExpiresOn: importOptionalDate(),
     passportNo: optionalText(),
-    passportExpiresOn: optionalText(),
+    passportExpiresOn: importOptionalDate(),
     workPermitNo: optionalText(),
-    workPermitExpiresOn: optionalText(),
+    workPermitExpiresOn: importOptionalDate(),
   })
   .transform((data) => {
     if (data.isForeigner) return data;
@@ -518,7 +520,8 @@ export const importEmployeeRowSchema = z
 
     for (const { field, label } of dateFields) {
       const val = data[field];
-      if (val && !isValidDateInput(val)) {
+      if (val == null) continue;
+      if (!isValidDateInput(val)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: `${label} không hợp lệ (YYYY-MM-DD)`,

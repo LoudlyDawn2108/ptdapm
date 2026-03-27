@@ -672,29 +672,36 @@ export async function importFromExcel(buffer: ArrayBuffer) {
     contractStatus: "none",
   }));
 
-  const inserted = await db.insert(employees).values(insertValues).returning({ id: employees.id });
+  const inserted = await db.transaction(async (tx) => {
+    const insertedEmployees = await tx
+      .insert(employees)
+      .values(insertValues)
+      .returning({ id: employees.id });
 
-  const foreignerPermits: NewEmployeeForeignWorkPermit[] = [];
-  for (let i = 0; i < parsedRows.length; i++) {
-    const row = parsedRows[i];
-    if (!row || !row.data.isForeigner) continue;
-    const employeeId = inserted[i]?.id;
-    if (!employeeId) continue;
+    const foreignerPermits: NewEmployeeForeignWorkPermit[] = [];
+    for (let i = 0; i < parsedRows.length; i++) {
+      const row = parsedRows[i];
+      if (!row || !row.data.isForeigner) continue;
+      const employeeId = insertedEmployees[i]?.id;
+      if (!employeeId) continue;
 
-    foreignerPermits.push({
-      employeeId,
-      visaNo: row.data.visaNo ?? null,
-      visaExpiresOn: row.data.visaExpiresOn ?? null,
-      passportNo: row.data.passportNo ?? null,
-      passportExpiresOn: row.data.passportExpiresOn ?? null,
-      workPermitNo: row.data.workPermitNo ?? null,
-      workPermitExpiresOn: row.data.workPermitExpiresOn ?? null,
-    });
-  }
+      foreignerPermits.push({
+        employeeId,
+        visaNo: row.data.visaNo ?? null,
+        visaExpiresOn: row.data.visaExpiresOn ?? null,
+        passportNo: row.data.passportNo ?? null,
+        passportExpiresOn: row.data.passportExpiresOn ?? null,
+        workPermitNo: row.data.workPermitNo ?? null,
+        workPermitExpiresOn: row.data.workPermitExpiresOn ?? null,
+      });
+    }
 
-  if (foreignerPermits.length > 0) {
-    await db.insert(employeeForeignWorkPermits).values(foreignerPermits);
-  }
+    if (foreignerPermits.length > 0) {
+      await tx.insert(employeeForeignWorkPermits).values(foreignerPermits);
+    }
+
+    return insertedEmployees;
+  });
 
   return { imported: inserted.length, errors: [] };
 }

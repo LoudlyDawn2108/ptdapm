@@ -39,9 +39,8 @@ export type UploadedFile = {
   mimeType: string | null;
 };
 
-const apiBaseUrl = import.meta.env.DEV
-  ? ""
-  : (import.meta.env.VITE_API_URL ?? "http://localhost:3000");
+const apiBaseUrl =
+  import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? "" : "http://localhost:3000");
 
 export function getFileUrl(fileId: string): string {
   return `${apiBaseUrl}/api/files/${encodeURIComponent(fileId)}`;
