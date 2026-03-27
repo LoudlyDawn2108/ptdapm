@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { employeeListOptions } from "@/features/employees/api";
+import { ImportEmployeesDialog } from "@/features/employees/components/ImportEmployeesDialog";
 import { useDebounce } from "@/hooks/use-debounce";
 import { fetchOrgUnitDropdown } from "@/lib/api/config-dropdowns";
 import { authorizeRoute } from "@/lib/permissions";
@@ -30,7 +31,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Pencil, Plus, Search, Users } from "lucide-react";
+import { FileSpreadsheet, Pencil, Plus, Search, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 
@@ -56,6 +57,7 @@ function EmployeesLayout() {
   const navigate = useNavigate({ from: "/employees" });
   const search = Route.useSearch();
   const [searchText, setSearchText] = useState(search.search ?? "");
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const debouncedSearch = useDebounce(searchText);
   const routeSearch = search.search ?? "";
   const normalizedSearch = debouncedSearch.trim();
@@ -375,6 +377,14 @@ function EmployeesLayout() {
                     Thêm hồ sơ nhân sự
                   </Link>
                 </Button>
+                <Button
+                  variant="outline"
+                  className="h-10 flex-shrink-0 rounded-lg border-[#3B5CCC] px-4 text-[#3B5CCC] hover:bg-[#EEF1F8] hover:text-[#2F4FB8]"
+                  onClick={() => setImportDialogOpen(true)}
+                >
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Thêm mới từ Excel
+                </Button>
               </RoleGuard>
             </div>
           </div>
@@ -433,6 +443,8 @@ function EmployeesLayout() {
 
       {/* Detail page renders as full page (replaces list) */}
       {isDetail && <Outlet />}
+
+      <ImportEmployeesDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
     </div>
   );
 }

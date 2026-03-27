@@ -39,7 +39,9 @@ export type UploadedFile = {
   mimeType: string | null;
 };
 
-const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+const apiBaseUrl = import.meta.env.DEV
+  ? ""
+  : (import.meta.env.VITE_API_URL ?? "http://localhost:3000");
 
 export function getFileUrl(fileId: string): string {
   return `${apiBaseUrl}/api/files/${encodeURIComponent(fileId)}`;
@@ -89,6 +91,75 @@ export async function uploadFile(file: File): Promise<UploadedFile> {
   }
 
   return payload.data;
+}
+
+// ──────────────────────────────────────────
+// Import from Excel
+// ──────────────────────────────────────────
+
+export type ImportResult = {
+  imported: number;
+  errors: Array<{ row: number; errors: string[] }>;
+};
+
+export async function downloadImportTemplate(): Promise<void> {
+  const response = await fetch(`${apiBaseUrl}/api/employees/import/template`, {
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw handleApiError({
+      status: response.status,
+      value: { error: "Không thể tải file mẫu" },
+    });
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "import-template.xlsx";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export function useImportEmployees() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File): Promise<ImportResult> => {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      let response: Response;
+      try {
+        response = await fetch(`${apiBaseUrl}/api/employees/import`, {
+          method: "POST",
+          body: formData,
+          credentials: "include",
+        });
+      } catch {
+        throw handleApiError({
+          status: 0,
+          value: { error: "Không thể tải file lên" },
+        });
+      }
+
+      const payload: unknown = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw handleApiError({
+          status: response.status,
+          value: payload ?? { error: "Import thất bại" },
+        });
+      }
+
+      const data = (payload as { data: ImportResult })?.data;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: employeeKeys.lists() }),
+  });
 }
 
 // ──────────────────────────────────────────

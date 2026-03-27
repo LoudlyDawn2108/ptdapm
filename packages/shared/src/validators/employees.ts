@@ -10,6 +10,7 @@ import {
   EducationLevel,
   FAMILY_RELATION_CODES,
   GENDER_CODES,
+  Gender,
   PARTY_ORG_TYPE_CODES,
   TRAINING_LEVEL_CODES,
   WORK_STATUS_CODES,
@@ -430,15 +431,101 @@ export type CreateForeignWorkPermitInput = z.infer<typeof createForeignWorkPermi
 export const updateForeignWorkPermitSchema = createForeignWorkPermitSchema.partial();
 export type UpdateForeignWorkPermitInput = z.infer<typeof updateForeignWorkPermitSchema>;
 
-export const importEmployeeRowSchema = z.object({
-  fullName: z.string().min(1, "Họ tên không được để trống"),
-  dob: z.string().refine((v) => /^\d{4}-\d{2}-\d{2}$/.test(v), "Ngày sinh không hợp lệ"),
-  gender: z.string().min(1, "Giới tính không được để trống"),
-  nationalId: z.string().min(1, "Số CCCD/CMND không được để trống"),
-  phone: z.string().optional(),
-  email: z.string().email("Email không hợp lệ").optional(),
-  hometown: z.string().optional(),
-  address: z.string().optional(),
-});
+const genderDisplayToCode = new Map<string, (typeof GENDER_CODES)[number]>(
+  Object.values(Gender).map((item) => [item.label, item.code]),
+);
+
+export const importEmployeeRowSchema = z
+  .object({
+    fullName: z.string().min(1, "Họ tên không được để trống"),
+    dob: z.string().refine((v) => /^\d{4}-\d{2}-\d{2}$/.test(v), "Ngày sinh không hợp lệ"),
+    gender: z.preprocess(
+      (v) => {
+        if (typeof v !== "string") return v;
+        const trimmed = v.trim();
+        return genderDisplayToCode.get(trimmed) ?? trimmed;
+      },
+      z.string().min(1, "Giới tính không được để trống"),
+    ),
+    nationalId: z.string().min(1, "Số CCCD/CMND không được để trống"),
+    phone: requiredPhone(
+      "Số điện thoại không được để trống",
+      "Số điện thoại không hợp lệ (chỉ được nhập số)",
+    ),
+    email: requiredEmail("Email không được để trống", "Email không hợp lệ"),
+    hometown: requiredText("Quê quán không được để trống"),
+    address: requiredText("Địa chỉ không được để trống"),
+    taxCode: requiredText("Mã số thuế không được để trống"),
+    socialInsuranceNo: optionalText(),
+    healthInsuranceNo: optionalText(),
+    educationLevel: requiredEducationLevel("Trình độ văn hóa không được để trống"),
+    academicRank: requiredAcademicRank("Học hàm/học vị không được để trống"),
+    isForeigner: z.preprocess((v) => {
+      if (typeof v === "boolean") return v;
+      if (typeof v === "number") return v === 1;
+      if (typeof v === "string") {
+        const lower = v.trim().toLowerCase();
+        return lower === "true" || lower === "1" || lower === "có" || lower === "yes";
+      }
+      return false;
+    }, z.boolean().default(false)),
+    visaNo: optionalText(),
+    visaExpiresOn: optionalText(),
+    passportNo: optionalText(),
+    passportExpiresOn: optionalText(),
+    workPermitNo: optionalText(),
+    workPermitExpiresOn: optionalText(),
+  })
+  .transform((data) => {
+    if (data.isForeigner) return data;
+    return {
+      ...data,
+      visaNo: undefined,
+      visaExpiresOn: undefined,
+      passportNo: undefined,
+      passportExpiresOn: undefined,
+      workPermitNo: undefined,
+      workPermitExpiresOn: undefined,
+    };
+  })
+  .superRefine((data, ctx) => {
+    if (!data.isForeigner) return;
+
+    const requiredFields = [
+      { field: "visaNo", label: "Số Visa" },
+      { field: "visaExpiresOn", label: "Ngày hết hạn Visa" },
+      { field: "passportNo", label: "Số Hộ chiếu" },
+      { field: "passportExpiresOn", label: "Ngày hết hạn Hộ chiếu" },
+      { field: "workPermitNo", label: "Số giấy phép lao động" },
+      { field: "workPermitExpiresOn", label: "Ngày hết hạn giấy phép lao động" },
+    ] as const;
+
+    for (const { field, label } of requiredFields) {
+      if (!data[field]) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `${label} là bắt buộc khi là người nước ngoài`,
+          path: [field],
+        });
+      }
+    }
+
+    const dateFields = [
+      { field: "visaExpiresOn", label: "Ngày hết hạn Visa" },
+      { field: "passportExpiresOn", label: "Ngày hết hạn Hộ chiếu" },
+      { field: "workPermitExpiresOn", label: "Ngày hết hạn giấy phép lao động" },
+    ] as const;
+
+    for (const { field, label } of dateFields) {
+      const val = data[field];
+      if (val && !isValidDateInput(val)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `${label} không hợp lệ (YYYY-MM-DD)`,
+          path: [field],
+        });
+      }
+    }
+  });
 
 export type ImportEmployeeRowInput = z.infer<typeof importEmployeeRowSchema>;
