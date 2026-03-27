@@ -28,6 +28,8 @@ export const createEvaluationSchema = z
     disciplineName: z.string().max(255).nullish(),
     reason: z.string().nullish(),
     actionForm: z.string().max(255).nullish(),
+    visibleToEmployee: z.boolean().default(true),
+    visibleToTckt: z.boolean().default(true),
   })
   .superRefine((data, ctx) => {
     if (data.evalType === "REWARD") {
@@ -115,6 +117,8 @@ export const updateEvaluationSchema = z
     disciplineName: z.string().max(255).nullish(),
     reason: z.string().nullish(),
     actionForm: z.string().max(255).nullish(),
+    visibleToEmployee: z.boolean().default(true),
+    visibleToTckt: z.boolean().default(true),
   })
   .superRefine((data, ctx) => {
     if (data.evalType === "REWARD") {
