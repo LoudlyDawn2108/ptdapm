@@ -117,6 +117,15 @@ const requiredEmail = (requiredMessage: string, invalidMessage: string) =>
     z.string({ error: requiredMessage }).min(1, requiredMessage).email(invalidMessage),
   );
 
+const requiredPhone = (requiredMessage: string, invalidMessage: string) =>
+  z.preprocess(
+    (value) => (typeof value === "string" ? value.trim() : value),
+    z
+      .string({ message: requiredMessage })
+      .min(1, { message: requiredMessage })
+      .regex(/^[0-9+\-\s()]+$/, { message: invalidMessage }),
+  );
+
 const genderSchema = z.enum(GENDER_CODES);
 const workStatusSchema = z.enum(WORK_STATUS_CODES);
 const contractStatusSchema = z.enum(CONTRACT_STATUS_CODES);
@@ -145,7 +154,10 @@ export const createEmployeeSchema = z.object({
   socialInsuranceNo: optionalText(),
   healthInsuranceNo: optionalText(),
   email: requiredEmail("Email không được để trống", "Email không hợp lệ"),
-  phone: requiredText("Số điện thoại không được để trống"),
+  phone: requiredPhone(
+    "Số điện thoại không được để trống",
+    "Số điện thoại không hợp lệ (chỉ được nhập số)",
+  ),
   isForeigner: z.boolean({ error: "Giá trị quốc tịch không hợp lệ" }).default(false),
   educationLevel: requiredEducationLevel("Trình độ văn hóa không được để trống"),
   trainingLevel: optionalField(trainingLevelSchema),

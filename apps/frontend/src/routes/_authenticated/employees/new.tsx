@@ -55,7 +55,10 @@ const formSchema = z
     dob: z.string().min(1, "Ngày sinh không được để trống"),
     hometown: z.string().min(1, "Quê quán không được để trống"),
     email: z.string().min(1, "Email không được để trống").email("Email không hợp lệ"),
-    phone: z.string().min(1, "Số điện thoại không được để trống"),
+    phone: z
+      .string()
+      .min(1, "Số điện thoại không được để trống")
+      .regex(/^[0-9+\-\s()]+$/, "Số điện thoại không hợp lệ (chỉ được nhập số)"),
     address: z.string().min(1, "Địa chỉ không được để trống"),
     nationalId: z.string().min(1, "Số CCCD/CMND không được để trống"),
     taxCode: z.string().min(1, "Mã số thuế không được để trống"),

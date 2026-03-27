@@ -1,6 +1,7 @@
+import type { OrgUnitTypeCode } from "@hrms/shared";
 import { eq } from "drizzle-orm";
 import { db } from "../index";
-import { campuses, employees, employeeAssignments, orgUnits } from "../schema";
+import { campuses, employeeAssignments, employees, orgUnits } from "../schema";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Org unit hierarchy matching Figma design:
@@ -19,7 +20,7 @@ import { campuses, employees, employeeAssignments, orgUnits } from "../schema";
 type OrgUnitSeed = {
   unitCode: string;
   unitName: string;
-  unitType: string;
+  unitType: OrgUnitTypeCode;
   parentCode?: string; // resolved at seed time
   email?: string;
   phone?: string;
@@ -132,13 +133,43 @@ const orgUnitData: OrgUnitSeed[] = [
 //   emp 3 (employee) → K_CNTT - Giảng viên Khoa CNTT
 //   emp 4 (standalone) → K_CNTT - Trợ giảng Khoa CNTT
 const assignmentData = [
-  { nationalId: "001085012345", orgCode: "TT_CNTT", position: "Phó Giám đốc Trung tâm CNTT", startedOn: "2019-03-01" },
-  { nationalId: "001090056789", orgCode: "P_TCHC", position: "Chuyên viên Phòng TCHC", startedOn: "2020-07-15" },
-  { nationalId: "001088098765", orgCode: "P_KHTC", position: "Chuyên viên Phòng KHTC", startedOn: "2018-07-01" },
-  { nationalId: "001092034567", orgCode: "K_CNTT", position: "Giảng viên Khoa CNTT", startedOn: "2020-09-01" },
-  { nationalId: "001095067890", orgCode: "K_CNTT", position: "Trợ giảng Khoa CNTT", startedOn: "2021-01-15" },
+  {
+    nationalId: "001085012345",
+    orgCode: "TT_CNTT",
+    position: "Phó Giám đốc Trung tâm CNTT",
+    startedOn: "2019-03-01",
+  },
+  {
+    nationalId: "001090056789",
+    orgCode: "P_TCHC",
+    position: "Chuyên viên Phòng TCHC",
+    startedOn: "2020-07-15",
+  },
+  {
+    nationalId: "001088098765",
+    orgCode: "P_KHTC",
+    position: "Chuyên viên Phòng KHTC",
+    startedOn: "2018-07-01",
+  },
+  {
+    nationalId: "001092034567",
+    orgCode: "K_CNTT",
+    position: "Giảng viên Khoa CNTT",
+    startedOn: "2020-09-01",
+  },
+  {
+    nationalId: "001095067890",
+    orgCode: "K_CNTT",
+    position: "Trợ giảng Khoa CNTT",
+    startedOn: "2021-01-15",
+  },
   // Extra assignments for BGH (Hiệu trưởng, Phó Hiệu trưởng) — using emp 0 & 1 for demo
-  { nationalId: "001085012345", orgCode: "BGH", position: "Phó Hiệu trưởng", startedOn: "2023-01-01" },
+  {
+    nationalId: "001085012345",
+    orgCode: "BGH",
+    position: "Phó Hiệu trưởng",
+    startedOn: "2023-01-01",
+  },
 ];
 
 async function seedOrgUnits() {
@@ -171,7 +202,7 @@ async function seedOrgUnits() {
       continue;
     }
 
-    const parentId = unit.parentCode ? codeToId.get(unit.parentCode) ?? null : null;
+    const parentId = unit.parentCode ? (codeToId.get(unit.parentCode) ?? null) : null;
 
     const [inserted] = await db
       .insert(orgUnits)
