@@ -136,7 +136,11 @@ function EmployeeDetailLayout() {
         <RoleGuard roles={[...EMPLOYEE_PROFILE_MANAGE_ROLES]}>
           {canEdit && (
             <Button variant="outline" asChild>
-              <Link to="/employees/$employeeId/edit" params={{ employeeId }}>
+              <Link
+                to="/employees/$employeeId/edit"
+                params={{ employeeId }}
+                search={{ from: "detail" }}
+              >
                 <Pencil className="mr-2 h-4 w-4" />
                 Sửa hồ sơ
               </Link>

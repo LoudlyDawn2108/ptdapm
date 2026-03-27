@@ -1,5 +1,6 @@
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -27,10 +28,7 @@ import type { EmployeeEvaluation } from "@/features/employees/types";
 import { formatDate, formatForInput } from "@/lib/date-utils";
 import { applyFieldErrors } from "@/lib/error-handler";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  type CreateEvaluationInput,
-  createEvaluationSchema,
-} from "@hrms/shared";
+import { type CreateEvaluationInput, createEvaluationSchema } from "@hrms/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import { AlertTriangle, Award, Pencil, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -314,6 +312,8 @@ function RewardFormDialog({
       decisionNo: "",
       content: "",
       rewardAmount: "",
+      visibleToEmployee: true,
+      visibleToTckt: true,
     },
   });
 
@@ -327,6 +327,8 @@ function RewardFormDialog({
       decisionNo: evaluation?.decisionNo ?? "",
       content: evaluation?.content ?? "",
       rewardAmount: evaluation?.rewardAmount ?? "",
+      visibleToEmployee: evaluation?.visibleToEmployee ?? true,
+      visibleToTckt: evaluation?.visibleToTckt ?? true,
     });
   }, [open, evaluation, form]);
 
@@ -477,6 +479,36 @@ function RewardFormDialog({
               )}
             />
 
+            <div className="rounded-lg border bg-muted/30 p-4">
+              <p className="mb-3 text-sm font-medium text-muted-foreground">Cài đặt hiển thị</p>
+              <div className="space-y-3">
+                <FormField
+                  control={form.control}
+                  name="visibleToEmployee"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2 space-y-0">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <FormLabel className="font-normal">Hiển thị với Cán bộ/Giảng viên</FormLabel>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="visibleToTckt"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2 space-y-0">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <FormLabel className="font-normal">Hiển thị với Phòng TCKT</FormLabel>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Hủy
@@ -524,6 +556,8 @@ function DisciplineFormDialog({
       decisionOn: "",
       reason: "",
       actionForm: "",
+      visibleToEmployee: true,
+      visibleToTckt: true,
     },
   });
 
@@ -536,6 +570,8 @@ function DisciplineFormDialog({
       decisionOn: formatForInput(evaluation?.decisionOn),
       reason: evaluation?.reason ?? "",
       actionForm: evaluation?.actionForm ?? "",
+      visibleToEmployee: evaluation?.visibleToEmployee ?? true,
+      visibleToTckt: evaluation?.visibleToTckt ?? true,
     });
   }, [open, evaluation, form]);
 
@@ -580,11 +616,7 @@ function DisciplineFormDialog({
                       Loại kỷ luật <span className="text-red-500">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Nhập loại kỷ luật"
-                        {...field}
-                        value={field.value ?? ""}
-                      />
+                      <Input placeholder="Nhập loại kỷ luật" {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -599,11 +631,7 @@ function DisciplineFormDialog({
                       Tên kỷ luật <span className="text-red-500">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Nhập tên kỷ luật"
-                        {...field}
-                        value={field.value ?? ""}
-                      />
+                      <Input placeholder="Nhập tên kỷ luật" {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -667,6 +695,36 @@ function DisciplineFormDialog({
                 </FormItem>
               )}
             />
+
+            <div className="rounded-lg border bg-muted/30 p-4">
+              <p className="mb-3 text-sm font-medium text-muted-foreground">Cài đặt hiển thị</p>
+              <div className="space-y-3">
+                <FormField
+                  control={form.control}
+                  name="visibleToEmployee"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2 space-y-0">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <FormLabel className="font-normal">Hiển thị với Cán bộ/Giảng viên</FormLabel>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="visibleToTckt"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2 space-y-0">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <FormLabel className="font-normal">Hiển thị với Phòng TCKT</FormLabel>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

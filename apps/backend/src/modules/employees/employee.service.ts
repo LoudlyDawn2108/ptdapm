@@ -1,8 +1,12 @@
 import {
+  AcademicRank,
   type CreateEmployeeInput,
   type DropdownOption,
+  EducationLevel,
+  Gender,
   type ImportEmployeeRowInput,
   type UpdateEmployeeInput,
+  enumToSortedList,
   importEmployeeRowSchema,
 } from "@hrms/shared";
 import { type SQL, and, eq, ilike, inArray, ne, or } from "drizzle-orm";
@@ -10,7 +14,7 @@ import ExcelJS from "exceljs";
 import { BadRequestError, FieldValidationError, NotFoundError } from "../../common/utils/errors";
 import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
 import { db } from "../../db";
-import type { NewEmployee } from "../../db/schema";
+import type { NewEmployee, NewEmployeeForeignWorkPermit } from "../../db/schema";
 import {
   type Employee,
   allowanceTypes,
@@ -300,7 +304,24 @@ function normalizeImportedDate(value: unknown): string | undefined {
     return formatDateToIso(date);
   }
 
-  return normalizeCellText(value);
+  const raw = normalizeCellText(value);
+  if (!raw) return undefined;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+
+  const dmyMatch = raw.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})$/);
+  if (dmyMatch) {
+    const [, d, m, y] = dmyMatch;
+    return `${y}-${m!.padStart(2, "0")}-${d!.padStart(2, "0")}`;
+  }
+
+  const ymdSlash = raw.match(/^(\d{4})[/.](\d{1,2})[/.](\d{1,2})$/);
+  if (ymdSlash) {
+    const [, y, m, d] = ymdSlash;
+    return `${y}-${m!.padStart(2, "0")}-${d!.padStart(2, "0")}`;
+  }
+
+  return raw;
 }
 
 function collectRowErrors(rowErrors: Map<number, string[]>) {
@@ -328,19 +349,39 @@ type ImportRowCandidate = {
   email?: string;
   hometown?: string;
   address?: string;
+  taxCode?: string;
+  socialInsuranceNo?: string;
+  healthInsuranceNo?: string;
+  educationLevel?: string;
+  academicRank?: string;
+  isForeigner?: string | boolean;
+  visaNo?: string;
+  visaExpiresOn?: string;
+  passportNo?: string;
+  passportExpiresOn?: string;
+  workPermitNo?: string;
+  workPermitExpiresOn?: string;
 };
+
+const DATE_IMPORT_FIELDS = new Set([
+  "dob",
+  "visaExpiresOn",
+  "passportExpiresOn",
+  "workPermitExpiresOn",
+]);
 
 function mapImportRow(row: ExcelJS.Row, headers: Map<number, string>): ImportRowCandidate | null {
   const values = Object.fromEntries(
     Array.from(headers.entries()).map(([columnIndex, header]) => {
       const cellValue = row.getCell(columnIndex).value;
-      const normalizedValue =
-        header === "dob" ? normalizeImportedDate(cellValue) : normalizeCellText(cellValue);
+      const normalizedValue = DATE_IMPORT_FIELDS.has(header)
+        ? normalizeImportedDate(cellValue)
+        : normalizeCellText(cellValue);
       return [header, normalizedValue];
     }),
   );
 
-  const candidate = {
+  const candidate: ImportRowCandidate = {
     fullName: values.fullName,
     dob: values.dob,
     gender: values.gender,
@@ -349,6 +390,18 @@ function mapImportRow(row: ExcelJS.Row, headers: Map<number, string>): ImportRow
     email: values.email,
     hometown: values.hometown,
     address: values.address,
+    taxCode: values.taxCode,
+    socialInsuranceNo: values.socialInsuranceNo,
+    healthInsuranceNo: values.healthInsuranceNo,
+    educationLevel: values.educationLevel,
+    academicRank: values.academicRank,
+    isForeigner: values.isForeigner,
+    visaNo: values.visaNo,
+    visaExpiresOn: values.visaExpiresOn,
+    passportNo: values.passportNo,
+    passportExpiresOn: values.passportExpiresOn,
+    workPermitNo: values.workPermitNo,
+    workPermitExpiresOn: values.workPermitExpiresOn,
   };
 
   const hasAnyValue = Object.values(candidate).some((value) => value != null && value !== "");
@@ -468,16 +521,69 @@ export async function importFromExcel(buffer: ArrayBuffer) {
     throw new BadRequestError("File Excel không có dữ liệu");
   }
 
+  const HEADER_LABEL_TO_KEY: Record<string, string> = {
+    "Họ tên (*)": "fullName",
+    "Ngày sinh (*)": "dob",
+    "Giới tính (*)": "gender",
+    "Số CCCD/CMND (*)": "nationalId",
+    "Số điện thoại (*)": "phone",
+    "Email (*)": "email",
+    "Quê quán (*)": "hometown",
+    "Địa chỉ (*)": "address",
+    "Mã số thuế (*)": "taxCode",
+    "Số BHXH": "socialInsuranceNo",
+    "Số BHYT": "healthInsuranceNo",
+    "Trình độ văn hóa (*)": "educationLevel",
+    "Học hàm/Học vị (*)": "academicRank",
+    "Người nước ngoài": "isForeigner",
+    "Số Visa": "visaNo",
+    "Hạn Visa": "visaExpiresOn",
+    "Số Hộ chiếu": "passportNo",
+    "Hạn Hộ chiếu": "passportExpiresOn",
+    "Số GPLĐ": "workPermitNo",
+    "Hạn GPLĐ": "workPermitExpiresOn",
+  };
+
   const headers = new Map<number, string>();
   worksheet.getRow(1).eachCell({ includeEmpty: true }, (cell, columnIndex) => {
-    const header = normalizeCellText(cell.value);
-    if (header) {
-      headers.set(columnIndex, header);
+    const rawHeader = normalizeCellText(cell.value);
+    if (rawHeader) {
+      headers.set(columnIndex, HEADER_LABEL_TO_KEY[rawHeader] ?? rawHeader);
     }
   });
 
   if (headers.size === 0) {
     throw new BadRequestError("File Excel không có tiêu đề cột");
+  }
+
+  const REQUIRED_COLUMNS = [
+    "fullName",
+    "dob",
+    "gender",
+    "nationalId",
+    "phone",
+    "email",
+    "hometown",
+    "address",
+    "taxCode",
+    "educationLevel",
+    "academicRank",
+  ] as const;
+  const headerValues = new Set(headers.values());
+  const missingColumns = REQUIRED_COLUMNS.filter((col) => !headerValues.has(col));
+  if (missingColumns.length > 0) {
+    throw new BadRequestError(
+      "Cấu trúc cột dữ liệu không hợp lệ. Thiếu trường thông tin bắt buộc trong file: " +
+        missingColumns.join(", "),
+    );
+  }
+
+  let dataRowCount = 0;
+  worksheet.eachRow({ includeEmpty: false }, (_row, rowNumber) => {
+    if (rowNumber > 1) dataRowCount++;
+  });
+  if (dataRowCount === 0) {
+    throw new BadRequestError("File Excel không có dữ liệu (file rỗng)");
   }
 
   const parsedRows: Array<{ rowNumber: number; data: ImportEmployeeRowInput }> = [];
@@ -556,29 +662,153 @@ export async function importFromExcel(buffer: ArrayBuffer) {
     address: data.address ?? "",
     email: data.email ?? "",
     phone: data.phone ?? "",
+    taxCode: data.taxCode ?? null,
+    socialInsuranceNo: data.socialInsuranceNo ?? null,
+    healthInsuranceNo: data.healthInsuranceNo ?? null,
+    educationLevel: data.educationLevel ?? null,
+    academicRank: data.academicRank ?? null,
+    isForeigner: data.isForeigner ?? false,
     workStatus: "pending",
     contractStatus: "none",
   }));
 
-  const inserted = await db.insert(employees).values(insertValues).returning({ id: employees.id });
+  const inserted = await db.transaction(async (tx) => {
+    const insertedEmployees = await tx
+      .insert(employees)
+      .values(insertValues)
+      .returning({ id: employees.id });
+
+    const foreignerPermits: NewEmployeeForeignWorkPermit[] = [];
+    for (let i = 0; i < parsedRows.length; i++) {
+      const row = parsedRows[i];
+      if (!row || !row.data.isForeigner) continue;
+      const employeeId = insertedEmployees[i]?.id;
+      if (!employeeId) continue;
+
+      foreignerPermits.push({
+        employeeId,
+        visaNo: row.data.visaNo ?? null,
+        visaExpiresOn: row.data.visaExpiresOn ?? null,
+        passportNo: row.data.passportNo ?? null,
+        passportExpiresOn: row.data.passportExpiresOn ?? null,
+        workPermitNo: row.data.workPermitNo ?? null,
+        workPermitExpiresOn: row.data.workPermitExpiresOn ?? null,
+      });
+    }
+
+    if (foreignerPermits.length > 0) {
+      await tx.insert(employeeForeignWorkPermits).values(foreignerPermits);
+    }
+
+    return insertedEmployees;
+  });
 
   return { imported: inserted.length, errors: [] };
 }
 
 export async function generateImportTemplate() {
   const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet("Employees");
+  const worksheet = workbook.addWorksheet("Nhập hồ sơ");
 
-  worksheet.addRow([
-    "fullName",
-    "dob",
-    "gender",
-    "nationalId",
-    "phone",
-    "email",
-    "hometown",
-    "address",
-  ]);
+  const columns = [
+    { key: "fullName", label: "Họ tên (*)", width: 25 },
+    { key: "dob", label: "Ngày sinh (*)", width: 18 },
+    { key: "gender", label: "Giới tính (*)", width: 14 },
+    { key: "nationalId", label: "Số CCCD/CMND (*)", width: 20 },
+    { key: "phone", label: "Số điện thoại (*)", width: 18 },
+    { key: "email", label: "Email (*)", width: 28 },
+    { key: "hometown", label: "Quê quán (*)", width: 25 },
+    { key: "address", label: "Địa chỉ (*)", width: 30 },
+    { key: "taxCode", label: "Mã số thuế (*)", width: 18 },
+    { key: "socialInsuranceNo", label: "Số BHXH", width: 16 },
+    { key: "healthInsuranceNo", label: "Số BHYT", width: 16 },
+    { key: "educationLevel", label: "Trình độ văn hóa (*)", width: 22 },
+    { key: "academicRank", label: "Học hàm/Học vị (*)", width: 20 },
+    { key: "isForeigner", label: "Người nước ngoài", width: 20 },
+    { key: "visaNo", label: "Số Visa", width: 18 },
+    { key: "visaExpiresOn", label: "Hạn Visa", width: 16 },
+    { key: "passportNo", label: "Số Hộ chiếu", width: 18 },
+    { key: "passportExpiresOn", label: "Hạn Hộ chiếu", width: 16 },
+    { key: "workPermitNo", label: "Số GPLĐ", width: 18 },
+    { key: "workPermitExpiresOn", label: "Hạn GPLĐ", width: 16 },
+  ];
+
+  const headerRow = worksheet.addRow(columns.map((c) => c.label));
+
+  for (const [i, col] of columns.entries()) {
+    const column = worksheet.getColumn(i + 1);
+    column.width = col.width;
+    column.numFmt = "@";
+  }
+
+  const headerFill: ExcelJS.FillPattern = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FF2B4C8C" },
+  };
+  const headerFont: Partial<ExcelJS.Font> = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
+  const thinBorder: Partial<ExcelJS.Border> = { style: "thin", color: { argb: "FFB0B0B0" } };
+  const cellBorder: Partial<ExcelJS.Borders> = {
+    top: thinBorder,
+    left: thinBorder,
+    bottom: thinBorder,
+    right: thinBorder,
+  };
+
+  headerRow.eachCell((cell) => {
+    cell.fill = headerFill;
+    cell.font = headerFont;
+    cell.alignment = { horizontal: "center", vertical: "middle" };
+    cell.border = cellBorder;
+  });
+  headerRow.height = 30;
+
+  const genderLabels = enumToSortedList(Gender).map((g) => g.label);
+  const educationLabels = enumToSortedList(EducationLevel).map((e) => e.label);
+  const rankLabels = enumToSortedList(AcademicRank).map((r) => r.label);
+
+  const genderCol = columns.findIndex((c) => c.key === "gender") + 1;
+  const educationCol = columns.findIndex((c) => c.key === "educationLevel") + 1;
+  const rankCol = columns.findIndex((c) => c.key === "academicRank") + 1;
+  const foreignerCol = columns.findIndex((c) => c.key === "isForeigner") + 1;
+
+  const DATA_ROWS = 200;
+  for (let row = 2; row <= DATA_ROWS + 1; row++) {
+    worksheet.getCell(row, genderCol).dataValidation = {
+      type: "list",
+      allowBlank: false,
+      formulae: [`"${genderLabels.join(",")}"`],
+      showErrorMessage: true,
+      errorTitle: "Giá trị không hợp lệ",
+      error: `Chọn một trong: ${genderLabels.join(", ")}`,
+    };
+    worksheet.getCell(row, educationCol).dataValidation = {
+      type: "list",
+      allowBlank: false,
+      formulae: [`"${educationLabels.join(",")}"`],
+      showErrorMessage: true,
+      errorTitle: "Giá trị không hợp lệ",
+      error: `Chọn một trong: ${educationLabels.join(", ")}`,
+    };
+    worksheet.getCell(row, rankCol).dataValidation = {
+      type: "list",
+      allowBlank: false,
+      formulae: [`"${rankLabels.join(",")}"`],
+      showErrorMessage: true,
+      errorTitle: "Giá trị không hợp lệ",
+      error: `Chọn một trong: ${rankLabels.join(", ")}`,
+    };
+    worksheet.getCell(row, foreignerCol).dataValidation = {
+      type: "list",
+      allowBlank: true,
+      formulae: ['"Không,Có"'],
+      showErrorMessage: true,
+      errorTitle: "Giá trị không hợp lệ",
+      error: "Chọn: Không hoặc Có",
+    };
+  }
+
+  worksheet.views = [{ state: "frozen", ySplit: 1 }];
 
   const buffer = await workbook.xlsx.writeBuffer();
   return buffer;

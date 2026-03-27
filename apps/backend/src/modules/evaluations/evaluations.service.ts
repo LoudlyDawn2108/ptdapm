@@ -1,21 +1,11 @@
-import type {
-  CreateEvaluationInput,
-  PaginatedResponse,
-  UpdateEvaluationInput,
-} from "@hrms/shared";
+import type { CreateEvaluationInput, PaginatedResponse, UpdateEvaluationInput } from "@hrms/shared";
 import { type SQL, and, eq } from "drizzle-orm";
 import { BadRequestError, NotFoundError } from "../../common/utils/errors";
-import {
-  buildPaginatedResponse,
-  countRows,
-} from "../../common/utils/pagination";
+import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
 import { db } from "../../db";
 import { auditLogs } from "../../db/schema/audit";
-import {
-  type EmployeeEvaluation,
-  employeeEvaluations,
-} from "../../db/schema/evaluations";
 import { employees } from "../../db/schema/employees";
+import { type EmployeeEvaluation, employeeEvaluations } from "../../db/schema/evaluations";
 
 async function ensureEmployeeExists(employeeId: string) {
   const [employee] = await db
@@ -29,9 +19,7 @@ async function ensureEmployeeExists(employeeId: string) {
 
 function ensureEmployeeCanBeEvaluated(workStatus: string) {
   if (workStatus === "terminated") {
-    throw new BadRequestError(
-      "Không thể tạo hoặc cập nhật đánh giá cho nhân sự đã thôi việc.",
-    );
+    throw new BadRequestError("Không thể tạo hoặc cập nhật đánh giá cho nhân sự đã thôi việc.");
   }
 }
 
@@ -43,10 +31,7 @@ async function ensureEvaluationExists(
     .select()
     .from(employeeEvaluations)
     .where(
-      and(
-        eq(employeeEvaluations.id, evaluationId),
-        eq(employeeEvaluations.employeeId, employeeId),
-      ),
+      and(eq(employeeEvaluations.id, evaluationId), eq(employeeEvaluations.employeeId, employeeId)),
     );
 
   if (!evaluation) throw new NotFoundError("Không tìm thấy bản đánh giá");
@@ -115,6 +100,8 @@ export async function create(
         disciplineName: data.disciplineName ?? null,
         reason: data.reason ?? null,
         actionForm: data.actionForm ?? null,
+        visibleToEmployee: data.visibleToEmployee ?? true,
+        visibleToTckt: data.visibleToTckt ?? true,
         createdByUserId: actorUserId,
       })
       .returning();
@@ -165,6 +152,8 @@ export async function update(
         disciplineName: data.disciplineName ?? null,
         reason: data.reason ?? null,
         actionForm: data.actionForm ?? null,
+        visibleToEmployee: data.visibleToEmployee ?? true,
+        visibleToTckt: data.visibleToTckt ?? true,
       })
       .where(eq(employeeEvaluations.id, evaluationId))
       .returning();
@@ -197,9 +186,7 @@ export async function remove(
   const existing = await ensureEvaluationExists(employeeId, evaluationId);
 
   await db.transaction(async (tx) => {
-    await tx
-      .delete(employeeEvaluations)
-      .where(eq(employeeEvaluations.id, evaluationId));
+    await tx.delete(employeeEvaluations).where(eq(employeeEvaluations.id, evaluationId));
 
     await tx.insert(auditLogs).values({
       actorUserId,

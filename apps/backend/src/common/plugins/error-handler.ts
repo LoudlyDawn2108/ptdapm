@@ -25,10 +25,14 @@ function extractFieldErrors(validationError: Error): Record<string, string> | nu
   const fields: Record<string, string> = {};
   for (const entry of all) {
     if (entry.path && !fields[entry.path]) {
-      fields[entry.path] = entry.message;
+      // Elysia validation paths may start with "/" (e.g., "/phone"), strip it
+      const fieldName = entry.path.startsWith("/") ? entry.path.slice(1) : entry.path;
+      if (fieldName && !fields[fieldName]) {
+        fields[fieldName] = entry.message;
+      }
     }
   }
-  return fields;
+  return Object.keys(fields).length > 0 ? fields : null;
 }
 
 function isPostgresError(error: unknown): error is { code: string; detail?: string } {
