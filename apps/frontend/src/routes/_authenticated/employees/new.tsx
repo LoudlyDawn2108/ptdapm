@@ -20,6 +20,11 @@ import {
   RequiredLabel,
   SectionHeader,
 } from "@/features/employees/components/form-helpers";
+import {
+  type CreateEmployeeFormInput,
+  type CreateEmployeeFormValues,
+  createEmployeeFormSchema,
+} from "@/features/employees/schemas/employee-form-schema";
 import { ApiResponseError, applyFieldErrors } from "@/lib/error-handler";
 import { authorizeRoute } from "@/lib/permissions";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,121 +44,11 @@ import { Plus, Upload, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { type Control, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 
 export const Route = createFileRoute("/_authenticated/employees/new")({
   beforeLoad: authorizeRoute("/employees/new"),
   component: NewEmployeePage,
 });
-
-// ── Form schema (local — includes sub-entity arrays) ──
-const formSchema = z
-  .object({
-    // ── Employee flat fields (matches backend createEmployeeSchema) ──
-    fullName: z.string().min(1, "Họ tên không được để trống"),
-    gender: z.string().min(1, "Giới tính không được để trống"),
-    dob: z.string().min(1, "Ngày sinh không được để trống"),
-    hometown: z.string().min(1, "Quê quán không được để trống"),
-    email: z.string().min(1, "Email không được để trống").email("Email không hợp lệ"),
-    phone: z
-      .string()
-      .min(1, "Số điện thoại không được để trống")
-      .regex(/^[0-9+\-\s()]+$/, "Số điện thoại không hợp lệ (chỉ được nhập số)"),
-    address: z.string().min(1, "Địa chỉ không được để trống"),
-    nationalId: z.string().min(1, "Số CCCD/CMND không được để trống"),
-    taxCode: z.string().min(1, "Mã số thuế không được để trống"),
-    socialInsuranceNo: z.string().optional(),
-    healthInsuranceNo: z.string().optional(),
-    portraitFileId: z.string().min(1, "Ảnh chân dung không được để trống"),
-    isForeigner: z.boolean().default(false),
-    visaNumber: z.string().optional(),
-    visaExpiry: z.string().optional(),
-    passportNumber: z.string().optional(),
-    passportExpiry: z.string().optional(),
-    workPermitNumber: z.string().optional(),
-    workPermitExpiry: z.string().optional(),
-    educationLevel: z.string().min(1, "Trình độ văn hóa không được để trống"),
-    academicRank: z.string().min(1, "Học hàm/Học vị không được để trống"),
-
-    // ── Sub-entity arrays ──
-    familyMembers: z
-      .array(
-        z.object({
-          relation: z.string().min(1, "Mối quan hệ không được để trống"),
-          fullName: z.string().min(1, "Họ tên không được để trống"),
-        }),
-      )
-      .default([]),
-    bankAccounts: z
-      .array(
-        z.object({
-          bankName: z.string().min(1, "Tên ngân hàng không được để trống"),
-          accountNo: z.string().min(1, "Số tài khoản không được để trống"),
-        }),
-      )
-      .default([]),
-    partyMemberships: z
-      .array(
-        z.object({
-          organizationType: z.string().min(1, "Loại tổ chức không được để trống"),
-          joinedOn: z.string().min(1, "Ngày gia nhập không được để trống"),
-          details: z.string().min(1, "Thông tin chi tiết không được để trống"),
-        }),
-      )
-      .default([]),
-    degrees: z
-      .array(
-        z.object({
-          degreeName: z.string().min(1, "Tên bằng không được để trống"),
-          school: z.string().min(1, "Trường/Nơi cấp không được để trống"),
-          degreeFileId: z.string().optional(),
-        }),
-      )
-      .default([]),
-    certificates: z
-      .array(
-        z.object({
-          certName: z.string().min(1, "Tên chứng chỉ không được để trống"),
-          issuedBy: z.string().min(1, "Nơi cấp không được để trống"),
-          certFileId: z.string().optional(),
-        }),
-      )
-      .default([]),
-    workPermitFileId: z.string().optional(),
-    previousJobs: z
-      .array(
-        z.object({
-          workplace: z.string().min(1, "Nơi làm việc không được để trống"),
-          startedOn: z.string().min(1, "Ngày bắt đầu không được để trống"),
-          endedOn: z.string().min(1, "Ngày kết thúc không được để trống"),
-        }),
-      )
-      .default([]),
-  })
-  .superRefine((data, ctx) => {
-    if (data.isForeigner) {
-      const foreignerFields = [
-        { field: "visaNumber", label: "Số visa" },
-        { field: "visaExpiry", label: "Ngày hết hạn visa" },
-        { field: "passportNumber", label: "Số hộ chiếu" },
-        { field: "passportExpiry", label: "Ngày hết hạn hộ chiếu" },
-        { field: "workPermitNumber", label: "Số giấy phép lao động" },
-        { field: "workPermitExpiry", label: "Ngày hết hạn giấy phép" },
-      ] as const;
-      for (const { field, label } of foreignerFields) {
-        if (!data[field]) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: `${label} là bắt buộc khi là người nước ngoài`,
-            path: [field],
-          });
-        }
-      }
-    }
-  });
-
-type FormInput = z.input<typeof formSchema>;
-type FormValues = z.output<typeof formSchema>;
 
 function FileUploadButton({
   control,
@@ -162,7 +57,7 @@ function FileUploadButton({
   uploadedLabel,
   defaultLabel,
 }: {
-  control: Control<FormInput>;
+  control: Control<CreateEmployeeFormInput>;
   name: string;
   inputId: string;
   uploadedLabel: string;
@@ -197,8 +92,8 @@ function NewEmployeePage() {
   const [portraitPreview, setPortraitPreview] = useState<string | null>(null);
   const [uploadingCount, setUploadingCount] = useState(0);
 
-  const form = useForm<FormInput, unknown, FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<CreateEmployeeFormInput, unknown, CreateEmployeeFormValues>({
+    resolver: zodResolver(createEmployeeFormSchema),
     defaultValues: {
       fullName: "",
       gender: "",
@@ -239,9 +134,9 @@ function NewEmployeePage() {
   const certFields = useFieldArray({ control: form.control, name: "certificates" });
   const jobFields = useFieldArray({ control: form.control, name: "previousJobs" });
 
-  const onSubmit = async (data: FormValues) => {
+  const onSubmit = async (data: CreateEmployeeFormValues) => {
     try {
-      const formData = formSchema.parse(data);
+      const formData = createEmployeeFormSchema.parse(data);
 
       // Phase 1: Create employee (flat fields only)
       const employeePayload: CreateEmployeeInput = {
