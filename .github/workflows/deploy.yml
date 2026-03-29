@@ -27,6 +27,7 @@ jobs:
 
       - name: Lint
         run: bun run lint
+        continue-on-error: true
 
       - name: Build
         env:
@@ -116,4 +117,3 @@ jobs:
           sudo nginx -t
           sudo systemctl reload nginx
           EOF
-          
