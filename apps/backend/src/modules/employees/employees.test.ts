@@ -60,6 +60,48 @@ async function tccbRequest(method: string, path: string, body?: unknown) {
   return requestAs("tccb_user", "tccb1234", method, path, body);
 }
 
+async function getSalaryBoundarySteps() {
+  const steps = await db
+    .select({
+      id: salaryGradeSteps.id,
+      coefficient: salaryGradeSteps.coefficient,
+    })
+    .from(salaryGradeSteps);
+
+  const sortedSteps = [...steps].sort(
+    (left, right) => Number(left.coefficient) - Number(right.coefficient),
+  );
+
+  return {
+    lowestStep: sortedSteps[0],
+    highestStep: sortedSteps[sortedSteps.length - 1],
+  };
+}
+
+async function createEmployeeForSalaryGuardTest(salaryGradeStepId: string) {
+  const uniqueSuffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+
+  const [createdEmployee] = await db
+    .insert(employees)
+    .values({
+      fullName: `Salary Guard ${uniqueSuffix}`,
+      dob: "1991-01-01",
+      gender: "NAM",
+      nationalId: `SG${uniqueSuffix}`.slice(0, 20),
+      address: "123 Salary Guard St",
+      email: `salary-guard-${uniqueSuffix}@example.com`,
+      phone: `09${uniqueSuffix}`.slice(0, 30),
+      salaryGradeStepId,
+    })
+    .returning({ id: employees.id });
+
+  if (!createdEmployee) {
+    throw new Error("Expected employee to be created for salary guard test");
+  }
+
+  return createdEmployee.id;
+}
+
 let testEmployeeId: string;
 let employeeForMeId: string;
 const testEvalIds: string[] = [];
@@ -271,6 +313,61 @@ describe("GET /api/employees — Search behavior", () => {
     expect(emptyBody.data.items.map((item: { id: string }) => item.id)).toEqual(
       defaultBody.data.items.map((item: { id: string }) => item.id),
     );
+  });
+});
+
+describe("PUT /api/employees/:id — Salary coefficient guard", () => {
+  test("allows updating to a higher salary coefficient", async () => {
+    const { lowestStep, highestStep } = await getSalaryBoundarySteps();
+
+    expect(lowestStep).toBeDefined();
+    expect(highestStep).toBeDefined();
+
+    if (!lowestStep || !highestStep) {
+      throw new Error("Expected seeded salary steps to exist");
+    }
+
+    const employeeId = await createEmployeeForSalaryGuardTest(lowestStep.id);
+
+    try {
+      const res = await tccbRequest("PUT", `/api/employees/${employeeId}`, {
+        salaryGradeStepId: highestStep.id,
+      });
+
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body.data.salaryGradeStepId).toBe(highestStep.id);
+    } finally {
+      await db.delete(employees).where(eq(employees.id, employeeId));
+    }
+  });
+
+  test("rejects lowering salary coefficient below the current level", async () => {
+    const { lowestStep, highestStep } = await getSalaryBoundarySteps();
+
+    expect(lowestStep).toBeDefined();
+    expect(highestStep).toBeDefined();
+
+    if (!lowestStep || !highestStep) {
+      throw new Error("Expected seeded salary steps to exist");
+    }
+
+    const employeeId = await createEmployeeForSalaryGuardTest(highestStep.id);
+
+    try {
+      const res = await tccbRequest("PUT", `/api/employees/${employeeId}`, {
+        salaryGradeStepId: lowestStep.id,
+      });
+
+      expect(res.status).toBe(400);
+
+      const body = await res.json();
+      expect(body.type).toBe("toast");
+      expect(body.error).toBe("Không thể hạ hệ số lương xuống thấp hơn mức hiện tại");
+    } finally {
+      await db.delete(employees).where(eq(employees.id, employeeId));
+    }
   });
 });
 
