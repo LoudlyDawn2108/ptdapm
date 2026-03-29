@@ -105,6 +105,15 @@ type AllowanceTypeOption = {
   status?: string;
 };
 
+function parseSalaryCoefficient(value?: string | number | null): number | null {
+  if (value == null) {
+    return null;
+  }
+
+  const coefficient = typeof value === "number" ? value : Number.parseFloat(value);
+  return Number.isFinite(coefficient) ? coefficient : null;
+}
+
 const EMPTY_ALLOWANCE_FORM_VALUES: CreateEmployeeAllowanceFormInput = {
   allowanceTypeId: "",
   status: "active",
@@ -184,6 +193,20 @@ function SalaryTab() {
       : typeof emp?.salaryGradeStepId === "string"
         ? emp.salaryGradeStepId
         : "";
+  const currentCoefficient = parseSalaryCoefficient(salary?.coefficient);
+  const eligibleSalarySteps = salarySteps.filter((step) => {
+    if (step.id === currentStepId) {
+      return true;
+    }
+
+    const stepCoefficient = parseSalaryCoefficient(step.coefficient);
+
+    if (currentCoefficient == null || stepCoefficient == null) {
+      return true;
+    }
+
+    return stepCoefficient >= currentCoefficient;
+  });
 
   const resetAllowanceForm = () => {
     allowanceForm.reset(EMPTY_ALLOWANCE_FORM_VALUES);
@@ -231,6 +254,18 @@ function SalaryTab() {
     event.preventDefault();
 
     if (!selectedStepId) return;
+
+    const selectedStep = salarySteps.find((step) => step.id === selectedStepId);
+    const selectedCoefficient = parseSalaryCoefficient(selectedStep?.coefficient ?? null);
+
+    if (
+      currentCoefficient != null &&
+      selectedCoefficient != null &&
+      selectedCoefficient < currentCoefficient
+    ) {
+      toast.error("Không thể hạ hệ số lương xuống thấp hơn mức hiện tại");
+      return;
+    }
 
     try {
       await updateEmployeeMutation.mutateAsync({
@@ -421,13 +456,24 @@ function SalaryTab() {
                   <SelectValue placeholder="Chọn bậc lương" />
                 </SelectTrigger>
                 <SelectContent>
-                  {salarySteps.map((step) => (
+                  {eligibleSalarySteps.map((step) => (
                     <SelectItem key={step.id} value={step.id}>
                       {`Bậc ${step.stepNo}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {currentCoefficient != null && (
+                <p className="text-xs text-muted-foreground">
+                  Chỉ cho phép chọn bậc có hệ số không thấp hơn mức hiện tại ({salary?.coefficient}
+                  ).
+                </p>
+              )}
+              {selectedGradeId && eligibleSalarySteps.length === 0 && (
+                <p className="text-xs text-destructive">
+                  Ngạch được chọn không có bậc lương nào đạt từ mức hiện tại trở lên.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

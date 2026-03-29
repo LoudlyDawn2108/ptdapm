@@ -38,6 +38,16 @@ type EmployeeListItem = Employee & {
   currentOrgUnitName: string | null;
 };
 
+type SalaryStepSnapshot = {
+  id: string;
+  salaryGradeId: string;
+  gradeName: string;
+  stepNo: number;
+  coefficient: string;
+  stepStatus: string;
+  gradeStatus: string;
+};
+
 function normalizeOptional(value?: string | null): string | undefined {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
@@ -230,6 +240,71 @@ async function getById(id: string): Promise<Employee> {
   const [employee] = await db.select().from(employees).where(eq(employees.id, id));
   if (!employee) throw new NotFoundError("Không tìm thấy nhân viên");
   return employee;
+}
+
+function parseSalaryCoefficient(value: string | number): number {
+  const coefficient = typeof value === "number" ? value : Number.parseFloat(value);
+
+  if (!Number.isFinite(coefficient)) {
+    throw new BadRequestError("Dữ liệu hệ số lương không hợp lệ");
+  }
+
+  return coefficient;
+}
+
+async function getSalaryStepSnapshot(stepId: string): Promise<SalaryStepSnapshot | null> {
+  const [step] = await db
+    .select({
+      id: salaryGradeSteps.id,
+      salaryGradeId: salaryGradeSteps.salaryGradeId,
+      gradeName: salaryGrades.gradeName,
+      stepNo: salaryGradeSteps.stepNo,
+      coefficient: salaryGradeSteps.coefficient,
+      stepStatus: salaryGradeSteps.status,
+      gradeStatus: salaryGrades.status,
+    })
+    .from(salaryGradeSteps)
+    .innerJoin(salaryGrades, eq(salaryGradeSteps.salaryGradeId, salaryGrades.id))
+    .where(eq(salaryGradeSteps.id, stepId))
+    .limit(1);
+
+  return step ?? null;
+}
+
+async function validateSalaryGradeStepChange(
+  existingEmployee: Employee,
+  nextSalaryGradeStepId?: string,
+): Promise<void> {
+  if (!nextSalaryGradeStepId || nextSalaryGradeStepId === existingEmployee.salaryGradeStepId) {
+    return;
+  }
+
+  const nextStep = await getSalaryStepSnapshot(nextSalaryGradeStepId);
+
+  if (!nextStep) {
+    throw new BadRequestError("Bậc lương không tồn tại");
+  }
+
+  if (nextStep.stepStatus !== "active" || nextStep.gradeStatus !== "active") {
+    throw new BadRequestError("Không thể áp dụng bậc lương đã ngừng sử dụng");
+  }
+
+  if (!existingEmployee.salaryGradeStepId) {
+    return;
+  }
+
+  const currentStep = await getSalaryStepSnapshot(existingEmployee.salaryGradeStepId);
+
+  if (!currentStep) {
+    return;
+  }
+
+  const currentCoefficient = parseSalaryCoefficient(currentStep.coefficient);
+  const nextCoefficient = parseSalaryCoefficient(nextStep.coefficient);
+
+  if (nextCoefficient < currentCoefficient) {
+    throw new BadRequestError("Không thể hạ hệ số lương xuống thấp hơn mức hiện tại");
+  }
 }
 
 function filterEvaluationsByRole<T extends { visibleToEmployee: boolean; visibleToTckt: boolean }>(
@@ -907,6 +982,8 @@ export async function update(id: string, data: UpdateEmployeeInput): Promise<Emp
 
   const nationalId = normalizeOptional(data.nationalId ?? undefined);
   const email = normalizeOptional(data.email ?? undefined);
+
+  await validateSalaryGradeStepChange(existing, data.salaryGradeStepId);
 
   const payload = undefinedToNull({
     ...data,
