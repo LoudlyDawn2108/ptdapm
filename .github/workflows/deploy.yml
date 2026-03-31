@@ -69,20 +69,59 @@ jobs:
 
       - name: Configure SSH key
         env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
         run: |
+          set -eu
+
+          host=$(printf "%s" "$EC2_HOST" | tr -d '\r\n' | xargs)
+          user=$(printf "%s" "$EC2_USER" | tr -d '\r\n' | xargs)
+
+          if [ -z "$host" ]; then
+            echo "EC2_HOST secret is empty"
+            exit 1
+          fi
+
+          if [ -z "$user" ]; then
+            echo "EC2_USER secret is empty"
+            exit 1
+          fi
+
+          case "$host" in
+            *'YOUR_EC2_PUBLIC_IP'*|*'your-domain.example'*|*'***'*|*' '*|*'://' *|*'/'*|*'@'*)
+              echo "EC2_HOST secret is invalid: use only a hostname or IP address, with no scheme, path, or username"
+              exit 1
+              ;;
+          esac
+
+          if [ -z "$EC2_SSH_KEY" ]; then
+            echo "EC2_SSH_KEY secret is empty"
+            exit 1
+          fi
+
           mkdir -p ~/.ssh
           printf "%s" "$EC2_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+          if ! ssh-keyscan -T 30 -H "$host" >> ~/.ssh/known_hosts; then
+            echo "Unable to resolve or reach EC2_HOST for ssh-keyscan. Check the EC2_HOST secret value and DNS/network accessibility from GitHub Actions."
+            exit 1
+          fi
+
+          {
+            echo "DEPLOY_HOST=$host"
+            echo "DEPLOY_USER=$user"
+          } >> "$GITHUB_ENV"
 
       - name: Ensure remote directories exist
         run: |
-          ssh -i ~/.ssh/deploy_key "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" \
+          set -eu
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
             "mkdir -p /srv/hrms/app /srv/hrms/app/apps/frontend/dist /srv/hrms/app/apps/backend/dist"
 
       - name: Sync repository payload
         run: |
+          set -eu
           rsync -avz --delete \
             --exclude ".git" \
             --exclude "node_modules" \
@@ -93,25 +132,28 @@ jobs:
             --exclude "apps/backend/dist" \
             -e "ssh -i ~/.ssh/deploy_key" \
             ./ \
-            "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/srv/hrms/app/"
+            "$DEPLOY_USER@$DEPLOY_HOST:/srv/hrms/app/"
 
       - name: Sync frontend build artifact
         run: |
+          set -eu
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/deploy_key" \
             ./apps/frontend/dist/ \
-            "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/srv/hrms/app/apps/frontend/dist/"
+            "$DEPLOY_USER@$DEPLOY_HOST:/srv/hrms/app/apps/frontend/dist/"
 
       - name: Sync backend build artifact
         run: |
+          set -eu
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/deploy_key" \
             ./apps/backend/dist/ \
-            "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/srv/hrms/app/apps/backend/dist/"
+            "$DEPLOY_USER@$DEPLOY_HOST:/srv/hrms/app/apps/backend/dist/"
 
       - name: Deploy on EC2
         run: |
-          ssh -i ~/.ssh/deploy_key "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" <<'EOF'
+          set -eu
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" <<'EOF'
           export BUN_INSTALL="$HOME/.bun"
           export PATH="$BUN_INSTALL/bin:$PATH"
 
