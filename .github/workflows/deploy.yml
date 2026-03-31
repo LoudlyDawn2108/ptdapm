@@ -88,12 +88,16 @@ jobs:
             exit 1
           fi
 
-          case "$host" in
-            *'YOUR_EC2_PUBLIC_IP'*|*'your-domain.example'*|*'***'*|*' '*|*'://' *|*'/'*|*'@'*)
-              echo "EC2_HOST secret is invalid: use only a hostname or IP address, with no scheme, path, or username"
-              exit 1
-              ;;
-          esac
+          if [[ "$host" == *"YOUR_EC2_PUBLIC_IP"* ]] || \
+             [[ "$host" == *"your-domain.example"* ]] || \
+             [[ "$host" == *"***"* ]] || \
+             [[ "$host" == *" "* ]] || \
+             [[ "$host" == *"://"* ]] || \
+             [[ "$host" == */* ]] || \
+             [[ "$host" == *"@"* ]]; then
+            echo "EC2_HOST secret is invalid: use only a hostname or IP address, with no scheme, path, or username"
+            exit 1
+          fi
 
           if [ -z "$EC2_SSH_KEY" ]; then
             echo "EC2_SSH_KEY secret is empty"
