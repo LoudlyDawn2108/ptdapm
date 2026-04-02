@@ -163,12 +163,59 @@ const assignmentData = [
     position: "Trợ giảng Khoa CNTT",
     startedOn: "2021-01-15",
   },
-  // Extra assignments for BGH (Hiệu trưởng, Phó Hiệu trưởng) — using emp 0 & 1 for demo
   {
     nationalId: "001085012345",
     orgCode: "BGH",
     position: "Phó Hiệu trưởng",
     startedOn: "2023-01-01",
+  },
+  {
+    nationalId: "001075011111",
+    orgCode: "BGH",
+    position: "Hiệu trưởng",
+    startedOn: "2026-01-01",
+  },
+  {
+    nationalId: "001078022222",
+    orgCode: "BGH",
+    position: "Phó hiệu trưởng",
+    startedOn: "2026-01-06",
+  },
+  {
+    nationalId: "001093033333",
+    orgCode: "BGH",
+    position: "Trợ lý",
+    startedOn: "2026-01-17",
+  },
+  {
+    nationalId: "001091044444",
+    orgCode: "K_CNTT",
+    position: "Giảng viên Khoa CNTT",
+    startedOn: "2024-09-01",
+  },
+  {
+    nationalId: "001087066666",
+    orgCode: "K_KTTN",
+    position: "Giảng viên Khoa KTTN",
+    startedOn: "2020-09-01",
+  },
+  {
+    nationalId: "001089077777",
+    orgCode: "P_DT",
+    position: "Chuyên viên Phòng Đào tạo",
+    startedOn: "2022-03-01",
+  },
+  {
+    nationalId: "001090088888",
+    orgCode: "BM_CNPM",
+    position: "Giảng viên BM CNPM",
+    startedOn: "2021-09-01",
+  },
+  {
+    nationalId: "001086099999",
+    orgCode: "BM_MMT",
+    position: "Giảng viên BM Mạng máy tính",
+    startedOn: "2019-09-01",
   },
 ];
 
@@ -288,6 +335,15 @@ async function seedOrgUnits() {
     { nationalId: "001088098765", orgCode: "P_KHTC" },
     { nationalId: "001092034567", orgCode: "K_CNTT" },
     { nationalId: "001095067890", orgCode: "K_CNTT" },
+    { nationalId: "001075011111", orgCode: "BGH" },
+    { nationalId: "001078022222", orgCode: "BGH" },
+    { nationalId: "001093033333", orgCode: "BGH" },
+    { nationalId: "001091044444", orgCode: "K_CNTT" },
+    { nationalId: "001094055555", orgCode: "P_TCHC" },
+    { nationalId: "001087066666", orgCode: "K_KTTN" },
+    { nationalId: "001089077777", orgCode: "P_DT" },
+    { nationalId: "001090088888", orgCode: "BM_CNPM" },
+    { nationalId: "001086099999", orgCode: "BM_MMT" },
   ];
 
   for (const m of orgMapping) {

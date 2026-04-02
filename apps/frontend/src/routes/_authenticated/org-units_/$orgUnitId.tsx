@@ -4,13 +4,12 @@ import { RoleGuard } from "@/components/shared/role-guard";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrgUnitFormDialog } from "@/features/org-units/OrgUnitFormDialog";
-import { UpdateStatusDialog } from "@/features/org-units/UpdateStatusDialog";
 import { orgUnitDetailOptions } from "@/features/org-units/api";
 import { useBreadcrumbOverrides } from "@/lib/breadcrumb-context";
 import { authorizeRoute } from "@/lib/permissions";
 import { useQuery } from "@tanstack/react-query";
 import { Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Pencil, RefreshCw } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const TAB_ITEMS = [
@@ -32,7 +31,6 @@ function OrgUnitDetailLayout() {
   const { setOverrides } = useBreadcrumbOverrides();
 
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
 
   const {
     data: orgDetail,
@@ -93,19 +91,13 @@ function OrgUnitDetailLayout() {
   return (
     <div>
       {/* ── Action Buttons ─────────────── */}
-      <RoleGuard roles={["ADMIN", "TCCB"]}>
+      <RoleGuard roles={["ADMIN"]}>
         <div className="flex justify-end gap-2 mb-4">
           {unit.status === "active" && (
-            <>
-              <Button variant="outline" onClick={() => setStatusDialogOpen(true)}>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Cập nhật trạng thái
-              </Button>
-              <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Sửa đơn vị
-              </Button>
-            </>
+            <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Sửa đơn vị
+            </Button>
           )}
         </div>
       </RoleGuard>
@@ -138,15 +130,6 @@ function OrgUnitDetailLayout() {
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         editingItem={unit}
-      />
-
-      {/* ── Update Status Dialog ─────────── */}
-      <UpdateStatusDialog
-        open={statusDialogOpen}
-        onOpenChange={setStatusDialogOpen}
-        orgUnitId={unit.id}
-        orgUnitName={unit.unitName}
-        hasChildren={(unit.children as any[] | undefined)?.length ? true : false}
       />
     </div>
   );

@@ -12,12 +12,21 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { orgUnitDetailOptions, useAddAssignment, useEndAssignment } from "@/features/org-units/api";
 import { createEmployeeDropdownFetcher, fetchOrgUnitDropdown } from "@/lib/api/config-dropdowns";
 import { formatDate } from "@/lib/date-utils";
 import { ApiResponseError } from "@/lib/error-handler";
+import { WorkStatus, enumToSortedList } from "@hrms/shared";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { useRouteContext } from "@tanstack/react-router";
 import { Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -44,6 +53,9 @@ function getTodayDateString() {
 
 function StaffTab() {
   const { orgUnitId } = Route.useParams();
+  const { user } = useRouteContext({ from: "/_authenticated" });
+  const isAdmin = user.role === "ADMIN";
+  const isTCCB = user.role === "TCCB";
 
   const { data: orgDetail } = useQuery(orgUnitDetailOptions(orgUnitId));
   const endAssignment = useEndAssignment();
@@ -52,11 +64,11 @@ function StaffTab() {
   const unit = orgDetail?.data;
   const assignments = (unit?.assignments ?? []) as AssignmentEntry[];
 
-  // End assignment dialog
   const [endTarget, setEndTarget] = useState<AssignmentEntry | null>(null);
-
-  // Add assignment dialog
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [statusTarget, setStatusTarget] = useState<AssignmentEntry | null>(null);
+  const [newStatus, setNewStatus] = useState("");
+
   const [addForm, setAddForm] = useState({
     mode: "new" as AssignmentMode,
     sourceOrgUnitId: "",
@@ -139,10 +151,21 @@ function StaffTab() {
     }
   };
 
+  const handleUpdateStatus = () => {
+    if (!statusTarget || !newStatus) return;
+    toast.success(
+      `Cập nhật trạng thái ${statusTarget.staffCode} — ${statusTarget.fullName} thành "${WorkStatus[newStatus as keyof typeof WorkStatus]?.label ?? newStatus}"`,
+    );
+    setStatusTarget(null);
+    setNewStatus("");
+  };
+
+  const sortedStatuses = enumToSortedList(WorkStatus);
+
   return (
     <div className="rounded-xl border bg-card p-6">
-      {/* Add button */}
-      <RoleGuard roles={["ADMIN", "TCCB"]}>
+      {/* TCCB: "Bổ nhiệm nhân sự" button */}
+      <RoleGuard roles={["TCCB"]}>
         {unit?.status === "active" && (
           <div className="flex justify-end mb-4">
             <Button onClick={() => setShowAddDialog(true)}>
@@ -163,8 +186,12 @@ function StaffTab() {
                 <th className="px-4 py-2.5 text-left font-medium">Đơn vị công tác</th>
                 <th className="px-4 py-2.5 text-left font-medium">Chức vụ</th>
                 <th className="px-4 py-2.5 text-left font-medium">Ngày bổ nhiệm</th>
-                <th className="px-4 py-2.5 text-left font-medium">Trạng thái</th>
-                <th className="rounded-r-lg px-4 py-2.5 text-left font-medium">Thao tác</th>
+                <th className={`px-4 py-2.5 text-left font-medium ${isTCCB ? "" : "rounded-r-lg"}`}>
+                  Trạng thái
+                </th>
+                {isTCCB && (
+                  <th className="rounded-r-lg px-4 py-2.5 text-left font-medium">Thao tác</th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -178,13 +205,29 @@ function StaffTab() {
                     <td className="px-4 py-2.5">{a.positionTitle ?? "—"}</td>
                     <td className="px-4 py-2.5">{formatDate(a.startedOn)}</td>
                     <td className="px-4 py-2.5">
-                      <StatusBadgeFromCode
-                        code={isEnded ? "terminated" : "active"}
-                        label={isEnded ? "Đã thôi việc" : "Đang công tác"}
-                      />
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          className="cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => {
+                            setStatusTarget(a);
+                            setNewStatus(isEnded ? "terminated" : "working");
+                          }}
+                        >
+                          <StatusBadgeFromCode
+                            code={isEnded ? "terminated" : "active"}
+                            label={isEnded ? "Đã thôi việc" : "Đang công tác"}
+                          />
+                        </button>
+                      ) : (
+                        <StatusBadgeFromCode
+                          code={isEnded ? "terminated" : "active"}
+                          label={isEnded ? "Đã thôi việc" : "Đang công tác"}
+                        />
+                      )}
                     </td>
-                    <td className="px-4 py-2.5">
-                      <RoleGuard roles={["ADMIN", "TCCB"]}>
+                    {isTCCB && (
+                      <td className="px-4 py-2.5">
                         {!isEnded && unit?.status === "active" && (
                           <Button
                             variant="ghost"
@@ -195,8 +238,8 @@ function StaffTab() {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         )}
-                      </RoleGuard>
-                    </td>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
@@ -209,7 +252,7 @@ function StaffTab() {
         </p>
       )}
 
-      {/* ── End Assignment Confirmation Dialog ──────────────── */}
+      {/* ── End Assignment Confirmation Dialog (TCCB) ──────── */}
       <Dialog
         open={!!endTarget}
         onOpenChange={(open) => {
@@ -241,7 +284,63 @@ function StaffTab() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Add Assignment Dialog ──────────────────────────── */}
+      {/* ── Update Employee Status Dialog (ADMIN) ─────────── */}
+      <Dialog
+        open={!!statusTarget}
+        onOpenChange={(open) => {
+          if (!open) {
+            setStatusTarget(null);
+            setNewStatus("");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cập nhật trạng thái</DialogTitle>
+            <DialogDescription>
+              Cập nhật trạng thái nhân sự{" "}
+              <strong>
+                {statusTarget?.staffCode} — {statusTarget?.fullName}
+              </strong>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>
+                Trạng thái <span className="text-destructive">*</span>
+              </Label>
+              <Select value={newStatus} onValueChange={setNewStatus}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sortedStatuses.map((s) => (
+                    <SelectItem key={s.code} value={s.code}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setStatusTarget(null);
+                setNewStatus("");
+              }}
+            >
+              Hủy
+            </Button>
+            <Button disabled={!newStatus} onClick={handleUpdateStatus}>
+              Cập nhật
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Add Assignment Dialog (TCCB) ──────────────────── */}
       <Dialog
         open={showAddDialog}
         onOpenChange={(open) => {
