@@ -95,7 +95,7 @@ export async function list(
   pageSize: number,
   status?: TrainingStatusCode,
   search?: string,
-): Promise<PaginatedResponse<TrainingCourse>> {
+): Promise<PaginatedResponse<TrainingCourse & { registrationCount: number }>> {
   const conditions: SQL[] = [];
 
   if (status) {
@@ -119,7 +119,15 @@ export async function list(
     countRows(trainingCourses, where),
   ]);
 
-  return buildPaginatedResponse(items, total, page, pageSize);
+  // Lấy số lượng đăng ký cho từng khóa đào tạo
+  const itemsWithCount = await Promise.all(
+    items.map(async (item) => ({
+      ...item,
+      registrationCount: await getRegistrationCount(item.id),
+    })),
+  );
+
+  return buildPaginatedResponse(itemsWithCount, total, page, pageSize);
 }
 
 // ---------------------------------------------------------------------------
@@ -234,6 +242,19 @@ export async function update(
   // Kiểm tra loại khóa đào tạo nếu có thay đổi
   if (data.courseTypeId) {
     await ensureCourseTypeExists(data.courseTypeId);
+  }
+
+  // E2: Không cho phép thay đổi loại khóa khi đã có dữ liệu đăng ký
+  if (
+    data.courseTypeId !== undefined &&
+    data.courseTypeId !== existing.courseTypeId
+  ) {
+    const registrationCount = await getRegistrationCount(courseId);
+    if (registrationCount > 0) {
+      throw new BadRequestError(
+        "Không thể thay đổi loại khóa đào tạo khi đã có dữ liệu đăng ký.",
+      );
+    }
   }
 
   // A1: Nếu đang đào tạo, chỉ cho sửa: location, cost, commitment, certificateName, certificateType

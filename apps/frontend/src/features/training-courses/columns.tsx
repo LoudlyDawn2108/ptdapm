@@ -17,6 +17,7 @@ export interface TrainingCourseRow {
   registrationFrom?: string | null;
   registrationTo?: string | null;
   registrationLimit?: number | null;
+  registrationCount?: number;
   status: TrainingStatusCode;
 }
 

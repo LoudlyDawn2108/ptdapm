@@ -155,16 +155,24 @@ function TrainingCoursesPage() {
     setError: UseFormSetError<UpdateTrainingCourseInput>,
   ) => {
     try {
-      const payload: UpdateTrainingCourseInput =
-        editingCourse?.status === "in_progress"
-          ? {
-              location: input.location,
-              cost: input.cost,
-              commitment: input.commitment,
-              certificateName: input.certificateName,
-              certificateType: input.certificateType,
-            }
-          : input;
+      let payload: UpdateTrainingCourseInput;
+      
+      if (editingCourse?.status === "in_progress") {
+        // Khi đang đào tạo: chỉ gửi các trường được phép chỉnh sửa
+        payload = {
+          location: input.location,
+          cost: input.cost,
+          commitment: input.commitment,
+          certificateName: input.certificateName,
+          certificateType: input.certificateType,
+        };
+      } else if ((editingCourse?.registrationCount ?? 0) > 0) {
+        // Khi đã có đăng ký: không gửi courseTypeId
+        const { courseTypeId, ...rest } = input;
+        payload = rest;
+      } else {
+        payload = input;
+      }
 
       await updateMutation.mutateAsync({ courseId, ...payload });
       toast.success("Cập nhật khóa đào tạo thành công");
@@ -364,6 +372,8 @@ function TrainingCourseFormDialog({
   const submitLabel =
     mode === "create" ? "Lưu khóa đào tạo" : "Lưu thay đổi";
   const isInProgressEdit = mode === "edit" && course?.status === "in_progress";
+  const registrationCount = course?.registrationCount ?? 0;
+  const hasRegistrations = mode === "edit" && registrationCount > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -406,6 +416,12 @@ function TrainingCourseFormDialog({
               </div>
             )}
 
+            {hasRegistrations && !isInProgressEdit && (
+              <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                Khóa đào tạo đã có dữ liệu đăng ký: không thể thay đổi loại khóa đào tạo.
+              </div>
+            )}
+
             {/* Tên + Loại khóa đào tạo */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
@@ -440,7 +456,7 @@ function TrainingCourseFormDialog({
                     <Select
                       value={field.value}
                       onValueChange={field.onChange}
-                      disabled={isInProgressEdit}
+                      disabled={isInProgressEdit || hasRegistrations}
                     >
                       <FormControl>
                         <SelectTrigger>
