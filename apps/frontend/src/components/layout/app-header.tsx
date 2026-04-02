@@ -1,3 +1,14 @@
+import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Breadcrumb,
@@ -67,6 +78,7 @@ function getInitials(name?: string | null): string {
 }
 
 export function AppHeader() {
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { user } = useAuth();
   const logoutMutation = useLogout();
@@ -146,15 +158,44 @@ export function AppHeader() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => logoutMutation.mutate()}
-              disabled={logoutMutation.isPending}
+              onSelect={(e) => {
+                e.preventDefault();
+                setShowLogoutConfirm(true);
+              }}
             >
-              {logoutMutation.isPending ? <Loader2 className="animate-spin" /> : <LogOut />}
+              <LogOut />
               Đăng xuất
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận đăng xuất</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending}
+            >
+              {logoutMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang đăng xuất...
+                </>
+              ) : (
+                "Đăng xuất"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </header>
   );
 }
