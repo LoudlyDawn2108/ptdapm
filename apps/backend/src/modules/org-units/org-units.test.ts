@@ -6,9 +6,54 @@ import { authPlugin } from "../../common/plugins/auth";
 import { dbPlugin } from "../../common/plugins/db";
 import { errorPlugin } from "../../common/plugins/error-handler";
 import { db } from "../../db";
-import { campuses, employeeAssignments, orgUnitStatusEvents, orgUnits } from "../../db/schema";
+import {
+  campuses,
+  employeeAssignments,
+  employees,
+  orgUnitStatusEvents,
+  orgUnits,
+} from "../../db/schema";
 import { authRoutes } from "../auth";
 import { orgUnitRoutes } from "./index";
+
+function offsetDate(days: number) {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().split("T")[0]!;
+}
+
+async function createTestOrgUnit(codePrefix: string, unitName: string) {
+  const unique = crypto.randomUUID().slice(0, 8);
+  const [unit] = await db
+    .insert(orgUnits)
+    .values({
+      campusId: testCampusId,
+      unitCode: `${codePrefix}_${unique}`,
+      unitName: `${unitName} ${unique}`,
+      unitType: "PHONG",
+    })
+    .returning({ id: orgUnits.id });
+
+  return unit!.id;
+}
+
+async function createTestEmployee(namePrefix: string) {
+  const unique = crypto.randomUUID().replaceAll("-", "").slice(0, 10);
+  const [employee] = await db
+    .insert(employees)
+    .values({
+      fullName: `${namePrefix} ${unique}`,
+      dob: "1990-01-01",
+      gender: "NAM",
+      nationalId: `TO${unique}`,
+      address: "123 Org Unit St",
+      email: `org-unit.${unique}@example.com`,
+      phone: "0901234567",
+    })
+    .returning({ id: employees.id });
+
+  return employee!.id;
+}
 
 const app = new Elysia()
   .use(cors({ origin: "http://localhost:5173", credentials: true }))
@@ -57,6 +102,15 @@ let testCampusId: string;
 const suffix = crypto.randomUUID().slice(0, 8);
 
 async function cleanupStaleUnits() {
+  const staleEmployees = await db
+    .select({ id: employees.id })
+    .from(employees)
+    .where(like(employees.fullName, "Test Org Unit Assignment Emp%"));
+  for (const employee of staleEmployees) {
+    await db.delete(employeeAssignments).where(eq(employeeAssignments.employeeId, employee.id));
+    await db.delete(employees).where(eq(employees.id, employee.id));
+  }
+
   const stale = await db
     .select({ id: orgUnits.id })
     .from(orgUnits)
@@ -210,16 +264,105 @@ describe("GET /api/org-units/:id — Detail", () => {
   });
 
   test("non-existent UUID → 404", async () => {
-    const res = await adminRequest(
-      "GET",
-      "/api/org-units/00000000-0000-0000-0000-000000000000",
-    );
+    const res = await adminRequest("GET", "/api/org-units/00000000-0000-0000-0000-000000000000");
     expect(res.status).toBe(404);
   });
 
   test("invalid format → 400", async () => {
     const res = await adminRequest("GET", "/api/org-units/not-a-uuid");
     expect(res.status).toBe(400);
+  });
+});
+
+describe("POST /api/org-units/:id/assignments + /end regression paths", () => {
+  test("rejects past startedOn", async () => {
+    const orgUnitId = await createTestOrgUnit("T_UNIT_ASG", "Org Unit Assignment Test");
+    const employeeId = await createTestEmployee("Test Org Unit Assignment Emp Past");
+
+    const res = await adminRequest("POST", `/api/org-units/${orgUnitId}/assignments`, {
+      employeeId,
+      startedOn: offsetDate(-1),
+    });
+
+    expect(res.status).toBeGreaterThanOrEqual(400);
+
+    const [activeAssignment] = await db
+      .select({ id: employeeAssignments.id })
+      .from(employeeAssignments)
+      .where(
+        and(eq(employeeAssignments.employeeId, employeeId), isNull(employeeAssignments.endedOn)),
+      )
+      .limit(1);
+    expect(activeAssignment).toBeUndefined();
+  });
+
+  test("handles transfer and clears employee state on /end dismissal", async () => {
+    const sourceOrgUnitId = await createTestOrgUnit("T_UNIT_ASG_SRC", "Org Unit Source");
+    const targetOrgUnitId = await createTestOrgUnit("T_UNIT_ASG_DST", "Org Unit Target");
+    const employeeId = await createTestEmployee("Test Org Unit Assignment Emp Transfer");
+    const sourceStartedOn = offsetDate(0);
+    const transferStartedOn = offsetDate(0);
+
+    const firstRes = await adminRequest("POST", `/api/org-units/${sourceOrgUnitId}/assignments`, {
+      employeeId,
+      positionTitle: "Chuyên viên",
+      startedOn: sourceStartedOn,
+    });
+    expect(firstRes.status).toBe(200);
+    const firstBody = await firstRes.json();
+
+    const transferRes = await adminRequest(
+      "POST",
+      `/api/org-units/${targetOrgUnitId}/assignments`,
+      {
+        employeeId,
+        positionTitle: "Trưởng phòng",
+        startedOn: transferStartedOn,
+      },
+    );
+    expect(transferRes.status).toBe(200);
+    const transferBody = await transferRes.json();
+
+    const [originalAssignment] = await db
+      .select({
+        endedOn: employeeAssignments.endedOn,
+        eventType: employeeAssignments.eventType,
+      })
+      .from(employeeAssignments)
+      .where(eq(employeeAssignments.id, firstBody.data.id))
+      .limit(1);
+    expect(originalAssignment!.endedOn).toBe(transferStartedOn);
+    expect(originalAssignment!.eventType).toBe("DISMISS");
+
+    const endRes = await adminRequest(
+      "POST",
+      `/api/org-units/${targetOrgUnitId}/assignments/${transferBody.data.id}/end`,
+    );
+    expect(endRes.status).toBe(200);
+    const endBody = await endRes.json();
+    expect(endBody.data.endedOn).toBe(offsetDate(0));
+    expect(endBody.data.eventType).toBe("DISMISS");
+
+    const [employee] = await db
+      .select({
+        currentOrgUnitId: employees.currentOrgUnitId,
+        currentPositionTitle: employees.currentPositionTitle,
+        workStatus: employees.workStatus,
+      })
+      .from(employees)
+      .where(eq(employees.id, employeeId))
+      .limit(1);
+    expect(employee!.currentOrgUnitId).toBeNull();
+    expect(employee!.currentPositionTitle).toBeNull();
+    expect(employee!.workStatus).toBe("pending");
+
+    const activeAssignments = await db
+      .select({ id: employeeAssignments.id })
+      .from(employeeAssignments)
+      .where(
+        and(eq(employeeAssignments.employeeId, employeeId), isNull(employeeAssignments.endedOn)),
+      );
+    expect(activeAssignments).toHaveLength(0);
   });
 });
 
@@ -236,11 +379,9 @@ describe("PUT /api/org-units/:id — Update", () => {
   });
 
   test("non-existent unit → 404", async () => {
-    const res = await adminRequest(
-      "PUT",
-      "/api/org-units/00000000-0000-0000-0000-000000000000",
-      { unitName: "Nope" },
-    );
+    const res = await adminRequest("PUT", "/api/org-units/00000000-0000-0000-0000-000000000000", {
+      unitName: "Nope",
+    });
     expect(res.status).toBe(404);
   });
 });

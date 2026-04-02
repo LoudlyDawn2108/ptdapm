@@ -150,23 +150,41 @@ async function isGradeUsedByEmployees(gradeId: string): Promise<boolean> {
   return false;
 }
 
-// ── Steps ───────────────────────────────────────────────────────────────────
-
-export async function listSteps(gradeId: string): Promise<SalaryGradeStep[]> {
-  await getById(gradeId);
-
-  return db
+async function getStepById(gradeId: string, stepId: string): Promise<SalaryGradeStep> {
+  const [step] = await db
     .select()
     .from(salaryGradeSteps)
-    .where(eq(salaryGradeSteps.salaryGradeId, gradeId))
-    .orderBy(salaryGradeSteps.stepNo);
+    .where(and(eq(salaryGradeSteps.id, stepId), eq(salaryGradeSteps.salaryGradeId, gradeId)));
+
+  if (!step) throw new NotFoundError("Không tìm thấy bậc lương");
+  return step;
+}
+
+// ── Steps ───────────────────────────────────────────────────────────────────
+
+export async function listSteps(gradeId: string, activeOnly = false): Promise<SalaryGradeStep[]> {
+  const grade = await getById(gradeId);
+
+  if (activeOnly && grade.status !== "active") {
+    return [];
+  }
+
+  const where = activeOnly
+    ? and(eq(salaryGradeSteps.salaryGradeId, gradeId), eq(salaryGradeSteps.status, "active"))
+    : eq(salaryGradeSteps.salaryGradeId, gradeId);
+
+  return db.select().from(salaryGradeSteps).where(where).orderBy(salaryGradeSteps.stepNo);
 }
 
 export async function createStep(
   gradeId: string,
   data: CreateSalaryGradeStepInput,
 ): Promise<SalaryGradeStep> {
-  await getById(gradeId);
+  const grade = await getById(gradeId);
+
+  if (grade.status !== "active") {
+    throw new BadRequestError("Không thể thêm bậc lương cho ngạch đã ngừng sử dụng");
+  }
 
   // Check duplicate stepNo in same grade
   const existing = await db
@@ -194,14 +212,19 @@ export async function updateStep(
   stepId: string,
   data: UpdateSalaryGradeStepInput,
 ): Promise<SalaryGradeStep> {
-  await getById(gradeId);
+  const grade = await getById(gradeId);
+  const step = await getStepById(gradeId, stepId);
 
-  const [step] = await db
-    .select()
-    .from(salaryGradeSteps)
-    .where(and(eq(salaryGradeSteps.id, stepId), eq(salaryGradeSteps.salaryGradeId, gradeId)));
+  const updatesStatusOnly =
+    Object.keys(data).length === 1 && Object.prototype.hasOwnProperty.call(data, "status");
 
-  if (!step) throw new NotFoundError("Không tìm thấy bậc lương");
+  if (grade.status !== "active" && !updatesStatusOnly) {
+    throw new BadRequestError("Không thể chỉnh sửa bậc lương thuộc ngạch đã ngừng sử dụng");
+  }
+
+  if (step.status === "inactive" && !updatesStatusOnly) {
+    throw new BadRequestError("Không thể chỉnh sửa bậc lương đã ngừng sử dụng");
+  }
 
   // Check if used by employees
   if (data.stepNo || data.coefficient) {
@@ -244,12 +267,7 @@ export async function updateStep(
 export async function removeStep(gradeId: string, stepId: string): Promise<{ id: string }> {
   await getById(gradeId);
 
-  const [step] = await db
-    .select()
-    .from(salaryGradeSteps)
-    .where(and(eq(salaryGradeSteps.id, stepId), eq(salaryGradeSteps.salaryGradeId, gradeId)));
-
-  if (!step) throw new NotFoundError("Không tìm thấy bậc lương");
+  const step = await getStepById(gradeId, stepId);
 
   // Check if used by employees
   const [emp] = await db

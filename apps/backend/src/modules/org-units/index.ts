@@ -10,6 +10,7 @@ import {
 import { Elysia, t } from "elysia";
 import { authPlugin } from "../../common/plugins/auth";
 import { requireRole } from "../../common/utils/role-guard";
+import * as assignmentService from "../assignments/assignment.service";
 import * as orgUnitService from "./org-unit.service";
 
 export const orgUnitRoutes = new Elysia({ prefix: "/api/org-units" })
@@ -79,7 +80,7 @@ export const orgUnitRoutes = new Elysia({ prefix: "/api/org-units" })
     "/:id/assignments",
     async ({ params, body, user }) => {
       requireRole(user.role, "ADMIN", "TCCB");
-      const data = await orgUnitService.addAssignment(params.id, body, user.id);
+      const data = await assignmentService.appoint(params.id, body, user.id);
       return { data };
     },
     {
@@ -92,7 +93,7 @@ export const orgUnitRoutes = new Elysia({ prefix: "/api/org-units" })
     "/:id/assignments/:assignmentId/end",
     async ({ params, user }) => {
       requireRole(user.role, "ADMIN", "TCCB");
-      const data = await orgUnitService.endAssignment(params.id, params.assignmentId);
+      const data = await assignmentService.dismissAssignment(params.id, params.assignmentId);
       return { data };
     },
     {

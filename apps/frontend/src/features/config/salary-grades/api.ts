@@ -14,7 +14,8 @@ export const salaryGradeKeys = {
   list: (params: Record<string, unknown>) => [...salaryGradeKeys.lists(), params] as const,
   detail: (id: string) => [...salaryGradeKeys.all, "detail", id] as const,
   dropdown: (search?: string) => [...salaryGradeKeys.all, "dropdown", search ?? ""] as const,
-  steps: (gradeId: string) => [...salaryGradeKeys.all, "steps", gradeId] as const,
+  steps: (gradeId: string, activeOnly = false) =>
+    [...salaryGradeKeys.all, "steps", gradeId, activeOnly ? "active-only" : "all"] as const,
 };
 
 export const salaryGradeListOptions = (params: {
@@ -59,13 +60,15 @@ export const salaryGradeDropdownOptions = (search?: string) =>
     staleTime: 60_000,
   });
 
-export const salaryGradeStepsOptions = (gradeId: string) =>
+export const salaryGradeStepsOptions = (gradeId: string, options?: { activeOnly?: boolean }) =>
   queryOptions({
-    queryKey: salaryGradeKeys.steps(gradeId),
+    queryKey: salaryGradeKeys.steps(gradeId, options?.activeOnly ?? false),
     queryFn: async () => {
       const { data, error } = await api.api.config["salary-grades"]({
         id: gradeId,
-      }).steps.get();
+      }).steps.get({
+        query: { activeOnly: options?.activeOnly ?? false },
+      });
       if (error) throw handleApiError(error);
       return data;
     },

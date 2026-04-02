@@ -110,6 +110,7 @@ export function useAddAssignment() {
     }: {
       orgUnitId: string;
       employeeId: string;
+      sourceOrgUnitId?: string;
       positionTitle?: string;
       startedOn: string;
     }) => {
@@ -133,9 +134,11 @@ export function useEndAssignment() {
       orgUnitId: string;
       assignmentId: string;
     }) => {
-      const { data, error } = await api.api["org-units"]({ id: orgUnitId }).assignments({
-        assignmentId,
-      }).end.post();
+      const { data, error } = await api.api["org-units"]({ id: orgUnitId })
+        .assignments({
+          assignmentId,
+        })
+        .end.post();
       if (error) throw handleApiError(error);
       return data;
     },

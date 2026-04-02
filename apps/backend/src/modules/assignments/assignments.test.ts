@@ -10,6 +10,45 @@ import { campuses, employeeAssignments, employees, orgUnits } from "../../db/sch
 import { authRoutes } from "../auth";
 import { assignmentRoutes } from "./index";
 
+function offsetDate(days: number) {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().split("T")[0]!;
+}
+
+async function createTestOrgUnit(campusId: string, codePrefix: string) {
+  const unique = crypto.randomUUID().slice(0, 8);
+  const [unit] = await db
+    .insert(orgUnits)
+    .values({
+      campusId,
+      unitCode: `${codePrefix}_${unique}`,
+      unitName: `${codePrefix} ${unique}`,
+      unitType: "PHONG",
+    })
+    .returning({ id: orgUnits.id });
+
+  return unit!.id;
+}
+
+async function createTestEmployee(namePrefix: string) {
+  const unique = crypto.randomUUID().replaceAll("-", "").slice(0, 10);
+  const [employee] = await db
+    .insert(employees)
+    .values({
+      fullName: `${namePrefix} ${unique}`,
+      dob: "1990-01-01",
+      gender: "NAM",
+      nationalId: `TA${unique}`,
+      address: "123 Assignment St",
+      email: `assign.${unique}@example.com`,
+      phone: "0901234567",
+    })
+    .returning({ id: employees.id });
+
+  return employee!.id;
+}
+
 const app = new Elysia()
   .use(cors({ origin: "http://localhost:5173", credentials: true }))
   .use(errorPlugin)
@@ -52,6 +91,7 @@ async function adminRequest(method: string, path: string, body?: unknown) {
 let testOrgUnitId: string;
 let testEmployeeId: string;
 let createdAssignmentId: string;
+let testCampusId: string;
 const suffix = crypto.randomUUID().slice(0, 8);
 
 async function cleanupStaleData() {
@@ -91,6 +131,8 @@ beforeAll(async () => {
       .returning({ id: campuses.id });
     campusId = created!.id;
   }
+
+  testCampusId = campusId;
 
   // Create test org unit
   const [unit] = await db
@@ -143,7 +185,7 @@ describe("RBAC — ADMIN/TCCB only", () => {
         headers: { Cookie: cookies, "Content-Type": "application/json" },
         body: JSON.stringify({
           employeeId: testEmployeeId,
-          startedOn: "2025-01-01",
+          startedOn: offsetDate(0),
         }),
       }),
     );
@@ -174,10 +216,12 @@ describe("GET /api/org-units/:orgUnitId/assignments — List", () => {
 
 describe("POST /api/org-units/:orgUnitId/assignments — Appoint", () => {
   test("valid data appoints employee", async () => {
+    const startedOn = offsetDate(0);
+
     const res = await adminRequest("POST", `/api/org-units/${testOrgUnitId}/assignments`, {
       employeeId: testEmployeeId,
       positionTitle: "Trưởng phòng",
-      startedOn: "2025-01-01",
+      startedOn,
     });
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -196,19 +240,124 @@ describe("POST /api/org-units/:orgUnitId/assignments — Appoint", () => {
   });
 
   test("duplicate appointment → 400", async () => {
+    const startedOn = offsetDate(0);
+
     const res = await adminRequest("POST", `/api/org-units/${testOrgUnitId}/assignments`, {
       employeeId: testEmployeeId,
-      startedOn: "2025-01-01",
+      startedOn,
     });
     expect(res.status).toBe(400);
   });
 
   test("non-existent employee → 404", async () => {
+    const startedOn = offsetDate(0);
+
     const res = await adminRequest("POST", `/api/org-units/${testOrgUnitId}/assignments`, {
       employeeId: "00000000-0000-0000-0000-000000000000",
-      startedOn: "2025-01-01",
+      startedOn,
     });
     expect(res.status).toBe(404);
+  });
+
+  test("past startedOn is rejected", async () => {
+    const employeeId = await createTestEmployee("Test Assignment Emp Past");
+
+    const res = await adminRequest("POST", `/api/org-units/${testOrgUnitId}/assignments`, {
+      employeeId,
+      startedOn: offsetDate(-1),
+    });
+
+    expect(res.status).toBeGreaterThanOrEqual(400);
+
+    const [activeAssignment] = await db
+      .select({ id: employeeAssignments.id })
+      .from(employeeAssignments)
+      .where(
+        and(eq(employeeAssignments.employeeId, employeeId), isNull(employeeAssignments.endedOn)),
+      )
+      .limit(1);
+    expect(activeAssignment).toBeUndefined();
+  });
+
+  test("appointment transfers employee from previous org unit", async () => {
+    const sourceOrgUnitId = await createTestOrgUnit(testCampusId, "T_ASG_SRC");
+    const targetOrgUnitId = await createTestOrgUnit(testCampusId, "T_ASG_DST");
+    const employeeId = await createTestEmployee("Test Assignment Emp Transfer");
+    const sourceStartedOn = offsetDate(0);
+    const transferStartedOn = offsetDate(0);
+
+    const firstRes = await adminRequest("POST", `/api/org-units/${sourceOrgUnitId}/assignments`, {
+      employeeId,
+      positionTitle: "Chuyên viên",
+      startedOn: sourceStartedOn,
+    });
+    expect(firstRes.status).toBe(200);
+    const firstBody = await firstRes.json();
+
+    const transferRes = await adminRequest(
+      "POST",
+      `/api/org-units/${targetOrgUnitId}/assignments`,
+      {
+        employeeId,
+        positionTitle: "Phó phòng",
+        startedOn: transferStartedOn,
+      },
+    );
+    expect(transferRes.status).toBe(200);
+    const transferBody = await transferRes.json();
+
+    const [originalAssignment] = await db
+      .select({
+        endedOn: employeeAssignments.endedOn,
+        eventType: employeeAssignments.eventType,
+      })
+      .from(employeeAssignments)
+      .where(eq(employeeAssignments.id, firstBody.data.id))
+      .limit(1);
+    expect(originalAssignment!.endedOn).toBe(transferStartedOn);
+    expect(originalAssignment!.eventType).toBe("DISMISS");
+
+    const [employee] = await db
+      .select({
+        currentOrgUnitId: employees.currentOrgUnitId,
+        currentPositionTitle: employees.currentPositionTitle,
+        workStatus: employees.workStatus,
+      })
+      .from(employees)
+      .where(eq(employees.id, employeeId))
+      .limit(1);
+    expect(employee!.currentOrgUnitId).toBe(targetOrgUnitId);
+    expect(employee!.currentPositionTitle).toBe("Phó phòng");
+    expect(employee!.workStatus).toBe("working");
+
+    expect(transferBody.data.orgUnitId).toBe(targetOrgUnitId);
+  });
+
+  test("transfer rejects mismatched source org unit", async () => {
+    const sourceOrgUnitId = await createTestOrgUnit(testCampusId, "T_ASG_SRC");
+    const wrongSourceOrgUnitId = await createTestOrgUnit(testCampusId, "T_ASG_WRONG");
+    const targetOrgUnitId = await createTestOrgUnit(testCampusId, "T_ASG_DST");
+    const employeeId = await createTestEmployee("Test Assignment Emp Wrong Source");
+
+    const firstRes = await adminRequest("POST", `/api/org-units/${sourceOrgUnitId}/assignments`, {
+      employeeId,
+      positionTitle: "Chuyên viên",
+      startedOn: offsetDate(0),
+    });
+    expect(firstRes.status).toBe(200);
+
+    const transferRes = await adminRequest(
+      "POST",
+      `/api/org-units/${targetOrgUnitId}/assignments`,
+      {
+        employeeId,
+        sourceOrgUnitId: wrongSourceOrgUnitId,
+        positionTitle: "Phó phòng",
+        startedOn: offsetDate(0),
+      },
+    );
+
+    expect(transferRes.status).toBe(400);
   });
 
   test("missing required fields → error", async () => {

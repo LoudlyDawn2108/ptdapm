@@ -13,13 +13,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { orgUnitDetailOptions, useAddAssignment, useEndAssignment } from "@/features/org-units/api";
-import { fetchEmployeeDropdown } from "@/lib/api/config-dropdowns";
+import { createEmployeeDropdownFetcher, fetchOrgUnitDropdown } from "@/lib/api/config-dropdowns";
 import { formatDate } from "@/lib/date-utils";
 import { ApiResponseError } from "@/lib/error-handler";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/org-units_/$orgUnitId/staff")({
@@ -35,6 +35,12 @@ type AssignmentEntry = {
   staffCode: string;
   fullName: string;
 };
+
+type AssignmentMode = "new" | "transfer";
+
+function getTodayDateString() {
+  return new Date().toISOString().split("T")[0]!;
+}
 
 function StaffTab() {
   const { orgUnitId } = Route.useParams();
@@ -52,10 +58,35 @@ function StaffTab() {
   // Add assignment dialog
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [addForm, setAddForm] = useState({
+    mode: "new" as AssignmentMode,
+    sourceOrgUnitId: "",
     employeeId: "",
     positionTitle: "",
-    startedOn: new Date().toISOString().split("T")[0]!,
+    startedOn: getTodayDateString(),
   });
+
+  const pendingEmployeeFetcher = useMemo(
+    () => createEmployeeDropdownFetcher({ workStatus: "pending" }),
+    [],
+  );
+  const transferEmployeeFetcher = useMemo(
+    () =>
+      createEmployeeDropdownFetcher({
+        orgUnitId: addForm.sourceOrgUnitId || undefined,
+        workStatus: "working",
+      }),
+    [addForm.sourceOrgUnitId],
+  );
+
+  const resetAddForm = () => {
+    setAddForm({
+      mode: "new",
+      sourceOrgUnitId: "",
+      employeeId: "",
+      positionTitle: "",
+      startedOn: getTodayDateString(),
+    });
+  };
 
   const handleEndAssignment = async () => {
     if (!endTarget) return;
@@ -79,25 +110,32 @@ function StaffTab() {
       toast.error("Vui lòng nhập đầy đủ thông tin");
       return;
     }
+
+    if (addForm.startedOn < getTodayDateString()) {
+      toast.error("Ngày bắt đầu không được ở trong quá khứ");
+      return;
+    }
+
+    if (addForm.mode === "transfer" && !addForm.sourceOrgUnitId) {
+      toast.error("Vui lòng chọn đơn vị nguồn để điều chuyển");
+      return;
+    }
+
     try {
       await addAssignment.mutateAsync({
         orgUnitId,
         employeeId: addForm.employeeId,
+        sourceOrgUnitId: addForm.mode === "transfer" ? addForm.sourceOrgUnitId : undefined,
         positionTitle: addForm.positionTitle || undefined,
         startedOn: addForm.startedOn,
       });
       toast.success("Bổ nhiệm thành công");
       setShowAddDialog(false);
-      setAddForm({
-        employeeId: "",
-        positionTitle: "",
-        startedOn: new Date().toISOString().split("T")[0]!,
-      });
+      resetAddForm();
     } catch (err: unknown) {
-      if (!(err instanceof ApiResponseError)) {
-        const message = err instanceof Error ? err.message : "Có lỗi xảy ra";
-        toast.error(message);
-      }
+      if (err instanceof ApiResponseError) return;
+      const message = err instanceof Error ? err.message : "Có lỗi xảy ra";
+      toast.error(message);
     }
   };
 
@@ -204,7 +242,13 @@ function StaffTab() {
       </Dialog>
 
       {/* ── Add Assignment Dialog ──────────────────────────── */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+      <Dialog
+        open={showAddDialog}
+        onOpenChange={(open) => {
+          setShowAddDialog(open);
+          if (!open) resetAddForm();
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Bổ nhiệm nhân sự</DialogTitle>
@@ -212,16 +256,82 @@ function StaffTab() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
+              <Label>Loại bổ nhiệm</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant={addForm.mode === "new" ? "default" : "outline"}
+                  onClick={() =>
+                    setAddForm((f) => ({
+                      ...f,
+                      mode: "new",
+                      sourceOrgUnitId: "",
+                      employeeId: "",
+                    }))
+                  }
+                >
+                  Nhân sự chờ xét
+                </Button>
+                <Button
+                  type="button"
+                  variant={addForm.mode === "transfer" ? "default" : "outline"}
+                  onClick={() =>
+                    setAddForm((f) => ({
+                      ...f,
+                      mode: "transfer",
+                      employeeId: "",
+                    }))
+                  }
+                >
+                  Điều chuyển từ đơn vị khác
+                </Button>
+              </div>
+            </div>
+            {addForm.mode === "transfer" && (
+              <div className="space-y-2">
+                <Label>
+                  Đơn vị nguồn <span className="text-destructive">*</span>
+                </Label>
+                <Combobox
+                  queryKey={["org-units", "transfer-source"]}
+                  fetchOptions={fetchOrgUnitDropdown}
+                  value={addForm.sourceOrgUnitId}
+                  onChange={(val) =>
+                    setAddForm((f) => ({ ...f, sourceOrgUnitId: val, employeeId: "" }))
+                  }
+                  placeholder="Chọn đơn vị nguồn..."
+                  emptyMessage="Không tìm thấy đơn vị nguồn."
+                />
+              </div>
+            )}
+            <div className="space-y-2">
               <Label>
                 Nhân sự <span className="text-destructive">*</span>
               </Label>
               <Combobox
-                queryKey={["employees", "combobox"]}
-                fetchOptions={fetchEmployeeDropdown}
+                queryKey={
+                  addForm.mode === "transfer"
+                    ? ["employees", "combobox", "working", addForm.sourceOrgUnitId || "no-source"]
+                    : ["employees", "combobox", "pending"]
+                }
+                fetchOptions={
+                  addForm.mode === "transfer" ? transferEmployeeFetcher : pendingEmployeeFetcher
+                }
                 value={addForm.employeeId}
                 onChange={(val) => setAddForm((f) => ({ ...f, employeeId: val }))}
-                placeholder="Tìm kiếm nhân sự..."
-                emptyMessage="Không tìm thấy nhân sự."
+                placeholder={
+                  addForm.mode === "transfer"
+                    ? addForm.sourceOrgUnitId
+                      ? "Tìm kiếm nhân sự đang công tác..."
+                      : "Chọn đơn vị nguồn trước"
+                    : "Tìm kiếm nhân sự chờ xét..."
+                }
+                emptyMessage={
+                  addForm.mode === "transfer"
+                    ? "Không tìm thấy nhân sự đang công tác trong đơn vị nguồn."
+                    : "Không tìm thấy nhân sự chờ xét."
+                }
+                disabled={addForm.mode === "transfer" && !addForm.sourceOrgUnitId}
               />
             </div>
             <div className="space-y-2">
@@ -236,6 +346,7 @@ function StaffTab() {
               <Label>Ngày bổ nhiệm</Label>
               <Input
                 type="date"
+                min={getTodayDateString()}
                 value={addForm.startedOn}
                 onChange={(e) => setAddForm((f) => ({ ...f, startedOn: e.target.value }))}
               />

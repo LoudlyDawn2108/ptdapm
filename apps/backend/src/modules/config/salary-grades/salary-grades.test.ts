@@ -253,6 +253,87 @@ describe("Salary Grade Steps — CRUD", () => {
     expect(body.data.length).toBeGreaterThan(0);
   });
 
+  test("GET steps with activeOnly hides inactive steps", async () => {
+    const deactivateRes = await adminRequest(
+      "PUT",
+      `/api/config/salary-grades/${createdGradeId}/steps/${createdStepId}`,
+      { status: "inactive" },
+    );
+    expect(deactivateRes.status).toBe(200);
+
+    const filteredRes = await adminRequest(
+      "GET",
+      `/api/config/salary-grades/${createdGradeId}/steps?activeOnly=true`,
+    );
+    expect(filteredRes.status).toBe(200);
+    const filteredBody = await filteredRes.json();
+    expect(filteredBody.data).toBeArray();
+    expect(
+      filteredBody.data.find((item: { id: string }) => item.id === createdStepId),
+    ).toBeUndefined();
+
+    const reactivateRes = await adminRequest(
+      "PUT",
+      `/api/config/salary-grades/${createdGradeId}/steps/${createdStepId}`,
+      { status: "active" },
+    );
+    expect(reactivateRes.status).toBe(200);
+  });
+
+  test("cannot create step under inactive grade", async () => {
+    const gradeRes = await adminRequest("POST", "/api/config/salary-grades", {
+      gradeCode: `INACTIVE_${suffix}`,
+      gradeName: `Inactive grade ${suffix}`,
+    });
+    expect(gradeRes.status).toBe(200);
+    const gradeBody = await gradeRes.json();
+    const inactiveGradeId = gradeBody.data.id as string;
+
+    const deactivateRes = await adminRequest(
+      "PUT",
+      `/api/config/salary-grades/${inactiveGradeId}`,
+      {
+        status: "inactive",
+      },
+    );
+    expect(deactivateRes.status).toBe(200);
+
+    const createStepRes = await adminRequest(
+      "POST",
+      `/api/config/salary-grades/${inactiveGradeId}/steps`,
+      {
+        stepNo: 1,
+        coefficient: "2.55",
+      },
+    );
+    expect(createStepRes.status).toBe(400);
+
+    await db.delete(salaryGrades).where(eq(salaryGrades.id, inactiveGradeId));
+  });
+
+  test("cannot edit inactive step fields except status", async () => {
+    const deactivateRes = await adminRequest(
+      "PUT",
+      `/api/config/salary-grades/${createdGradeId}/steps/${createdStepId}`,
+      { status: "inactive" },
+    );
+    expect(deactivateRes.status).toBe(200);
+
+    const updateRes = await adminRequest(
+      "PUT",
+      `/api/config/salary-grades/${createdGradeId}/steps/${createdStepId}`,
+      { coefficient: "6.78" },
+    );
+    expect(updateRes.status).toBe(400);
+
+    const reactivateRes = await adminRequest(
+      "PUT",
+      `/api/config/salary-grades/${createdGradeId}/steps/${createdStepId}`,
+      { status: "active" },
+    );
+    expect(reactivateRes.status).toBe(200);
+  });
+
   test("PUT step — update coefficient succeeds", async () => {
     const res = await adminRequest(
       "PUT",

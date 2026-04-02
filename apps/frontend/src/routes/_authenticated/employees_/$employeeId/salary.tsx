@@ -164,7 +164,9 @@ function SalaryTab() {
 
   const { data, isLoading } = useQuery(employeeDetailOptions(employeeId));
   const { data: salaryGradesData } = useQuery(salaryGradeDropdownOptions());
-  const { data: salaryGradeStepsData } = useQuery(salaryGradeStepsOptions(selectedGradeId));
+  const { data: salaryGradeStepsData } = useQuery(
+    salaryGradeStepsOptions(selectedGradeId, { activeOnly: true }),
+  );
   const { data: allowanceTypesData } = useQuery(
     allowanceTypeListOptions({ page: 1, pageSize: 100, search: undefined }),
   );

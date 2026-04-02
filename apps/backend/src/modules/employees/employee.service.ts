@@ -6,6 +6,7 @@ import {
   Gender,
   type ImportEmployeeRowInput,
   type UpdateEmployeeInput,
+  type WorkStatusCode,
   enumToSortedList,
   importEmployeeRowSchema,
 } from "@hrms/shared";
@@ -202,13 +203,27 @@ export async function list(
 
 // ── Dropdown ────────────────────────────────────────────────────────────────
 
-export async function dropdown(search?: string, limit = 20): Promise<DropdownOption[]> {
-  const workStatusFilter = or(
-    eq(employees.workStatus, "working"),
-    eq(employees.workStatus, "pending"),
-  );
+export async function dropdown(
+  search?: string,
+  limit = 20,
+  workStatus?: WorkStatusCode,
+  orgUnitId?: string,
+): Promise<DropdownOption[]> {
   const conditions: SQL[] = [];
-  if (workStatusFilter) conditions.push(workStatusFilter);
+
+  if (workStatus) {
+    conditions.push(eq(employees.workStatus, workStatus));
+  } else {
+    const workStatusFilter = or(
+      eq(employees.workStatus, "working"),
+      eq(employees.workStatus, "pending"),
+    );
+    if (workStatusFilter) conditions.push(workStatusFilter);
+  }
+
+  if (orgUnitId) {
+    conditions.push(eq(employees.currentOrgUnitId, orgUnitId));
+  }
 
   if (search) {
     const searchCondition = or(

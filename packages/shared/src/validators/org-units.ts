@@ -5,6 +5,11 @@ const orgUnitTypeSchema = z.enum(ORG_UNIT_TYPE_CODES);
 
 const orgEventReasonSchema = z.enum(ORG_EVENT_REASON_CODES);
 
+const getTodayDateString = (now = new Date()) => now.toISOString().split("T")[0]!;
+
+export const isTodayOrFutureDateString = (value: string, now = new Date()) =>
+  value >= getTodayDateString(now);
+
 // ---------------------------------------------------------------------------
 // Org Units
 // ---------------------------------------------------------------------------
@@ -88,12 +93,14 @@ export type MergeOrgUnitInput = z.infer<typeof mergeOrgUnitSchema>;
 // ---------------------------------------------------------------------------
 export const createAssignmentSchema = z.object({
   employeeId: z.uuid({ error: "Mã nhân sự không được để trống" }),
+  sourceOrgUnitId: z.uuid().optional().nullish(),
   positionTitle: z.string().nullish(),
   startedOn: z
     .string({ error: "Ngày bắt đầu không được để trống" })
     .min(1, "Ngày bắt đầu không được để trống")
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Ngày bắt đầu không hợp lệ (YYYY-MM-DD)")
-    .refine((val) => !Number.isNaN(Date.parse(val)), "Ngày bắt đầu không hợp lệ"),
+    .refine((val) => !Number.isNaN(Date.parse(val)), "Ngày bắt đầu không hợp lệ")
+    .refine((val) => isTodayOrFutureDateString(val), "Ngày bắt đầu không được ở trong quá khứ"),
 });
 
 export type CreateAssignmentInput = z.infer<typeof createAssignmentSchema>;

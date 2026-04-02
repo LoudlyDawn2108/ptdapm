@@ -27,6 +27,11 @@ const listQuerySchema = paginationSchema.extend({
   positionTitle: z.string().optional(),
 });
 
+const employeeDropdownQuerySchema = dropdownQuerySchema.extend({
+  orgUnitId: z.string().uuid().optional(),
+  workStatus: z.enum(WORK_STATUS_CODES).optional(),
+});
+
 export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
   .use(authPlugin)
   .get(
@@ -39,10 +44,7 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
 
       const employee = await employeeService.getByEmail(user.email ?? "");
       if (!employee) throw new NotFoundError("Không tìm thấy hồ sơ nhân viên");
-      const data = await employeeService.getAggregateById(
-        employee.id,
-        user.role,
-      );
+      const data = await employeeService.getAggregateById(employee.id, user.role);
       return { data };
     },
     { auth: true },
@@ -54,8 +56,7 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
       const data = await employeeService.generateImportTemplate();
       return new Response(data, {
         headers: {
-          "Content-Type":
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           "Content-Disposition": 'attachment; filename="import-template.xlsx"',
         },
       });
@@ -105,19 +106,21 @@ export const employeeRoutes = new Elysia({ prefix: "/api/employees" })
   .get(
     "/dropdown",
     async ({ query, user }) => {
-      const data = await employeeService.dropdown(query.search, query.limit);
+      const data = await employeeService.dropdown(
+        query.search,
+        query.limit,
+        query.workStatus as Parameters<typeof employeeService.dropdown>[2],
+        query.orgUnitId,
+      );
       return { data };
     },
-    { auth: true, query: dropdownQuerySchema },
+    { auth: true, query: employeeDropdownQuerySchema },
   )
   .get(
     "/:employeeId",
     async ({ params, user }) => {
       requireRole(user.role, ...EMPLOYEE_PROFILE_VIEW_ROLES);
-      const data = await employeeService.getAggregateById(
-        params.employeeId,
-        user.role,
-      );
+      const data = await employeeService.getAggregateById(params.employeeId, user.role);
       return { data };
     },
     { auth: true, params: z.object({ employeeId: z.string().uuid() }) },

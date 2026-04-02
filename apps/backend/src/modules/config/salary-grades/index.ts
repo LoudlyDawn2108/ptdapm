@@ -17,6 +17,10 @@ const listQuerySchema = paginationSchema.extend({
   search: z.string().optional(),
 });
 
+const stepListQuerySchema = z.object({
+  activeOnly: z.coerce.boolean().optional().default(false),
+});
+
 const gradeIdParam = z.object({ id: z.uuid() });
 const stepIdParam = z.object({ id: z.uuid(), stepId: z.uuid() });
 
@@ -76,11 +80,11 @@ export const salaryGradeRoutes = new Elysia({ prefix: "/api/config/salary-grades
   // ── Steps ────────────────────────────────────────────────────────────────
   .get(
     "/:id/steps",
-    async ({ params }) => {
-      const data = await salaryGradeService.listSteps(params.id);
+    async ({ params, query }) => {
+      const data = await salaryGradeService.listSteps(params.id, query.activeOnly);
       return { data };
     },
-    { auth: true, params: gradeIdParam },
+    { auth: true, params: gradeIdParam, query: stepListQuerySchema },
   )
   .post(
     "/:id/steps",
