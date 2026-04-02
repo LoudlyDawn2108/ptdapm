@@ -1,6 +1,14 @@
-import { PageHeader } from "@/components/layout/page-header";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useChangePassword } from "@/features/auth/api";
@@ -22,6 +30,8 @@ function ChangePasswordPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingValues, setPendingValues] = useState<ChangePasswordInput | null>(null);
 
   const form = useForm<ChangePasswordInput>({
     resolver: zodResolver(changePasswordSchema),
@@ -32,18 +42,27 @@ function ChangePasswordPage() {
     },
   });
 
-  const onSubmit = form.handleSubmit(async (values) => {
+  const onSubmit = form.handleSubmit((values) => {
+    setPendingValues(values);
+    setShowConfirmDialog(true);
+  });
+
+  const handleConfirmChange = async () => {
+    if (!pendingValues) return;
     try {
-      await changePasswordMutation.mutateAsync(values);
+      await changePasswordMutation.mutateAsync(pendingValues);
       toast.success("Đổi mật khẩu thành công");
       form.reset();
     } catch (error) {
       applyFieldErrors(form.setError, error);
+    } finally {
+      setShowConfirmDialog(false);
+      setPendingValues(null);
     }
-  });
+  };
 
   return (
-    <div className="mx-96 my-36">
+    <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:py-16 lg:py-24">
       <form onSubmit={onSubmit} className="space-y-5">
         <div className="space-y-2">
           <Label htmlFor="currentPassword">
@@ -149,6 +168,33 @@ function ChangePasswordPage() {
           Lưu mật khẩu
         </Button>
       </form>
+
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận đổi mật khẩu</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn đổi mật khẩu? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmChange}
+              disabled={changePasswordMutation.isPending}
+            >
+              {changePasswordMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang xử lý...
+                </>
+              ) : (
+                "Xác nhận"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
