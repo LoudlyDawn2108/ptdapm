@@ -367,13 +367,16 @@ function TrainingCourseFormDialog({
     }
   }, [open, mode, course, form]);
 
-  const title =
-    mode === "create" ? "Thêm khóa đào tạo" : "Chỉnh sửa khóa đào tạo";
-  const submitLabel =
-    mode === "create" ? "Lưu khóa đào tạo" : "Lưu thay đổi";
   const isInProgressEdit = mode === "edit" && course?.status === "in_progress";
+  const isCompletedEdit = mode === "edit" && course?.status === "completed";
   const registrationCount = course?.registrationCount ?? 0;
   const hasRegistrations = mode === "edit" && registrationCount > 0;
+  
+  const title =
+    mode === "create" ? "Thêm khóa đào tạo" : 
+    isCompletedEdit ? "Chi tiết khóa đào tạo" : "Chỉnh sửa khóa đào tạo";
+  const submitLabel =
+    mode === "create" ? "Lưu khóa đào tạo" : "Lưu thay đổi";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -410,13 +413,19 @@ function TrainingCourseFormDialog({
             })}
             className="px-6 py-4 space-y-5"
           >
-            {isInProgressEdit && (
+            {isCompletedEdit && (
+              <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+                Khóa đào tạo đã hoàn thành: không thể chỉnh sửa thông tin.
+              </div>
+            )}
+
+            {isInProgressEdit && !isCompletedEdit && (
               <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
                 Khóa đào tạo đang diễn ra: chỉ được chỉnh sửa địa điểm, kinh phí, cam kết và thông tin chứng chỉ.
               </div>
             )}
 
-            {hasRegistrations && !isInProgressEdit && (
+            {hasRegistrations && !isInProgressEdit && !isCompletedEdit && (
               <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
                 Khóa đào tạo đã có dữ liệu đăng ký: không thể thay đổi loại khóa đào tạo.
               </div>
@@ -437,7 +446,7 @@ function TrainingCourseFormDialog({
                       <Input
                         {...field}
                         placeholder="Nhập tên khóa đào tạo"
-                        disabled={isInProgressEdit}
+                        disabled={isInProgressEdit || isCompletedEdit}
                       />
                     </FormControl>
                     <FormMessage />
@@ -456,7 +465,7 @@ function TrainingCourseFormDialog({
                     <Select
                       value={field.value}
                       onValueChange={field.onChange}
-                      disabled={isInProgressEdit || hasRegistrations}
+                      disabled={isInProgressEdit || hasRegistrations || isCompletedEdit}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -493,7 +502,7 @@ function TrainingCourseFormDialog({
                         type="date"
                         {...field}
                         value={field.value ?? ""}
-                        disabled={isInProgressEdit}
+                        disabled={isInProgressEdit || isCompletedEdit}
                       />
                     </FormControl>
                     <FormMessage />
@@ -514,7 +523,7 @@ function TrainingCourseFormDialog({
                         type="date"
                         {...field}
                         value={field.value ?? ""}
-                        disabled={isInProgressEdit}
+                        disabled={isInProgressEdit || isCompletedEdit}
                       />
                     </FormControl>
                     <FormMessage />
@@ -536,6 +545,7 @@ function TrainingCourseFormDialog({
                         {...field}
                         value={field.value ?? ""}
                         placeholder="Nhập địa điểm đào tạo"
+                        disabled={isCompletedEdit}
                       />
                     </FormControl>
                     <FormMessage />
@@ -553,6 +563,7 @@ function TrainingCourseFormDialog({
                         {...field}
                         value={field.value ?? ""}
                         placeholder="VD: 3500000 hoặc 3500000.00"
+                        disabled={isCompletedEdit}
                       />
                     </FormControl>
                     <FormMessage />
@@ -573,6 +584,7 @@ function TrainingCourseFormDialog({
                       {...field}
                       value={field.value ?? ""}
                       placeholder="Nhập nội dung cam kết (nếu có)"
+                      disabled={isCompletedEdit}
                     />
                   </FormControl>
                   <FormMessage />
@@ -593,6 +605,7 @@ function TrainingCourseFormDialog({
                         {...field}
                         value={field.value ?? ""}
                         placeholder="Tên chứng chỉ"
+                        disabled={isCompletedEdit}
                       />
                     </FormControl>
                     <FormMessage />
@@ -610,6 +623,7 @@ function TrainingCourseFormDialog({
                         {...field}
                         value={field.value ?? ""}
                         placeholder="Loại chứng chỉ"
+                        disabled={isCompletedEdit}
                       />
                     </FormControl>
                     <FormMessage />
@@ -631,7 +645,7 @@ function TrainingCourseFormDialog({
                         type="date"
                         {...field}
                         value={field.value ?? ""}
-                        disabled={isInProgressEdit}
+                        disabled={isInProgressEdit || isCompletedEdit}
                         onChange={(e) =>
                           field.onChange(e.target.value || undefined)
                         }
@@ -652,7 +666,7 @@ function TrainingCourseFormDialog({
                         type="date"
                         {...field}
                         value={field.value ?? ""}
-                        disabled={isInProgressEdit}
+                        disabled={isInProgressEdit || isCompletedEdit}
                         onChange={(e) =>
                           field.onChange(e.target.value || undefined)
                         }
@@ -677,7 +691,7 @@ function TrainingCourseFormDialog({
                       min={1}
                       placeholder="Để trống nếu không giới hạn"
                       value={field.value ?? ""}
-                      disabled={isInProgressEdit}
+                      disabled={isInProgressEdit || isCompletedEdit}
                       onChange={(e) => {
                         const val = e.target.value;
                         field.onChange(val === "" ? undefined : Number(val));
@@ -696,18 +710,20 @@ function TrainingCourseFormDialog({
                 variant="outline"
                 onClick={() => onOpenChange(false)}
               >
-                Hủy
+                {isCompletedEdit ? "Đóng" : "Hủy"}
               </Button>
-              <Button type="submit" disabled={isSubmitting} className="bg-primary text-primary-foreground">
-                {isSubmitting ? (
-                  "Đang lưu..."
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-1.5" />
-                    {submitLabel}
-                  </>
-                )}
-              </Button>
+              {!isCompletedEdit && (
+                <Button type="submit" disabled={isSubmitting} className="bg-primary text-primary-foreground">
+                  {isSubmitting ? (
+                    "Đang lưu..."
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-1.5" />
+                      {submitLabel}
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </form>
         </Form>
