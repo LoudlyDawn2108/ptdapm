@@ -26,7 +26,6 @@ import { applyFieldErrors } from "@/lib/error-handler";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   type CreateOrgUnitInput,
-  OrgUnitStatus,
   OrgUnitType,
   createOrgUnitSchema,
   enumToSortedList,
@@ -36,13 +35,9 @@ import { Pencil, Plus, Save } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import {
-  orgUnitTreeOptions,
-  useCreateOrgUnit,
-  useUpdateOrgUnit,
-} from "./api";
+import { orgUnitTreeOptions, useCreateOrgUnit, useUpdateOrgUnit } from "./api";
 
-type OrgUnitNode = { id: string; unitName: string; children?: OrgUnitNode[] };
+type OrgUnitNode = { id: string; unitName: string; status?: string; children?: OrgUnitNode[] };
 
 interface OrgUnitFormDialogProps {
   open: boolean;
@@ -68,7 +63,9 @@ export function OrgUnitFormDialog({
       acc: Array<{ id: string; unitName: string }> = [],
     ) => {
       for (const node of nodes ?? []) {
-        acc.push({ id: node.id, unitName: node.unitName });
+        if (node.status === "active") {
+          acc.push({ id: node.id, unitName: node.unitName });
+        }
         flatten(node.children, acc);
       }
       return acc;
@@ -136,7 +133,6 @@ export function OrgUnitFormDialog({
     if (values.address) sanitized.address = values.address;
     if (values.officeAddress) sanitized.officeAddress = values.officeAddress;
     if (values.foundedOn) sanitized.foundedOn = values.foundedOn;
-    if (values.status) sanitized.status = values.status;
 
     try {
       if (isUpdate) {
@@ -344,42 +340,8 @@ export function OrgUnitFormDialog({
               )}
             />
 
-            {isUpdate && (
-              <FormField
-                control={form.control}
-                name={"status" as any}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Trạng thái</FormLabel>
-                    <Select
-                      value={field.value ?? editingItem?.status ?? "active"}
-                      onValueChange={field.onChange}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Object.entries(OrgUnitStatus).map(([code, meta]) => (
-                          <SelectItem key={code} value={code}>
-                            {meta.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Hủy
               </Button>
               <Button type="submit" disabled={isPending}>

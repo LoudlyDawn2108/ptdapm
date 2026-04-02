@@ -199,6 +199,10 @@ function SalaryTab() {
       return true;
     }
 
+    if (step.status === "inactive") {
+      return false;
+    }
+
     const stepCoefficient = parseSalaryCoefficient(step.coefficient);
 
     if (currentCoefficient == null || stepCoefficient == null) {

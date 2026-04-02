@@ -27,11 +27,7 @@ export async function listByOrgUnit(orgUnitId: string) {
     .orderBy(employeeAssignments.startedOn);
 }
 
-export async function appoint(
-  orgUnitId: string,
-  data: CreateAssignmentInput,
-  userId?: string,
-) {
+export async function appoint(orgUnitId: string, data: CreateAssignmentInput, userId?: string) {
   // Verify org unit exists and is active
   const [unit] = await db.select().from(orgUnits).where(eq(orgUnits.id, orgUnitId));
   if (!unit) throw new NotFoundError("Không tìm thấy đơn vị tổ chức");
@@ -88,19 +84,18 @@ export async function appoint(
   return assignment;
 }
 
-export async function dismiss(
-  orgUnitId: string,
-  assignmentId: string,
-  userId?: string,
-) {
+export async function dismiss(orgUnitId: string, assignmentId: string, userId?: string) {
+  const [unit] = await db.select().from(orgUnits).where(eq(orgUnits.id, orgUnitId));
+  if (!unit) throw new NotFoundError("Không tìm thấy đơn vị tổ chức");
+  if (unit.status !== "active") {
+    throw new BadRequestError("Không thể bãi nhiệm tại đơn vị đã giải thể/sáp nhập");
+  }
+
   const [assignment] = await db
     .select()
     .from(employeeAssignments)
     .where(
-      and(
-        eq(employeeAssignments.id, assignmentId),
-        eq(employeeAssignments.orgUnitId, orgUnitId),
-      ),
+      and(eq(employeeAssignments.id, assignmentId), eq(employeeAssignments.orgUnitId, orgUnitId)),
     );
 
   if (!assignment) throw new NotFoundError("Không tìm thấy bổ nhiệm");

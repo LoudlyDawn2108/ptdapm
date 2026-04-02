@@ -109,7 +109,7 @@ export async function getDetail(id: string) {
 
 export async function addAssignment(
   orgUnitId: string,
-  data: { employeeId: string; positionTitle?: string; startedOn: string },
+  data: { employeeId: string; positionTitle?: string | null; startedOn: string },
   createdByUserId?: string,
 ) {
   // Validate org unit exists and is active
@@ -126,22 +126,14 @@ export async function addAssignment(
     .limit(1);
   if (!emp) throw new NotFoundError("Không tìm thấy nhân sự");
 
-  // Check for duplicate active assignment
-  const [existing] = await db
-    .select({ id: employeeAssignments.id })
-    .from(employeeAssignments)
+  // End any existing active assignments at other units (transfer scenario)
+  const today = new Date().toISOString().split("T")[0]!;
+  await db
+    .update(employeeAssignments)
+    .set({ endedOn: today })
     .where(
-      and(
-        eq(employeeAssignments.orgUnitId, orgUnitId),
-        eq(employeeAssignments.employeeId, data.employeeId),
-        isNull(employeeAssignments.endedOn),
-      ),
-    )
-    .limit(1);
-
-  if (existing) {
-    throw new ConflictError("Nhân sự đã được bổ nhiệm tại đơn vị này");
-  }
+      and(eq(employeeAssignments.employeeId, data.employeeId), isNull(employeeAssignments.endedOn)),
+    );
 
   const [assignment] = await db
     .insert(employeeAssignments)
@@ -155,16 +147,25 @@ export async function addAssignment(
     })
     .returning();
 
-  // Update employee's currentOrgUnitId
   await db
     .update(employees)
-    .set({ currentOrgUnitId: orgUnitId, updatedAt: new Date() })
+    .set({
+      currentOrgUnitId: orgUnitId,
+      currentPositionTitle: data.positionTitle ?? null,
+      workStatus: "working",
+      updatedAt: new Date(),
+    })
     .where(eq(employees.id, data.employeeId));
 
   return assignment;
 }
 
 export async function endAssignment(orgUnitId: string, assignmentId: string) {
+  const unit = await getById(orgUnitId);
+  if (unit.status !== "active") {
+    throw new BadRequestError("Không thể bãi nhiệm tại đơn vị đã giải thể/sáp nhập");
+  }
+
   const [assignment] = await db
     .select()
     .from(employeeAssignments)

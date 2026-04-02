@@ -1,12 +1,7 @@
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { orgUnitDetailOptions } from "@/features/org-units/api";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { OrgUnitFormDialog } from "@/features/org-units/OrgUnitFormDialog";
+import { orgUnitDetailOptions } from "@/features/org-units/api";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight, Eye, Pencil, Plus } from "lucide-react";
@@ -40,7 +35,7 @@ function ChildUnitNode({
 }) {
   const [expanded, setExpanded] = useState(level < 2);
   const hasChildren = (node.children?.length ?? 0) > 0;
-  const isDissolved = node.status === "dissolved";
+  const isInactive = node.status !== "active";
 
   return (
     <div>
@@ -67,22 +62,21 @@ function ChildUnitNode({
 
         {/* Name */}
         <span
-          className={`font-medium text-sm flex-1 ${isDissolved ? "text-muted-foreground line-through" : ""}`}
+          className={`font-medium text-sm flex-1 ${isInactive ? "text-muted-foreground line-through" : ""}`}
         >
           {node.unitName}
         </span>
 
-        {/* Dissolved badge */}
-        {isDissolved && (
+        {isInactive && (
           <span className="rounded border border-gray-300 px-2 py-0.5 text-xs text-muted-foreground">
-            Giải thể
+            {node.status === "dissolved" ? "Giải thể" : "Đã sáp nhập"}
           </span>
         )}
 
         {/* Action buttons */}
         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <TooltipProvider delayDuration={300}>
-            {!isDissolved && (
+            {!isInactive && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -116,7 +110,7 @@ function ChildUnitNode({
               <TooltipContent>Xem chi tiết</TooltipContent>
             </Tooltip>
 
-            {!isDissolved && (
+            {!isInactive && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -195,12 +189,7 @@ function ChildrenTab() {
   return (
     <div className="rounded-xl border bg-card p-6">
       {treeRoot && (treeRoot.children?.length ?? 0) > 0 ? (
-        <ChildUnitNode
-          node={treeRoot}
-          onAdd={handleAdd}
-          onEdit={handleEdit}
-          onView={handleView}
-        />
+        <ChildUnitNode node={treeRoot} onAdd={handleAdd} onEdit={handleEdit} onView={handleView} />
       ) : (
         <p className="py-12 text-center text-sm text-muted-foreground">
           Không có đơn vị trực thuộc.

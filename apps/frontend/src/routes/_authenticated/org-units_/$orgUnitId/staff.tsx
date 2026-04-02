@@ -105,12 +105,14 @@ function StaffTab() {
     <div className="rounded-xl border bg-card p-6">
       {/* Add button */}
       <RoleGuard roles={["ADMIN", "TCCB"]}>
-        <div className="flex justify-end mb-4">
-          <Button onClick={() => setShowAddDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Bổ nhiệm nhân sự
-          </Button>
-        </div>
+        {unit?.status === "active" && (
+          <div className="flex justify-end mb-4">
+            <Button onClick={() => setShowAddDialog(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Bổ nhiệm nhân sự
+            </Button>
+          </div>
+        )}
       </RoleGuard>
 
       {assignments.length > 0 ? (
@@ -145,7 +147,7 @@ function StaffTab() {
                     </td>
                     <td className="px-4 py-2.5">
                       <RoleGuard roles={["ADMIN", "TCCB"]}>
-                        {!isEnded && (
+                        {!isEnded && unit?.status === "active" && (
                           <Button
                             variant="ghost"
                             size="icon-sm"
@@ -170,12 +172,18 @@ function StaffTab() {
       )}
 
       {/* ── End Assignment Confirmation Dialog ──────────────── */}
-      <Dialog open={!!endTarget} onOpenChange={(open) => { if (!open) setEndTarget(null); }}>
+      <Dialog
+        open={!!endTarget}
+        onOpenChange={(open) => {
+          if (!open) setEndTarget(null);
+        }}
+      >
         <DialogContent className="sm:max-w-md" showCloseButton={false}>
           <DialogHeader className="items-center text-center">
             <DialogTitle className="text-center text-lg">Bãi nhiệm nhân sự</DialogTitle>
             <DialogDescription className="text-center">
-              Bạn có chắc chắn muốn bãi nhiệm nhân sự {endTarget?.staffCode} — {endTarget?.fullName}?
+              Bạn có chắc chắn muốn bãi nhiệm nhân sự {endTarget?.staffCode} — {endTarget?.fullName}
+              ?
               <br />
               Hành động này không thể hoàn tác
             </DialogDescription>
@@ -200,13 +208,13 @@ function StaffTab() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Bổ nhiệm nhân sự</DialogTitle>
-            <DialogDescription>
-              Thêm nhân sự vào đơn vị {unit?.unitName}
-            </DialogDescription>
+            <DialogDescription>Thêm nhân sự vào đơn vị {unit?.unitName}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Nhân sự <span className="text-destructive">*</span></Label>
+              <Label>
+                Nhân sự <span className="text-destructive">*</span>
+              </Label>
               <Combobox
                 queryKey={["employees", "combobox"]}
                 fetchOptions={fetchEmployeeDropdown}
@@ -237,10 +245,7 @@ function StaffTab() {
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
               Hủy
             </Button>
-            <Button
-              disabled={addAssignment.isPending}
-              onClick={handleAddAssignment}
-            >
+            <Button disabled={addAssignment.isPending} onClick={handleAddAssignment}>
               {addAssignment.isPending ? "Đang xử lý..." : "Bổ nhiệm"}
             </Button>
           </DialogFooter>

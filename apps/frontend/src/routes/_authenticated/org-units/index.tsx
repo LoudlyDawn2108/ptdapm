@@ -6,14 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { orgUnitTreeOptions } from "@/features/org-units/api";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { OrgUnitFormDialog } from "@/features/org-units/OrgUnitFormDialog";
+import { orgUnitTreeOptions } from "@/features/org-units/api";
 import { useDebounce } from "@/hooks/use-debounce";
 import { ORG_TREE_BASE_PADDING_PX, ORG_TREE_INDENT_PX, SKELETON_ROW_COUNT } from "@/lib/constants";
 import { authorizeRoute } from "@/lib/permissions";
@@ -45,7 +40,7 @@ function OrgUnitNode({
   const hasChildren = node.children?.length > 0;
   const statusLabel =
     OrgUnitStatus[node.status as keyof typeof OrgUnitStatus]?.label ?? node.status;
-  const isDissolved = node.status === "dissolved";
+  const isInactive = node.status !== "active";
 
   return (
     <div>
@@ -71,21 +66,26 @@ function OrgUnitNode({
         </button>
 
         {/* Name */}
-        <span className={`font-medium text-sm flex-1 ${isDissolved ? "text-muted-foreground line-through" : ""}`}>
+        <span
+          className={`font-medium text-sm flex-1 ${isInactive ? "text-muted-foreground line-through" : ""}`}
+        >
           {node.unitName}
         </span>
 
-        {/* Dissolved badge */}
-        {isDissolved ? (
+        {/* Inactive badge */}
+        {isInactive ? (
           <span className="rounded border border-gray-300 px-2 py-0.5 text-xs text-muted-foreground">
-            Giải thể
+            {statusLabel}
           </span>
         ) : (
           /* Eye icon — always visible */
           <Button
             variant="ghost"
             size="icon-sm"
-            onClick={(e) => { e.stopPropagation(); onView(node); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onView(node);
+            }}
           >
             <Eye className="h-3.5 w-3.5" />
           </Button>
@@ -94,13 +94,16 @@ function OrgUnitNode({
         {/* Action buttons — visible on hover */}
         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <TooltipProvider delayDuration={300}>
-            {!isDissolved && (
+            {!isInactive && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    onClick={(e) => { e.stopPropagation(); onAdd(node.id); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAdd(node.id);
+                    }}
                   >
                     <Plus className="h-3.5 w-3.5" />
                   </Button>
@@ -108,13 +111,16 @@ function OrgUnitNode({
                 <TooltipContent>Thêm đơn vị con</TooltipContent>
               </Tooltip>
             )}
-            {!isDissolved && (
+            {!isInactive && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    onClick={(e) => { e.stopPropagation(); onEdit(node); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(node);
+                    }}
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
@@ -254,7 +260,9 @@ function OrgUnitsPage() {
       {/* Edit dialog */}
       <OrgUnitFormDialog
         open={!!editingItem}
-        onOpenChange={(open) => { if (!open) setEditingItem(null); }}
+        onOpenChange={(open) => {
+          if (!open) setEditingItem(null);
+        }}
         editingItem={editingItem}
       />
     </div>

@@ -23,7 +23,11 @@ export const createOrgUnitSchema = z.object({
   address: z.string().optional(),
   officeAddress: z.string().optional(),
   email: z.string().email("Email không hợp lệ").optional().or(z.literal("")),
-  phone: z.string().optional(),
+  phone: z
+    .string()
+    .regex(/^[0-9]*$/, "Số điện thoại chỉ được nhập số")
+    .optional()
+    .or(z.literal("")),
   website: z.string().optional(),
   isLeafConfirmed: z.boolean().default(false),
 });
@@ -41,7 +45,11 @@ export const updateOrgUnitSchema = z.object({
   address: z.string().optional(),
   officeAddress: z.string().optional(),
   email: z.string().email("Email không hợp lệ").optional().or(z.literal("")),
-  phone: z.string().optional(),
+  phone: z
+    .string()
+    .regex(/^[0-9]*$/, "Số điện thoại chỉ được nhập số")
+    .optional()
+    .or(z.literal("")),
   website: z.string().optional(),
   isLeafConfirmed: z.boolean().optional(),
 });
@@ -83,7 +91,9 @@ export const createAssignmentSchema = z.object({
   positionTitle: z.string().nullish(),
   startedOn: z
     .string({ error: "Ngày bắt đầu không được để trống" })
-    .min(1, "Ngày bắt đầu không được để trống"),
+    .min(1, "Ngày bắt đầu không được để trống")
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Ngày bắt đầu không hợp lệ (YYYY-MM-DD)")
+    .refine((val) => !Number.isNaN(Date.parse(val)), "Ngày bắt đầu không hợp lệ"),
 });
 
 export type CreateAssignmentInput = z.infer<typeof createAssignmentSchema>;

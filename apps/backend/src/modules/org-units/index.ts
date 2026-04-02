@@ -1,4 +1,5 @@
 import {
+  createAssignmentSchema,
   createOrgUnitSchema,
   dissolveOrgUnitSchema,
   dropdownQuerySchema,
@@ -84,11 +85,7 @@ export const orgUnitRoutes = new Elysia({ prefix: "/api/org-units" })
     {
       auth: true,
       params: idParamSchema,
-      body: t.Object({
-        employeeId: t.String(),
-        positionTitle: t.Optional(t.String()),
-        startedOn: t.String(),
-      }),
+      body: createAssignmentSchema,
     },
   )
   .post(

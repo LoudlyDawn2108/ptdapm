@@ -80,7 +80,7 @@ export function useCreateSalaryGrade() {
       if (error) throw handleApiError(error);
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: salaryGradeKeys.lists() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: salaryGradeKeys.all }),
   });
 }
 
@@ -93,8 +93,7 @@ export function useUpdateSalaryGrade() {
       return data;
     },
     onSuccess: (_data, vars) => {
-      qc.invalidateQueries({ queryKey: salaryGradeKeys.lists() });
-      qc.invalidateQueries({ queryKey: salaryGradeKeys.detail(vars.id) });
+      qc.invalidateQueries({ queryKey: salaryGradeKeys.all });
     },
   });
 }
@@ -109,7 +108,7 @@ export function useDeleteSalaryGrade() {
       if (error) throw handleApiError(error);
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: salaryGradeKeys.lists() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: salaryGradeKeys.all }),
   });
 }
 
@@ -125,8 +124,7 @@ export function useCreateSalaryGradeStep() {
       return data;
     },
     onSuccess: (_data, vars) => {
-      qc.invalidateQueries({ queryKey: salaryGradeKeys.steps(vars.gradeId) });
-      qc.invalidateQueries({ queryKey: salaryGradeKeys.lists() });
+      qc.invalidateQueries({ queryKey: salaryGradeKeys.all });
     },
   });
 }
@@ -148,8 +146,7 @@ export function useUpdateSalaryGradeStep() {
       return data;
     },
     onSuccess: (_data, vars) => {
-      qc.invalidateQueries({ queryKey: salaryGradeKeys.steps(vars.gradeId) });
-      qc.invalidateQueries({ queryKey: salaryGradeKeys.lists() });
+      qc.invalidateQueries({ queryKey: salaryGradeKeys.all });
     },
   });
 }
@@ -173,8 +170,7 @@ export function useDeleteSalaryGradeStep() {
       return data;
     },
     onSuccess: (_data, vars) => {
-      qc.invalidateQueries({ queryKey: salaryGradeKeys.steps(vars.gradeId) });
-      qc.invalidateQueries({ queryKey: salaryGradeKeys.lists() });
+      qc.invalidateQueries({ queryKey: salaryGradeKeys.all });
     },
   });
 }
