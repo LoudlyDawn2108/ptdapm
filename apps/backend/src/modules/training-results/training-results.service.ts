@@ -6,11 +6,7 @@ import type {
 } from "@hrms/shared";
 import { type SQL, and, eq, sql } from "drizzle-orm";
 import type { ResultStatusCode } from "@hrms/shared";
-import {
-  BadRequestError,
-  ConflictError,
-  NotFoundError,
-} from "../../common/utils/errors";
+import { BadRequestError, NotFoundError } from "../../common/utils/errors";
 import { buildPaginatedResponse } from "../../common/utils/pagination";
 import { db } from "../../db";
 import { auditLogs } from "../../db/schema/audit";
@@ -67,15 +63,13 @@ async function ensureRegistrationExists(
   return registration;
 }
 
-async function ensureNoExistingResult(registrationId: string) {
+async function findExistingResult(registrationId: string) {
   const [existing] = await db
-    .select({ id: trainingResults.id })
+    .select()
     .from(trainingResults)
     .where(eq(trainingResults.registrationId, registrationId));
 
-  if (existing) {
-    throw new ConflictError("Kết quả đào tạo đã được ghi nhận cho đăng ký này");
-  }
+  return existing ?? null;
 }
 
 async function ensureResultExists(
@@ -222,8 +216,60 @@ export async function create(
   const course = await ensureCourseExists(courseId);
   ensureCourseCompleted(course);
   await ensureRegistrationExists(data.registrationId, courseId);
-  await ensureNoExistingResult(data.registrationId);
 
+  // Kiểm tra xem đã có kết quả chưa - nếu có thì cập nhật thay vì từ chối
+  const existingResult = await findExistingResult(data.registrationId);
+
+  if (existingResult) {
+    // Cập nhật kết quả đã tồn tại (ghi nhận lần 2)
+    const [updated] = await db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(trainingResults)
+        .set({
+          resultStatus: data.resultStatus,
+          completedOn: data.completedOn ?? course.trainingTo,
+          certificateFileId: data.certificateFileId ?? null,
+          note: data.note ?? null,
+        })
+        .where(eq(trainingResults.id, existingResult.id))
+        .returning();
+
+      if (!row) throw new Error("Update training result failed");
+
+      await tx
+        .update(trainingRegistrations)
+        .set({ participationStatus: data.resultStatus })
+        .where(eq(trainingRegistrations.id, data.registrationId));
+
+      await tx.insert(auditLogs).values({
+        actorUserId,
+        action: "UPDATE",
+        entityType: "training_result",
+        entityId: row.id,
+        oldValues: {
+          resultStatus: existingResult.resultStatus,
+          completedOn: existingResult.completedOn,
+          certificateFileId: existingResult.certificateFileId,
+          note: existingResult.note,
+        },
+        newValues: {
+          registrationId: data.registrationId,
+          resultStatus: data.resultStatus,
+          completedOn: data.completedOn ?? course.trainingTo,
+          certificateFileId: data.certificateFileId ?? null,
+          note: data.note ?? null,
+          courseId,
+        },
+      });
+
+      return [row] as const;
+    });
+
+    if (!updated) throw new Error("Update training result failed");
+    return updated;
+  }
+
+  // Tạo mới kết quả (ghi nhận lần đầu)
   const [created] = await db.transaction(async (tx) => {
     const [row] = await tx
       .insert(trainingResults)
@@ -276,9 +322,11 @@ export async function createBatch(
   const course = await ensureCourseExists(courseId);
   ensureCourseCompleted(course);
 
-  const createdResults: TrainingResult[] = [];
+  const processedResults: TrainingResult[] = [];
+  const createdIds: string[] = [];
+  const updatedIds: string[] = [];
 
-  // Validate and insert inside the same transaction to prevent race conditions
+  // Validate and upsert inside the same transaction to prevent race conditions
   await db.transaction(async (tx) => {
     for (const item of data.results) {
       // Validate registration exists (inside tx)
@@ -297,31 +345,72 @@ export async function createBatch(
         );
       }
 
-      // Validate no existing result (inside tx)
+      // Kiểm tra xem đã có kết quả chưa (inside tx)
       const [existingResult] = await tx
-        .select({ id: trainingResults.id })
+        .select()
         .from(trainingResults)
         .where(eq(trainingResults.registrationId, item.registrationId));
+
+      let resultRow: TrainingResult;
+
       if (existingResult) {
-        throw new ConflictError(
-          "Kết quả đào tạo đã được ghi nhận cho đăng ký này",
-        );
+        // Cập nhật kết quả đã tồn tại (ghi nhận lần 2)
+        const [updated] = await tx
+          .update(trainingResults)
+          .set({
+            resultStatus: item.resultStatus,
+            completedOn: item.completedOn ?? course.trainingTo,
+            certificateFileId: item.certificateFileId ?? null,
+            note: item.note ?? null,
+          })
+          .where(eq(trainingResults.id, existingResult.id))
+          .returning();
+
+        if (!updated) throw new Error("Update training result failed");
+        resultRow = updated;
+        updatedIds.push(item.registrationId);
+
+        // Ghi audit log cho update
+        await tx.insert(auditLogs).values({
+          actorUserId,
+          action: "UPDATE",
+          entityType: "training_result",
+          entityId: resultRow.id,
+          oldValues: {
+            resultStatus: existingResult.resultStatus,
+            completedOn: existingResult.completedOn,
+            certificateFileId: existingResult.certificateFileId,
+            note: existingResult.note,
+          },
+          newValues: {
+            registrationId: item.registrationId,
+            resultStatus: item.resultStatus,
+            completedOn: item.completedOn ?? course.trainingTo,
+            certificateFileId: item.certificateFileId ?? null,
+            note: item.note ?? null,
+            courseId,
+          },
+        });
+      } else {
+        // Tạo mới kết quả (ghi nhận lần đầu)
+        const [created] = await tx
+          .insert(trainingResults)
+          .values({
+            registrationId: item.registrationId,
+            resultStatus: item.resultStatus,
+            completedOn: item.completedOn ?? course.trainingTo,
+            certificateFileId: item.certificateFileId ?? null,
+            note: item.note ?? null,
+            createdByUserId: actorUserId,
+          })
+          .returning();
+
+        if (!created) throw new Error("Insert training result failed");
+        resultRow = created;
+        createdIds.push(item.registrationId);
       }
 
-      const [created] = await tx
-        .insert(trainingResults)
-        .values({
-          registrationId: item.registrationId,
-          resultStatus: item.resultStatus,
-          completedOn: item.completedOn ?? course.trainingTo,
-          certificateFileId: item.certificateFileId ?? null,
-          note: item.note ?? null,
-          createdByUserId: actorUserId,
-        })
-        .returning();
-
-      if (!created) throw new Error("Insert training result failed");
-      createdResults.push(created);
+      processedResults.push(resultRow);
 
       // Cập nhật trạng thái tham gia
       await tx
@@ -330,20 +419,24 @@ export async function createBatch(
         .where(eq(trainingRegistrations.id, item.registrationId));
     }
 
-    await tx.insert(auditLogs).values({
-      actorUserId,
-      action: "CREATE_BATCH",
-      entityType: "training_result",
-      entityId: courseId,
-      newValues: {
-        courseId,
-        count: createdResults.length,
-        registrationIds: data.results.map((r) => r.registrationId),
-      },
-    });
+    // Ghi audit log tổng hợp cho batch create (chỉ ghi nếu có tạo mới)
+    if (createdIds.length > 0) {
+      await tx.insert(auditLogs).values({
+        actorUserId,
+        action: "CREATE_BATCH",
+        entityType: "training_result",
+        entityId: courseId,
+        newValues: {
+          courseId,
+          createdCount: createdIds.length,
+          updatedCount: updatedIds.length,
+          createdRegistrationIds: createdIds,
+        },
+      });
+    }
   });
 
-  return createdResults;
+  return processedResults;
 }
 
 // ---------------------------------------------------------------------------

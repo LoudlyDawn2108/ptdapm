@@ -1,11 +1,21 @@
-import type { CreateEvaluationInput, PaginatedResponse, UpdateEvaluationInput } from "@hrms/shared";
-import { type SQL, and, eq } from "drizzle-orm";
+import type {
+  CreateEvaluationInput,
+  PaginatedResponse,
+  UpdateEvaluationInput,
+} from "@hrms/shared";
+import { type SQL, and, eq, ne, sql } from "drizzle-orm";
 import { BadRequestError, NotFoundError } from "../../common/utils/errors";
-import { buildPaginatedResponse, countRows } from "../../common/utils/pagination";
+import {
+  buildPaginatedResponse,
+  countRows,
+} from "../../common/utils/pagination";
 import { db } from "../../db";
 import { auditLogs } from "../../db/schema/audit";
 import { employees } from "../../db/schema/employees";
-import { type EmployeeEvaluation, employeeEvaluations } from "../../db/schema/evaluations";
+import {
+  type EmployeeEvaluation,
+  employeeEvaluations,
+} from "../../db/schema/evaluations";
 
 async function ensureEmployeeExists(employeeId: string) {
   const [employee] = await db
@@ -19,7 +29,9 @@ async function ensureEmployeeExists(employeeId: string) {
 
 function ensureEmployeeCanBeEvaluated(workStatus: string) {
   if (workStatus === "terminated") {
-    throw new BadRequestError("Không thể tạo hoặc cập nhật đánh giá cho nhân sự đã thôi việc.");
+    throw new BadRequestError(
+      "Không thể tạo hoặc cập nhật đánh giá cho nhân sự đã thôi việc.",
+    );
   }
 }
 
@@ -31,11 +43,55 @@ async function ensureEvaluationExists(
     .select()
     .from(employeeEvaluations)
     .where(
-      and(eq(employeeEvaluations.id, evaluationId), eq(employeeEvaluations.employeeId, employeeId)),
+      and(
+        eq(employeeEvaluations.id, evaluationId),
+        eq(employeeEvaluations.employeeId, employeeId),
+      ),
     );
 
   if (!evaluation) throw new NotFoundError("Không tìm thấy bản đánh giá");
   return evaluation;
+}
+
+/**
+ * Check if a decision number already exists within the same year
+ * @param decisionNo - The decision number to check
+ * @param decisionOn - The decision date (to extract year)
+ * @param excludeId - Optional ID to exclude (for update operations)
+ * @throws BadRequestError if a duplicate is found
+ */
+async function ensureDecisionNoNotDuplicate(
+  decisionNo: string | null | undefined,
+  decisionOn: string | null | undefined,
+  excludeId?: string,
+): Promise<void> {
+  if (!decisionNo || !decisionOn) return;
+
+  const year = new Date(decisionOn).getFullYear();
+  const startOfYear = `${year}-01-01`;
+  const endOfYear = `${year}-12-31`;
+
+  const conditions: SQL[] = [
+    eq(employeeEvaluations.decisionNo, decisionNo),
+    sql`${employeeEvaluations.decisionOn} >= ${startOfYear}`,
+    sql`${employeeEvaluations.decisionOn} <= ${endOfYear}`,
+  ];
+
+  if (excludeId) {
+    conditions.push(ne(employeeEvaluations.id, excludeId));
+  }
+
+  const [existing] = await db
+    .select({ id: employeeEvaluations.id })
+    .from(employeeEvaluations)
+    .where(and(...conditions))
+    .limit(1);
+
+  if (existing) {
+    throw new BadRequestError(
+      `Số quyết định "${decisionNo}" đã tồn tại trong năm ${year}. Vui lòng sử dụng số quyết định khác.`,
+    );
+  }
 }
 
 export async function list(
@@ -83,6 +139,9 @@ export async function create(
 ): Promise<EmployeeEvaluation> {
   const employee = await ensureEmployeeExists(employeeId);
   ensureEmployeeCanBeEvaluated(employee.workStatus);
+
+  // Check for duplicate decision number within the same year
+  await ensureDecisionNoNotDuplicate(data.decisionNo, data.decisionOn);
 
   const [created] = await db.transaction(async (tx) => {
     const [row] = await tx
@@ -137,6 +196,13 @@ export async function update(
   ensureEmployeeCanBeEvaluated(employee.workStatus);
   const existing = await ensureEvaluationExists(employeeId, evaluationId);
 
+  // Check for duplicate decision number within the same year (excluding current record)
+  await ensureDecisionNoNotDuplicate(
+    data.decisionNo,
+    data.decisionOn,
+    evaluationId,
+  );
+
   const [updated] = await db.transaction(async (tx) => {
     const [row] = await tx
       .update(employeeEvaluations)
@@ -186,7 +252,9 @@ export async function remove(
   const existing = await ensureEvaluationExists(employeeId, evaluationId);
 
   await db.transaction(async (tx) => {
-    await tx.delete(employeeEvaluations).where(eq(employeeEvaluations.id, evaluationId));
+    await tx
+      .delete(employeeEvaluations)
+      .where(eq(employeeEvaluations.id, evaluationId));
 
     await tx.insert(auditLogs).values({
       actorUserId,

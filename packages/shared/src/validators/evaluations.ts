@@ -1,5 +1,12 @@
 import { z } from "zod";
 import { EVAL_TYPE_CODES } from "../constants/enums";
+import { safeStringNullish } from "./common";
+
+/**
+ * Regex pattern to detect common SQL injection attempts.
+ */
+const SQL_INJECTION_PATTERN =
+  /('[\s]*OR[\s]+|'[\s]*AND[\s]+|--[\s]*$|;[\s]*--|UNION[\s]+SELECT|DROP[\s]+TABLE|INSERT[\s]+INTO|DELETE[\s]+FROM|UPDATE[\s]+.*SET|SELECT[\s]+.*FROM|'[\s]*=[\s]*'|1[\s]*=[\s]*1|'[\s]*;)/i;
 
 const rewardAmountSchema = z
   .string()
@@ -13,21 +20,30 @@ const rewardAmountSchema = z
       message: "Số tiền thưởng phải là số không âm, tối đa 2 chữ số thập phân",
     },
   )
+  .refine(
+    (value) => {
+      if (value == null || value === "") return true;
+      return !SQL_INJECTION_PATTERN.test(value);
+    },
+    {
+      message: "Dữ liệu chứa ký tự không hợp lệ",
+    },
+  )
   .transform((value) => (value === "" ? undefined : value));
 
 export const createEvaluationSchema = z
   .object({
     evalType: z.enum(EVAL_TYPE_CODES),
-    rewardType: z.string().max(255).nullish(),
-    rewardName: z.string().max(255).nullish(),
+    rewardType: safeStringNullish(255),
+    rewardName: safeStringNullish(255),
     decisionOn: z.union([z.literal(""), z.string().date()]).nullish(),
-    decisionNo: z.string().max(50).nullish(),
-    content: z.string().nullish(),
+    decisionNo: safeStringNullish(50),
+    content: safeStringNullish(),
     rewardAmount: rewardAmountSchema,
-    disciplineType: z.string().max(255).nullish(),
-    disciplineName: z.string().max(255).nullish(),
-    reason: z.string().nullish(),
-    actionForm: z.string().max(255).nullish(),
+    disciplineType: safeStringNullish(255),
+    disciplineName: safeStringNullish(255),
+    reason: safeStringNullish(),
+    actionForm: safeStringNullish(255),
     visibleToEmployee: z.boolean().default(true),
     visibleToTckt: z.boolean().default(true),
   })
@@ -107,16 +123,16 @@ export type CreateEvaluationInput = z.input<typeof createEvaluationSchema>;
 export const updateEvaluationSchema = z
   .object({
     evalType: z.enum(EVAL_TYPE_CODES),
-    rewardType: z.string().max(255).nullish(),
-    rewardName: z.string().max(255).nullish(),
+    rewardType: safeStringNullish(255),
+    rewardName: safeStringNullish(255),
     decisionOn: z.union([z.literal(""), z.string().date()]).nullish(),
-    decisionNo: z.string().max(50).nullish(),
-    content: z.string().nullish(),
+    decisionNo: safeStringNullish(50),
+    content: safeStringNullish(),
     rewardAmount: rewardAmountSchema,
-    disciplineType: z.string().max(255).nullish(),
-    disciplineName: z.string().max(255).nullish(),
-    reason: z.string().nullish(),
-    actionForm: z.string().max(255).nullish(),
+    disciplineType: safeStringNullish(255),
+    disciplineName: safeStringNullish(255),
+    reason: safeStringNullish(),
+    actionForm: safeStringNullish(255),
     visibleToEmployee: z.boolean().default(true),
     visibleToTckt: z.boolean().default(true),
   })
