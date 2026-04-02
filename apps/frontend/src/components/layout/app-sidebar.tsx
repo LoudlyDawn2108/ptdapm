@@ -14,6 +14,7 @@ import { useAuth } from "@/features/auth/hooks";
 import { canAccessRoute } from "@/lib/permissions";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
+  BarChart3,
   BookOpen,
   Building2,
   CircleUserRound,
@@ -59,6 +60,16 @@ function isNavItemActive(currentPath: string, itemPath: string) {
 }
 
 const navGroups: NavGroupConfig[] = [
+  {
+    label: "Báo cáo",
+    items: [
+      {
+        title: "Báo cáo và Thống kê",
+        to: "/",
+        icon: BarChart3,
+      },
+    ],
+  },
   {
     label: "Tài khoản",
     items: [
