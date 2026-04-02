@@ -8,6 +8,7 @@ import {
   buildAuthUser,
   forwardCookies,
   getSessionFromHeaders,
+  isUserLocked,
   signIn,
   signOut,
   updateLastLogin,
@@ -18,7 +19,8 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
   .post(
     "/login",
     async ({ body }) => {
-      const res = await signIn(body.username, body.password);
+      const username = body.username.trim();
+      const res = await signIn(username, body.password);
 
       if (!res.ok) {
         const parsed = await res.json();
@@ -37,7 +39,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
 
       const [sessionResult] = await Promise.all([
         getSessionFromHeaders(new Headers({ cookie: cookieHeader })),
-        updateLastLogin(body.username),
+        updateLastLogin(username),
       ]);
 
       if (!sessionResult) {
@@ -46,6 +48,16 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
             error: "Failed to establish session",
           }),
           { status: 500, headers: { "Content-Type": "application/json" } },
+        );
+      }
+
+      // Reject locked accounts — mirrors authPlugin behavior
+      if (await isUserLocked(sessionResult.user.id, sessionResult.user.status)) {
+        return new Response(
+          JSON.stringify({
+            error: "Tài khoản đã bị khóa",
+          }),
+          { status: 403, headers: { "Content-Type": "application/json" } },
         );
       }
 

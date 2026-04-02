@@ -5,17 +5,13 @@ import bgImage from "../../assets/image-476.jpeg";
 
 export const Route = createFileRoute("/login")({
   beforeLoad: async ({ context }) => {
-    try {
-      // If already logged in, redirect to dashboard
-      await context.queryClient.ensureQueryData(sessionOptions());
+    // If already logged in, redirect to dashboard
+    const session = await context.queryClient
+      .fetchQuery(sessionOptions())
+      .catch(() => null);
+
+    if (session) {
       throw redirect({ to: "/" });
-    } catch (e) {
-      // Re-throw redirect (from successful auth check)
-      if (e && typeof e === "object" && "to" in e) {
-        throw e;
-      }
-      // Any other error (network, "Not authenticated", etc.) → show login page
-      return;
     }
   },
   component: LoginPage,
